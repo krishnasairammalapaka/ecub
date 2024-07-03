@@ -1,0 +1,23 @@
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "ecub-v2",
+                    "appId": "1:214420805388:android:f1c383e99b121e5015db29",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "ecub-v2",
+                    "configurations": {
+                        "android": "1:214420805388:android:f1c383e99b121e5015db29",
+                        "ios": "1:214420805388:ios:10dff23db787318115db29",
+                        "web": "1:214420805388:web:46c51e24fd1ea47115db29"
+                    }
+                }
+            }
+        }
+    }
+}
