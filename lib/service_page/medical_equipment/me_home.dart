@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:ecub_s1_v2/service_page/medical_equipment/me_items.dart';
+// import 'package:ecub_s1_v2/service_page/medical_equipment/me_items.dart';
+import 'package:ecub_s1_v2/service_page/medical_equipment/me_items2.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -117,7 +118,7 @@ class MeHomePage extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              MeItems(categoryName: category.name),
+                              MeItems2(categoryName: category.name),
                         ),
                       );
                     },
@@ -205,7 +206,7 @@ class MeHomePage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MeItems(categoryName: category.name),
+                    builder: (context) => MeItems2(categoryName: category.name),
                   ),
                 );
               },

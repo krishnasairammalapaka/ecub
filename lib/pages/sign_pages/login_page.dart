@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hive/hive.dart';
 
 class LoginPage extends StatelessWidget {
   LoginPage({super.key});
@@ -13,18 +15,44 @@ class LoginPage extends StatelessWidget {
     return firebaseApp;
   }
 
+  void getUserdata() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      DocumentSnapshot userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.email)
+          .get();
+      // print(1);
+      try {
+        // Open the Hive box asynchronously before using it
+        var box = await Hive.openBox('user_data');
+        if (userData['firstname'] != null) {
+          // Check for null value
+          await box.put('email', userData['email']);
+          await box.put('phonenumber', userData['phonenumber']);
+          await box.put('age', userData['age']);
+          await box.put('firstname', userData['firstname']);
+          await box.put('lastname', userData['lastname']);
+        }
+        // Optionally close the box if you're done with it
+        // await box.close();
+      } catch (e) {
+        print("Error storing data in Hive: $e");
+      }
+    }
+  }
+
   // Login function
   Future<void> _loginWithEmailPassword(BuildContext context) async {
     try {
-      final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-      final User? user = (await _firebaseAuth.signInWithEmailAndPassword(
+      final user = (await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       ))
           .user;
       if (user != null) {
-        //navigator.popuntil
         Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        getUserdata();
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

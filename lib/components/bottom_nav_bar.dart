@@ -7,8 +7,12 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
+      decoration: BoxDecoration(
+        color: Colors.red[600], // Replace with your desired background color
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
       ),
       child: SafeArea(
         child: Padding(
@@ -18,7 +22,7 @@ class BottomNavBar extends StatelessWidget {
             hoverColor: Colors.grey[100]!,
             backgroundColor: Colors.transparent,
             gap: 8,
-            activeColor:Color.fromRGBO(183, 28, 28, 1),
+            activeColor: Color.fromRGBO(183, 28, 28, 1),
             iconSize: 24,
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             duration: Duration(milliseconds: 400),
@@ -30,13 +34,25 @@ class BottomNavBar extends StatelessWidget {
               GButton(
                 icon: Icons.home,
                 text: 'Home',
-                iconColor: Color.fromRGBO(183, 28, 28, 1),
+                iconColor: Color.fromRGBO(247, 245, 245, 1),
                 textColor: Color.fromRGBO(183, 28, 28, 1),
               ),
               GButton(
                 icon: Icons.person,
                 text: 'Profile',
-                iconColor: Color.fromRGBO(183, 28, 28, 1),
+                iconColor: Color.fromRGBO(247, 245, 245, 1),
+                textColor: Color.fromRGBO(183, 28, 28, 1),
+              ),
+              GButton(
+                icon: Icons.shopping_cart,
+                text: 'Cart',
+                iconColor: Color.fromRGBO(247, 245, 245, 1),
+                textColor: Color.fromRGBO(183, 28, 28, 1),
+              ),
+              GButton(
+                icon: Icons.shopping_bag,
+                text: 'Orders',
+                iconColor: Color.fromRGBO(247, 245, 245, 1),
                 textColor: Color.fromRGBO(183, 28, 28, 1),
               ),
             ],

@@ -90,47 +90,51 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: GridView.builder(
+          padding: const EdgeInsets.all(10), // Adjust padding as needed
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3, // Number of columns in the grid
-            crossAxisSpacing: 10, // Space between columns
-            mainAxisSpacing: 10, // Space between rows
+            crossAxisCount: 2, // Number of columns
+            crossAxisSpacing: 10, // Horizontal space between items
+            mainAxisSpacing: 10, // Vertical space between items
+            childAspectRatio: 3 / 2, // Aspect ratio of each item
           ),
-          itemCount: categories.length, // Number of items in the grid
+          itemCount: categories.length,
           itemBuilder: (context, index) {
-            // Accessing each category by index
-            Category category = categories[index];
-            return InkWell(
+            final category = categories[index];
+            return GestureDetector(
               onTap: () {
-                // Navigate to the category page
-                // print(category.path);
                 Navigator.pushNamed(context, category.path);
               },
-              child: Card(
-                // Wrap GridTile with Card for elevation and shape
-                color: Colors.grey[200],
-                elevation: 5, // Shadow depth
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10), // Rounded corners
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 5, // Shadow depth
+                      offset: Offset(0, 5), // Shadow position
+                    ),
+                  ],
                 ),
-                child: GridTile(
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(10)),
-                          child: Image.network(category.imageUrl,
-                              fit: BoxFit.cover), // Category image
-                        ),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(10)),
+                        child: Image.network(category.imageUrl,
+                            fit: BoxFit.cover,
+                            // color: Colors.red[900],
+                            ), // Category image
                       ),
-                      Padding(
-                        // Add padding around the text
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(category.name,
-                            textAlign: TextAlign.center), // Category name
-                      ),
-                    ],
-                  ),
+                    ),
+                    Padding(
+                      // Add padding around the text
+                      padding: EdgeInsets.all(8.0),
+                      child: Text(category.name,
+                          textAlign: TextAlign.center), // Category name
+                    ),
+                  ],
                 ),
               ),
             );
@@ -139,6 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
 
   CarouselSlider carouselSlider(List<Category> categories) {
     return CarouselSlider(
@@ -159,14 +164,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 margin: EdgeInsets.symmetric(horizontal: 5.0),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: Colors.red[300],
+                  color: Colors.red[400],
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Expanded(
-                        child:
-                            Image.network(category.imageUrl, fit: BoxFit.cover)),
+                        child: Image.network(category.imageUrl,
+                            fit: BoxFit.cover)),
                     Text(category.name,
                         style: TextStyle(
                             fontSize: 16.0, fontWeight: FontWeight.bold)),
@@ -180,6 +185,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+
 
 class Category {
   final String name;
