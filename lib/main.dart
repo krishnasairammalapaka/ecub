@@ -8,13 +8,18 @@ import 'package:ecub_s1_v2/pages/sign_pages/registration_page.dart';
 import 'package:ecub_s1_v2/coming_soon.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_cart.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_home.dart';
+// import 'package:ecub_s1_v2/service_page/medical_equipment/me_item_details.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_orders.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/adapters.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Hive.initFlutter();
+  // ignore: unused_local_variable
+  var box=await Hive.openBox('user_data');
   runApp(const MyApp());
 }
 
@@ -39,6 +44,7 @@ class MyApp extends StatelessWidget {
         '/me': (context) => MeHomePage(),
         '/me_cart': (context) => Mecart(),
         '/me_orders': (context) => MeOrders(),
+      
       },
     );
   }

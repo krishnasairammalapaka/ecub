@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hive/hive.dart';
 
 class ProfileScreen extends StatelessWidget {
   ProfileScreen({Key? key}) : super(key: key); // Removed the 'super.' prefix for clarity and compatibility
@@ -25,7 +26,7 @@ class ProfileScreen extends StatelessWidget {
               if (!snapshot.hasData) {
                 return const Center(child: Text('No user data found.'));
               }
-              var userData = snapshot.data!.data() as Map<String, dynamic>;
+              var userData = Hive.box("user_data");
               return SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -35,20 +36,20 @@ class ProfileScreen extends StatelessWidget {
                       children: [
                         ListTile(
                           leading: Icon(Icons.person, color: Theme.of(context).primaryColor),
-                          title: Text('${userData['firstname']} ${userData['lastname']}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                          title: Text('${userData.get('firstname')} ${userData.get('lastname')}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                         ),
                         Divider(),
                         ListTile(
                           leading: Icon(Icons.email, color: Theme.of(context).primaryColor),
-                          title: Text('${userData['email']}', style: TextStyle(fontSize: 18)),
+                          title: Text('${userData.get('email')}', style: TextStyle(fontSize: 18)),
                         ),
                         ListTile(
                           leading: Icon(Icons.phone, color: Theme.of(context).primaryColor),
-                          title: Text('${userData['phonenumber']}', style: TextStyle(fontSize: 18)),
+                          title: Text('${userData.get('phonenumber')}', style: TextStyle(fontSize: 18)),
                         ),
                         ListTile(
                           leading: Icon(Icons.cake, color: Theme.of(context).primaryColor),
-                          title: Text('${userData['age']}', style: TextStyle(fontSize: 18)),
+                          title: Text('${userData.get('age')}', style: TextStyle(fontSize: 18)),
                         ),
                       ],
                     ),
