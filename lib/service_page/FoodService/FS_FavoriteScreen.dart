@@ -1,0 +1,269 @@
+import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:ecub_s1_v2/models/Favourites_DB.dart';
+import 'package:ecub_s1_v2/models/Food_db.dart';
+
+class FS_FavoriteScreen extends StatefulWidget {
+  @override
+  _FS_FavoriteScreenState createState() => _FS_FavoriteScreenState();
+}
+
+class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> {
+  int _selectedIndex = 2;
+  Box<Favourites_DB>? _favouritesBox;
+  Box<Food_db>? FDbox;
+
+  @override
+  void initState() {
+    super.initState();
+    _openBoxes();
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        Navigator.pushNamed(context, '/fs_home');
+        break;
+      case 1:
+        Navigator.pushNamed(context, '/fs_search');
+        break;
+      case 2:
+        Navigator.pushNamed(context, '/fs_favourite');
+        break;
+      case 3:
+        Navigator.pushNamed(context, '/fs_profile');
+        break;
+      default:
+        break;
+    }
+  }
+
+  Future<void> _openBoxes() async {
+    _favouritesBox = await Hive.openBox<Favourites_DB>('favouritesDbBox');
+    FDbox = await Hive.openBox<Food_db>('foodDbBox');
+
+
+    setState(() {});
+  }
+
+  void _deleteFavoriteItem(String productId) {
+    var favoriteItemKey = _favouritesBox!.keys.firstWhere((key) {
+      var item = _favouritesBox!.get(key);
+      return item != null && item.ItemId == productId;
+    });
+    _favouritesBox!.delete(favoriteItemKey);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        // leading: IconButton(
+        //   icon: Icon(Icons.arrow_back, color: Colors.black),
+        //   onPressed: () {
+        //     Navigator.popUntil(context, ModalRoute.withName('/fs_home'));
+        //   },
+        // ),
+        title: Text(
+          'My Favourite',
+          style: TextStyle(color: Colors.black),
+        ),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Expanded(
+              child: _favouritesBox == null || FDbox == null
+                  ? Center(child: CircularProgressIndicator())
+                  : ValueListenableBuilder(
+                valueListenable: _favouritesBox!.listenable(),
+                builder: (context, Box<Favourites_DB> items, _) {
+                  if (items.isEmpty) {
+                    return Center(child: Text('No favorite items.'));
+                  } else {
+                    return ListView.builder(
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        var item = items.getAt(index);
+                        if (item == null) {
+                          return Center(child: Text('Item not found.'));
+                        }
+
+                        var productId = item.ItemId;
+                        var productDetails = FDbox!.values.firstWhereOrNull(
+                                (element) => element.productId == productId);
+
+                        if (productDetails == null) {
+                          return Center(child: Text('Product not found.'));
+                        }
+
+                        return GestureDetector(
+                          onTap: () {},
+                          child: RestaurantCard(
+                            name: productDetails.productTitle,
+                            location: productDetails.productOwnership,
+                            rating: productDetails.productRating,
+                            deliveryTime: productDetails.productPrepTime,
+                            imageUrl: productDetails.productImg,
+                            isHomeMade: productDetails.productType == 'home-made',
+                            onDelete: () => _deleteFavoriteItem(productId),
+                          ),
+                        );
+                      },
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        items: [
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.only(top: 10.0),
+              child: Icon(
+                Icons.dinner_dining,
+                size: 30,
+              ),
+            ),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.only(top: 10.0),
+              child: Icon(
+                Icons.search,
+                size: 30,
+              ),
+            ),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.only(top: 10.0),
+              child: Icon(
+                Icons.favorite,
+                size: 30,
+              ),
+            ),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: const EdgeInsets.only(top: 10.0),
+              child: Icon(
+                Icons.person,
+                size: 30,
+              ),
+            ),
+            label: '',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        backgroundColor: Colors.red,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white,
+        onTap: _onItemTapped,
+      ),
+    );
+  }
+}
+
+class RestaurantCard extends StatelessWidget {
+  final String name;
+  final String location;
+  final double rating;
+  final String deliveryTime;
+  final String imageUrl;
+  final bool isHomeMade;
+  final VoidCallback onDelete;
+
+  RestaurantCard({
+    required this.name,
+    required this.location,
+    required this.rating,
+    required this.deliveryTime,
+    required this.imageUrl,
+    required this.isHomeMade,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8.0),
+              child: Image.asset(
+                imageUrl,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+              ),
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(location),
+                  Row(
+                    children: [
+                      Icon(Icons.star, color: Colors.yellow[700]),
+                      SizedBox(width: 5),
+                      Text('$rating'),
+                      SizedBox(width: 10),
+                      Icon(Icons.timer, color: Colors.grey),
+                      SizedBox(width: 5),
+                      Text(deliveryTime),
+                    ],
+                  ),
+                  if (isHomeMade)
+                    Container(
+                      margin: EdgeInsets.only(top: 5),
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Home-made',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: onDelete,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
