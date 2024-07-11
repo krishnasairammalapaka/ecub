@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:ecub_s1_v2/models/Food_db.dart';
+import 'package:hive/hive.dart';
 import 'package:ecub_s1_v2/models/Hotels_Db.dart';
+import 'package:ecub_s1_v2/models/Food_db.dart';
 
 class FS_RestaurantScreen extends StatefulWidget {
   @override
@@ -10,8 +10,12 @@ class FS_RestaurantScreen extends StatefulWidget {
 
 class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
   Box<Food_db>? FDbox;
-  Hotels_Db? hotelDetails;
-  List<Food_db> hotelDishes = [];
+  Box<Hotels_Db>? hotelBox;
+  String hotelName = '';
+  String hotelMail = '';
+  String hotelAddress = '';
+  String hotelUsername = '';
+  List<Map<String, dynamic>> foodItems = [];
 
   @override
   void initState() {
@@ -20,22 +24,46 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
   }
 
   Future<void> _openBoxes() async {
+    hotelBox = await Hive.openBox<Hotels_Db>('hotelDbBox');
     FDbox = await Hive.openBox<Food_db>('foodDbBox');
-    var hotelBox = await Hive.openBox<Hotels_Db>('hotelDbBox');
+    _fetchHotelInfo();
+  }
 
-    // Retrieve arguments passed from the previous screen
-    final Map<String, dynamic>? args =
-    ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-    var hotelID = args?['id']; // Access the 'id' argument
+  void _fetchHotelInfo() {
+    final args = ModalRoute.of(context)?.settings.arguments as Map;
+    final hotelusername = args['username'];
+    final hotelList = hotelBox?.values.toList();
 
-    hotelDetails =
-        hotelBox.values.firstWhere((hotel) => hotel.hotelUsername == hotelID);
+    if (hotelList != null) {
+      for (var hotel in hotelList) {
+        if (hotel.hotelUsername == hotelusername) {
+          setState(() {
+            hotelName = hotel.hotelName;
+            hotelMail = hotel.hotelMail;
+            hotelAddress = hotel.hotelAddress;
+            hotelUsername = hotel.hotelUsername;
+          });
 
-    if (hotelDetails != null) {
-      hotelDishes = FDbox!.values
-          .where((dish) => dish.productOwnership == hotelDetails!.hotelUsername)
-          .toList();
-      setState(() {});
+          _fetchFoodItems();
+          break;
+        }
+      }
+    }
+  }
+
+
+  void _fetchFoodItems() {
+    final allFoodItems = FDbox?.values.where((item) => item.productOwnership == hotelUsername).toList();
+
+    if (allFoodItems != null) {
+      setState(() {
+        foodItems = allFoodItems.map((item) => {
+          'name': item.productTitle,
+          'restaurant': item.productOwnership,
+          'price': item.productPrice,
+          'image': item.productImg
+        }).toList();
+      });
     }
   }
 
@@ -43,103 +71,187 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Restaurant Details'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        title: Text('Restaurant View'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.favorite_border, color: Colors.red),
+            onPressed: () {
+              // Add your favorite button action here
+            },
+          ),
+        ],
       ),
-      body: hotelDetails == null
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Hotel Logo
-            Center(
-              child: Image.asset(
-                'assets/hotel_prof.png', // Replace with hotel logo path from hotelDetails
-                width: 100,
-                height: 100,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(16),
+                  image: DecorationImage(
+                    image: AssetImage('assets/hotel.png'),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                hotelName,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                hotelMail,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                hotelAddress,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                ),
+              ),
+              SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.star, color: Colors.red),
+                  SizedBox(width: 4),
+                  Text('4.7'),
+                  SizedBox(width: 16),
+                  Icon(Icons.delivery_dining, color: Colors.red),
+                  SizedBox(width: 4),
+                  Text('Free'),
+                  SizedBox(width: 16),
+                  Icon(Icons.access_time, color: Colors.red),
+                  SizedBox(width: 4),
+                  Text('20 min'),
+                ],
+              ),
+              SizedBox(height: 16),
+              GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                children: foodItems.map((item) => MenuItem(
+                  name: item['name'],
+                  restaurant: item['restaurant'],
+                  price: item['price'],
+                  image: item['image'],
+                )).toList(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+}
+
+class CategoryTab extends StatelessWidget {
+  final String text;
+  final bool isSelected;
+
+  CategoryTab({required this.text, this.isSelected = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.red : Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        border: isSelected ? null : Border.all(color: Colors.red),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: isSelected ? Colors.white : Colors.red,
+        ),
+      ),
+    );
+  }
+}
+
+class MenuItem extends StatelessWidget {
+  final String name;
+  final String restaurant;
+  final double price;
+  final String image;
+
+  MenuItem({required this.name, required this.restaurant, required this.price, required this.image});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 80,
+            decoration: BoxDecoration(
+              color: Colors.grey[400],
+              borderRadius: BorderRadius.circular(8),
+              image: DecorationImage(
+                image: AssetImage(image),
                 fit: BoxFit.cover,
               ),
             ),
-            SizedBox(height: 16),
-            // Hotel Name
-            Text(
-              hotelDetails!.hotelName,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 12),
+          Text(
+            name,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
             ),
-            SizedBox(height: 8),
-            // Hotel Email
-            Text(
-              'Email: ${hotelDetails!.hotelMail}',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 8),
-            // Hotel Address
-            Text(
-              'Address: ${hotelDetails!.hotelAddress}',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 8),
-            // Hotel Phone Number
-            Text(
-              'Phone: ${hotelDetails!.hotelPhoneNo}',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 8),
-            // Hotel Username
-            Text(
-              'Username: ${hotelDetails!.hotelUsername}',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 8),
-            // Hotel Type
-            Text(
-              'Type: ${hotelDetails!.hotelType}',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 8),
-            // Homemade Tag if applicable
-            if (hotelDetails!.hotelType == "homemade")
-              Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Chip(
-                  label: Text('Homemade'),
-                  backgroundColor: Colors.green,
-                ),
-              ),
-            SizedBox(height: 16),
-            // List of Dishes
-            Text(
-              'Dishes Available:',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: hotelDishes.length,
-              itemBuilder: (context, index) {
-                var dish = hotelDishes[index];
-                return ListTile(
-                  leading: Image.asset(
-                    dish.productImg,
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                  ),
-                  title: Text(dish.productTitle),
-                  subtitle: Text('₹ ${dish.productPrice}'),
-                  trailing: IconButton(
-                    icon: Icon(Icons.add),
-                    onPressed: () {
-                      // Add dish to cart or perform other actions
-                    },
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
+          ),
+          // Text(restaurant),
+          SizedBox(height: 10,),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('₹$price',
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: 15
+          ),
+    ),
+
+            ],
+          ),
+        ],
       ),
     );
   }

@@ -32,9 +32,6 @@ class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> {
       case 1:
         Navigator.pushNamed(context, '/fs_search');
         break;
-      case 2:
-        Navigator.pushNamed(context, '/fs_favourite');
-        break;
       case 3:
         Navigator.pushNamed(context, '/fs_profile');
         break;

@@ -151,6 +151,7 @@ class _FS_SearchState extends State<FS_Search> {
                             onTap: () {
                               Navigator.pushNamed(context, '/fs_hotel', arguments: {
                                 'id': item.hotelId,
+                                'username':item.hotelUsername,
                                 'name': item.hotelName,
                               });
                             },

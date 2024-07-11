@@ -9,7 +9,7 @@ class FS_HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<FS_HomeScreen> {
-  int _selectedIndex = 2;
+  int _selectedIndex = 0;
   Box<Food_db>? FDbox;
   Map<String, String> categoryImages = {};
 
@@ -37,25 +37,25 @@ class _HomeScreenState extends State<FS_HomeScreen> {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (_selectedIndex != index) {
+      setState(() {
+        _selectedIndex = index;
+      });
 
-    switch (index) {
-      case 0:
-        Navigator.pushNamed(context, '/fs_home');
-        break;
-      case 1:
-        Navigator.pushNamed(context, '/fs_search');
-        break;
-      case 2:
-        Navigator.pushNamed(context, '/fs_favourite');
-        break;
-      case 3:
-        Navigator.pushNamed(context, '/fs_profile');
-        break;
-      default:
-        break;
+      switch (index) {
+
+        case 1:
+          Navigator.pushNamed(context, '/fs_search');
+          break;
+        case 2:
+          Navigator.pushNamed(context, '/fs_favourite');
+          break;
+        case 3:
+          Navigator.pushNamed(context, '/fs_profile');
+          break;
+        default:
+          break;
+      }
     }
   }
 
@@ -67,10 +67,6 @@ class _HomeScreenState extends State<FS_HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: Image.asset('assets/hamburger.png'),
-          onPressed: () {},
-        ),
         actions: [
           GestureDetector(
             onTap: () {
@@ -125,7 +121,7 @@ class _HomeScreenState extends State<FS_HomeScreen> {
               CarouselSlider(
                 items: [
                   {'image': 'assets/slide.png', 'route': '/home_subscribed'},
-                  {'image': 'assets/slide2.png', 'route': '/home_made'},
+                  {'image': 'assets/slide2.png', 'route': '/home_made.png'},
                 ].map((item) {
                   return GestureDetector(
                     onTap: () {
@@ -163,28 +159,74 @@ class _HomeScreenState extends State<FS_HomeScreen> {
                 ),
               ),
               SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/fs_dishes', arguments: {
+                        'title': "entry.key",
+                        'type': "entry.key"
+                      });
+                    },
+                    child: CategoryTile(
+                      title: "Home Made",
+                      image: "assets/home_made.png",
+                    ),
+                  ),
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/fs_dishes', arguments: {
+                        'title': "entry.key",
+                        'type': "entry.key"
+                      });
+                    },
+                    child: CategoryTile(
+                      title: "Restuarent",
+                      image: "assets/restuarnt_logo.png",
+                    ),
+                  ),
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/fs_dishes', arguments: {
+                        'title': "entry.key",
+                        'type': "entry.key"
+                      });
+                    },
+                    child: CategoryTile(
+                      title: "Subscription",
+                      image: "assets/subscription_logo.png",
+                    ),
+                  ),
+
+                ],
+              ),
+              SizedBox(height: 30),
               categoryImages.isEmpty
                   ? Center(child: CircularProgressIndicator())
                   : SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: categoryImages.entries.map((entry) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/fs_dishes',
-                            arguments: {
-                              'title': entry.key,
-                              'type': entry.key
-                        });
-                      },
-                      child: CategoryCard(
-                        title: entry.key,
-                        image: entry.value,
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: categoryImages.entries.map((entry) {
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(context, '/fs_dishes',
+                                  arguments: {
+                                    'title': entry.key,
+                                    'type': entry.key
+                                  });
+                            },
+                            child: CategoryCard(
+                              title: entry.key,
+                              image: entry.value,
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ),
+                    ),
               SizedBox(height: 20),
               Text(
                 "Popular now",
@@ -197,56 +239,55 @@ class _HomeScreenState extends State<FS_HomeScreen> {
               FDbox == null
                   ? Center(child: CircularProgressIndicator())
                   : ValueListenableBuilder(
-                valueListenable: FDbox!.listenable(),
-                builder: (context, Box<Food_db> items, _) {
-                  if (items.isEmpty) {
-                    return Center(child: Text('No items found.'));
-                  } else {
+                      valueListenable: FDbox!.listenable(),
+                      builder: (context, Box<Food_db> items, _) {
+                        if (items.isEmpty) {
+                          return Center(child: Text('No items found.'));
+                        } else {
+                          List<Food_db> sortedItems = items.values.toList();
+                          sortedItems.sort((a, b) =>
+                              b.productRating.compareTo(a.productRating));
 
-                    List<Food_db> sortedItems = items.values.toList();
-                    sortedItems.sort((a, b) =>
-                        b.productRating.compareTo(a.productRating));
-
-                    return GridView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: sortedItems.length,
-                      gridDelegate:
-                      SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 2 / 3,
-                      ),
-                      itemBuilder: (context, index) {
-                        var item = sortedItems[index];
-                        if (item.productRating > 4.4) {
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/fs_product',
-                                  arguments: {
-                                    'id': item.productId,
-                                    'title': item.productTitle,
-                                    'price': item.productPrice.toInt(),
-                                    'image': item.productImg,
-                                    'description': item.productDesc,
-                                    'shop': item.productOwnership,
-                                  });
-                            },
-                            child: FoodTile(
-                              title: item.productTitle,
-                              price: item.productPrice.toInt(),
-                              image: item.productImg,
-                              rating: item.productRating,
+                          return GridView.builder(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: sortedItems.length,
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 2 / 3,
                             ),
+                            itemBuilder: (context, index) {
+                              var item = sortedItems[index];
+                              if (item.productRating > 4.4) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.pushNamed(context, '/fs_product',
+                                        arguments: {
+                                          'id': item.productId,
+                                          'title': item.productTitle,
+                                          'price': item.productPrice.toInt(),
+                                          'image': item.productImg,
+                                          'description': item.productDesc,
+                                          'shop': item.productOwnership,
+                                        });
+                                  },
+                                  child: FoodTile(
+                                    title: item.productTitle,
+                                    price: item.productPrice.toInt(),
+                                    image: item.productImg,
+                                    rating: item.productRating,
+                                  ),
+                                );
+                              }
+                              return null;
+                            },
                           );
                         }
-                        return null;
                       },
-                    );
-                  }
-                },
-              ),
+                    ),
             ],
           ),
         ),
@@ -347,7 +388,11 @@ class FoodTile extends StatelessWidget {
   final String image;
   final double rating;
 
-  FoodTile({required this.title, required this.price, required this.image, required this.rating});
+  FoodTile(
+      {required this.title,
+      required this.price,
+      required this.image,
+      required this.rating});
 
   @override
   Widget build(BuildContext context) {
@@ -420,6 +465,56 @@ class FoodTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class CategoryTile extends StatelessWidget {
+  final String title;
+  final String image;
+
+  CategoryTile({required this.title, required this.image});
+
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
+    return GestureDetector(
+      child: Container(
+        width: screenSize.width * 0.25,
+        height: screenSize.width * 0.3,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 4.0,
+              spreadRadius: 1.0,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              image,
+              fit: BoxFit.cover,
+              width: screenSize.width * 0.2,
+              height: screenSize.width * 0.2,
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

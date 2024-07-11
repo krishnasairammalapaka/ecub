@@ -56,20 +56,21 @@ class FS_ProductScreen extends StatefulWidget {
 class _FS_ProductScreenState extends State<FS_ProductScreen> {
   late Box<Cart_Db> _cartBox;
   Box<Food_db>? FDbox;
-
   late Box<Favourites_DB> _favouritesBox;
-
   int count = 1;
   late int pricePerItem;
   late String productId;
   late String ShopUsername;
   bool isProductInCart = false;
   bool isProductFavorite = false;
+  List<Comment> comments = []; // List to hold comments
+  String sortOrder = 'newest'; // Default sort order
 
   @override
   void initState() {
     super.initState();
     _openBoxes();
+    _loadComments(); // Load comments initially
   }
 
   Future<void> _openBoxes() async {
@@ -106,37 +107,46 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   }
 
   void addToCart() async {
-    final existingItems = _cartBox.values.toList();
-    final existingItemIndex =
-    existingItems.indexWhere((item) => item.ItemId == productId);
+    final foodItem = FDbox?.values.firstWhere((food) => food.productId == productId);
+    final String? itemOwnership = foodItem?.productOwnership;
 
-    if (existingItemIndex != -1) {
-      final existingItem = _cartBox.values.elementAt(existingItemIndex);
-      final newItem =
-      existingItem.copyWith(ItemCount: existingItem.ItemCount + count);
-      await _cartBox.put(existingItem.key, newItem);
-    } else {
-      final newItem = Cart_Db(
-        UserId: '1',
-        ItemId: productId,
-        ItemCount: count.toDouble(),
-        key: DateTime.now().millisecondsSinceEpoch,
-      );
-      await _cartBox.add(newItem);
+    final existingItems = _cartBox.values.toList();
+
+    // Check if the cart is empty
+    if (existingItems.isNotEmpty) {
+      // Check if all items in the cart are from the same ownership
+      final firstItemOwnership = FDbox?.values.firstWhere((food) => food.productId == existingItems.first.ItemId).productOwnership;
+      if (firstItemOwnership != itemOwnership) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('All items in the cart must be from the same ownership.'),
+        ));
+        return;
+      }
     }
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Added to cart')));
+
+    final newItem = Cart_Db(
+      UserId: '1',
+      ItemId: productId,
+      ItemCount: count.toDouble(),
+      key: DateTime.now().millisecondsSinceEpoch,
+    );
+    await _cartBox.add(newItem);
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added to cart')));
     setState(() {
       isProductInCart = true;
     });
   }
 
+
+
   void toggleFavorite() async {
     print('Favourites before toggle: ${_favouritesBox.values.toList()}');
 
     if (isProductFavorite) {
-      final favoriteItemIndex =
-      _favouritesBox.values.toList().indexWhere((item) => item.ItemId == productId);
+      final favoriteItemIndex = _favouritesBox.values
+          .toList()
+          .indexWhere((item) => item.ItemId == productId);
       if (favoriteItemIndex != -1) {
         final favoriteItemKey = _favouritesBox.keyAt(favoriteItemIndex);
         await _favouritesBox.delete(favoriteItemKey);
@@ -154,6 +164,34 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
 
     setState(() {
       isProductFavorite = !isProductFavorite;
+    });
+  }
+
+  void _loadComments() {
+    // Load comments from a data source
+    comments = [
+      Comment(
+        userName: 'User1',
+        commentText: 'This is a great product!',
+        timestamp: DateTime.now().subtract(Duration(hours: 1)),
+      ),
+      Comment(
+        userName: 'User2',
+        commentText: 'Really loved it!',
+        timestamp: DateTime.now().subtract(Duration(days: 1)),
+      ),
+      // Add more comments here
+    ];
+    _sortComments();
+  }
+
+  void _sortComments() {
+    setState(() {
+      if (sortOrder == 'newest') {
+        comments.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      } else if (sortOrder == 'oldest') {
+        comments.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      }
     });
   }
 
@@ -188,236 +226,330 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                height: 250,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  image: DecorationImage(
-                    image:
-                    AssetImage(args['image'] ?? 'assets/defaultImage.png'),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 100.0),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    args['title'] ?? 'Product Title',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      isProductFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isProductFavorite ? Colors.red : null,
-                    ),
-                    onPressed: toggleFavorite,
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "₹ ${args['price'] ?? 'N/A'}",
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.red,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16),
-              Text(
-                args['description'] ?? 'Product description goes here.',
-                style: TextStyle(
-                  fontSize: 16,
-                ),
-              ),
-              SizedBox(height: 20),
-              GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, '/hotel_profile');
-                },
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundImage: AssetImage('assets/hotel_prof.png'),
-                      radius: 20,
-                    ),
-                    SizedBox(width: 10),
-                    Text(
-                      ShopUsername,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                  Container(
+                    width: double.infinity,
+                    height: 250,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      image: DecorationImage(
+                        image: AssetImage(
+                            args['image'] ?? 'assets/defaultImage.png'),
+                        fit: BoxFit.cover,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20),
-              Row(
-                children: [
-                  SizedBox(width: 10),
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        args['title'] ?? 'Product Title',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          isProductFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: isProductFavorite ? Colors.red : null,
+                        ),
+                        onPressed: toggleFavorite,
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "₹ ${args['price'] ?? 'N/A'}",
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
                   Text(
-                    'You might also like',
+                    args['description'] ?? 'Product description goes here.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/hotel_profile');
+                    },
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: AssetImage('assets/hotel_prof.png'),
+                          radius: 20,
+                        ),
+                        SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(context, '/fs_hotel', arguments: {
+                              'id': '1',
+                              'username':ShopUsername,
+                              'name': ShopUsername,
+                            });
+                          },
+                          child: Text(
+                            ShopUsername,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Row(
+                    children: [
+                      SizedBox(width: 10),
+                      Text(
+                        'You might also like',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Container(
+                    height: 200,
+                    child: FDbox == null
+                        ? Center(child: CircularProgressIndicator())
+                        : ValueListenableBuilder(
+                      valueListenable: FDbox!.listenable(),
+                      builder: (context, Box<Food_db> items, _) {
+                        if (items.isEmpty) {
+                          return Center(child: Text('No items found.'));
+                        } else {
+                          List<Food_db> sortedItems =
+                          items.values.toList();
+                          sortedItems.sort((a, b) =>
+                              b.productRating.compareTo(a.productRating));
+
+                          List<Food_db> popularItems = sortedItems
+                              .where((item) => item.productRating < 4.4)
+                              .toList();
+
+
+                          popularItems.shuffle();
+
+                          return ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: popularItems.length,
+                            itemBuilder: (context, index) {
+                              var item = popularItems[index];
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(context, '/fs_product',
+                                      arguments: {
+                                        'id': item.productId,
+                                        'title': item.productTitle,
+                                        'price': item.productPrice.toInt(),
+                                        'image': item.productImg,
+                                        'description': item.productDesc,
+                                        'shop': item.productOwnership,
+                                      });
+                                },
+                                child: Container(
+                                  width: 150,
+                                  margin: EdgeInsets.symmetric(horizontal: 5),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        height: 120,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                          BorderRadius.circular(10),
+                                          image: DecorationImage(
+                                            image: AssetImage(
+                                                item.productImg),
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        item.productTitle,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        '₹ ${item.productPrice}',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }
+                      },
+                    ),
+                  ),
+
+                  SizedBox(height: 20),
+
+                  Text(
+                    'Comments',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  Row(
+                    children: [
+                      Text('Sort by: '),
+                      DropdownButton<String>(
+                        value: sortOrder,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            sortOrder = newValue!;
+                            _sortComments();
+                          });
+                        },
+                        items: <String>['newest', 'oldest']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: comments.length,
+                    itemBuilder: (context, index) {
+                      final comment = comments[index];
+                      return ListTile(
+                        title: Text(comment.userName),
+                        subtitle: Text(comment.commentText),
+                        trailing: Text(comment.timestamp.toString()),
+                      );
+                    },
+                  ),
                 ],
               ),
-              SizedBox(height: 10),
-              Container(
-                height: 200,
-                child: FDbox == null
-                    ? Center(child: CircularProgressIndicator())
-                    : ValueListenableBuilder(
-                  valueListenable: FDbox!.listenable(),
-                  builder: (context, Box<Food_db> items, _) {
-                    if (items.isEmpty) {
-                      return Center(child: Text('No items found.'));
-                    } else {
-                      List<Food_db> sortedItems =
-                      items.values.toList();
-                      sortedItems.sort((a, b) =>
-                          b.productRating.compareTo(a.productRating));
-
-                      List<Food_db> popularItems = sortedItems
-                          .where((item) => item.productRating < 4.4)
-                          .toList();
-
-
-                      popularItems.shuffle();
-
-                      return ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: popularItems.length,
-                        itemBuilder: (context, index) {
-                          var item = popularItems[index];
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/fs_product',
-                                  arguments: {
-                                    'id': item.productId,
-                                    'title': item.productTitle,
-                                    'price': item.productPrice.toInt(),
-                                    'image': item.productImg,
-                                    'description': item.productDesc,
-                                    'shop': item.productOwnership,
-                                  });
-                            },
-                            child: Container(
-                              width: 150,
-                              margin: EdgeInsets.symmetric(horizontal: 5),
-                              child: Column(
-                                crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    height: 120,
-                                    decoration: BoxDecoration(
-                                      borderRadius:
-                                      BorderRadius.circular(10),
-                                      image: DecorationImage(
-                                        image: AssetImage(
-                                            item.productImg),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    item.productTitle,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    '₹ ${item.productPrice}',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.red,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    }
-                  },
-                ),
-              ),
-
-              SizedBox(height: 50),
-            ],
+            ),
           ),
-        ),
-      ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      if (count > 1) {
-                        count--;
-                      }
-                    });
-                  },
-                  icon: Icon(Icons.remove_circle_outline),
-                  iconSize: 30,
-                ),
-                Text(
-                  '$count',
-                  style: TextStyle(fontSize: 20),
-                ),
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      count++;
-                    });
-                  },
-                  icon: Icon(Icons.add_circle_outline),
-                  iconSize: 30,
-                ),
-              ],
-            ),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: isProductInCart ? null : addToCart,
-                child: Text(
-                  isProductInCart ? 'Already Added' : 'Add to Cart',
-                  style: TextStyle(fontSize: 18),
-                ),
+
+
+
+
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              color: Colors.white,
+              padding: EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  FloatingActionButton(
+                    onPressed: () {
+                      setState(() {
+                        count = count > 1 ? count - 1 : 1;
+                      });
+                    },
+                    child: Icon(Icons.remove),
+                  ),
+                  Text('$count'),
+                  FloatingActionButton(
+                    onPressed: () {
+                      setState(() {
+                        count++;
+                      });
+                    },
+                    child: Icon(Icons.add),
+                  ),
+
+
+                  ElevatedButton(
+                    onPressed: isProductInCart
+                        ? null
+                        : checkOwnership(productId)
+                        ? addToCart
+                        : null,
+                    child: Text(
+                      isProductInCart
+                          ? 'Already Added'
+                          : checkOwnership(productId)
+                          ? 'Add to Cart'
+                          : 'Unavailable',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
+
+  bool checkOwnership(String productId) {
+    final foodItem = FDbox?.values.firstWhere((food) => food.productId == productId);
+    final String? itemOwnership = foodItem?.productOwnership;
+
+    final existingItems = _cartBox.values.toList();
+    if (existingItems.isNotEmpty) {
+      final firstItemOwnership = FDbox?.values.firstWhere((food) => food.productId == existingItems.first.ItemId).productOwnership;
+      if (firstItemOwnership != itemOwnership) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+}
+
+class Comment {
+  final String userName;
+  final String commentText;
+  final DateTime timestamp;
+
+  Comment({
+    required this.userName,
+    required this.commentText,
+    required this.timestamp,
+  });
 }

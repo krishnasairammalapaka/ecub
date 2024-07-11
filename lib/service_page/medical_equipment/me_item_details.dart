@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecub_s1_v2/service_page/medical_equipment/RentCalculator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,7 +25,6 @@ class _MeItemDetailsState extends State<MeItemDetails> {
       String rating, String imageUrl) async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null && user.email != null) {
-      // Reference to the specific item in the user's cart
       DocumentReference itemRef = FirebaseFirestore.instance
           .collection('me_cart')
           .doc(user.email)
@@ -45,7 +45,6 @@ class _MeItemDetailsState extends State<MeItemDetails> {
           'quantity': 1,
         });
       }
-      // Show success dialog
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(itemSnapshot.exists
@@ -57,33 +56,11 @@ class _MeItemDetailsState extends State<MeItemDetails> {
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
             },
           ),
-          duration: const Duration(
-              seconds: 2), // Set the duration for the snackbar to be visible
-          behavior: SnackBarBehavior
-              .floating, // Make the snackbar float above the bottom navigation bar
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
-  }
-
-  Future<bool> ItemInCart(String name) async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null && user.email != null) {
-      // Reference to the specific item in the user's cart
-      DocumentReference itemRef = FirebaseFirestore.instance
-          .collection('me_cart')
-          .doc(user.email)
-          .collection('items')
-          .doc(name);
-          DocumentSnapshot itemSnapshot = await itemRef.get();
-          if (itemSnapshot.exists) {
-            return true;
-          }
-          else {
-            return false;
-            }
-    }
-    return false;
   }
 
   @override
@@ -96,7 +73,6 @@ class _MeItemDetailsState extends State<MeItemDetails> {
               expandedHeight: 300.0,
               pinned: true,
               flexibleSpace: FlexibleSpaceBar(
-                // title: Text(widget.itemName, style: GoogleFonts.lato(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold)),
                 background: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -173,7 +149,7 @@ class _MeItemDetailsState extends State<MeItemDetails> {
                     Row(
                       children: [
                         Text(
-                          'Price',
+                          'Price        ',
                           style: GoogleFonts.lato(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -185,7 +161,7 @@ class _MeItemDetailsState extends State<MeItemDetails> {
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Text(
-                              'Rs. 1000',
+                              'Rs. 1000 ',
                               style: GoogleFonts.lato(fontSize: 16),
                             ),
                           ),
@@ -193,8 +169,41 @@ class _MeItemDetailsState extends State<MeItemDetails> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    //add to cart
-                    storeList(context),
+                    Row(
+                      children: [
+                        Text(
+                          'Min-Max',
+                          style: GoogleFonts.lato(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.deepPurple),
+                        ),
+                        const SizedBox(width: 10),
+                        Card(
+                          elevation: 4,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Text(
+                              '100-1000',
+                              style: GoogleFonts.lato(fontSize: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Column(
+                      children: [
+                        storeList(context, 'Buy', Colors.red[800],
+                            Icons.shopping_cart),
+                        const SizedBox(height: 10),
+                        storeList(
+                            context,
+                            'Rent',
+                            const Color.fromARGB(255, 42, 128, 46),
+                            Icons.store),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -205,21 +214,19 @@ class _MeItemDetailsState extends State<MeItemDetails> {
     );
   }
 
-  ElevatedButton storeList(BuildContext context) {
+  ElevatedButton storeList(
+      BuildContext context, String label, Color? color, IconData icon) {
     return ElevatedButton.icon(
-      icon: Icon(Icons.shopping_cart),
-      label: Text('Add to Cart'), // Fixed: Changed 'child' to 'label'
+      icon: Icon(icon),
+      label: Text(label),
       onPressed: () async {
         final categoryName = widget.categoryName;
-        // Display the modal with the list of stores
         showModalBottomSheet(
           context: context,
-          // future builder
           builder: (context) {
             return FutureBuilder<QuerySnapshot>(
               future: FirebaseFirestore.instance
-                  .collection(
-                      'medical_eqipment_categories') // Fixed typo in collection name
+                  .collection('medical_eqipment_categories')
                   .doc(categoryName)
                   .collection('data')
                   .get(),
@@ -233,39 +240,54 @@ class _MeItemDetailsState extends State<MeItemDetails> {
                       rating: doc['Rating'],
                     );
                   }).toList();
-                  // print the length
-                  print(stores.length);
                   return ListView.builder(
                     itemCount: stores.length,
                     itemBuilder: (context, index) {
                       return Padding(
                         padding: const EdgeInsets.fromLTRB(16, 5, 16, 5),
                         child: Card(
-                          elevation: 5, // Adds shadow under the card
+                          elevation: 5,
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(15), // Rounded corners
+                            borderRadius: BorderRadius.circular(15),
                           ),
                           child: InkWell(
                             onTap: () {
-                              // Add the item to the cart
-                              // print
-                              addItemToCart(
-                                widget.itemName,
-                                stores[index].name,
-                                stores[index].address,
-                                stores[index].rating.toString(),
-                                widget.itemImage,
-                              );
-                              Navigator.pop(context);
+                              if (label.trim() == 'Rent') {
+                                addItemToCart(
+                                  widget.itemName,
+                                  stores[index].name,
+                                  stores[index].address,
+                                  stores[index].rating.toString(),
+                                  widget.itemImage,
+                                );
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => RentCalculator(
+                                      shopName: stores[index].name,
+                                      productName: widget.itemName,
+                                      shopAddress: stores[index].address,
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                addItemToCart(
+                                  widget.itemName,
+                                  stores[index].name,
+                                  stores[index].address,
+                                  stores[index].rating.toString(),
+                                  widget.itemImage,
+                                );
+                                Navigator.pop(context);
+                              }
                             },
                             child: ListTile(
                               leading: Icon(Icons.store, color: Colors.red),
                               title: Text(
                                 stores[index].name,
                                 style: TextStyle(
-                                  fontWeight:
-                                      FontWeight.bold, // Bold text for name
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               subtitle: Text(stores[index].address),
@@ -273,15 +295,13 @@ class _MeItemDetailsState extends State<MeItemDetails> {
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .primaryColor, // Background color of the tag
-                                  borderRadius: BorderRadius.circular(
-                                      20), // Rounded corners for the tag
+                                  color: Theme.of(context).primaryColor,
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
                                   "${stores[index].rating}⭐",
                                   style: TextStyle(
-                                    color: Colors.white, // White text color
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
@@ -302,16 +322,15 @@ class _MeItemDetailsState extends State<MeItemDetails> {
         );
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red[800],
+        backgroundColor: color,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10), // Rounded corners
+          borderRadius: BorderRadius.circular(10),
         ),
       ),
     );
   }
 }
-
 
 class Stores {
   final String name;
@@ -324,4 +343,3 @@ class Stores {
     required this.rating,
   });
 }
-
