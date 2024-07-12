@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 class Mecart extends StatefulWidget {
   const Mecart({Key? key}) : super(key: key);
@@ -9,29 +9,56 @@ class Mecart extends StatefulWidget {
   State<Mecart> createState() => _MecartState();
 }
 
-class _MecartState extends State<Mecart> {
+class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
   final User? user = FirebaseAuth.instance.currentUser;
   String searchQuery = "";
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Cart'),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.history),
-              onPressed: () {
-                Navigator.pushNamed(context, '/me_orders');
-              },
-            ),
+      appBar: AppBar(
+        title: const Text('Cart'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: 'Buy'), // nav bar intialization
+            Tab(text: 'Rent'),
           ],
         ),
-        body: Column(
-          children: [
-            items_tile(),
-          ],
-        ));
+        actions: [
+          IconButton(
+            icon: Icon(Icons.history),
+            onPressed: () {
+              Navigator.pushNamed(context, '/me_orders');
+            },
+          ),
+        ],
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          Column(
+            children: [
+              items_tile(),
+            ],
+          ),
+          RentPage(),
+        ],
+      ),
+    );
   }
 
   Map<String, Map<String, dynamic>> generateOrderSummary(
@@ -318,10 +345,8 @@ class _MecartState extends State<Mecart> {
                                     child: Text('Confirm'),
                                   ),
                                 ],
-                                
                               );
                             },
-
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -335,6 +360,15 @@ class _MecartState extends State<Mecart> {
                 );
               },
             ),
+    );
+  }
+}
+
+class RentPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text('one Second.'),
     );
   }
 }

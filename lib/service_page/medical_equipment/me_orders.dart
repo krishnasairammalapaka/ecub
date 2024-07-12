@@ -1,6 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MeOrders extends StatelessWidget {
   MeOrders({super.key});
@@ -39,15 +39,14 @@ class MeOrders extends StatelessWidget {
                 //get keys to list
                 List<String> keys = data['order_summary'].keys.toList();
                 //create a list of items
-                data=data['order_summary'];
+                data = data['order_summary'];
                 List<Item> items = [];
                 for (int i = 0; i < keys.length; i++) {
                   print(data[keys[i]]['name']);
                   items.add(Item(
-                    name: data[keys[i]]['name'],
-                    quantity: data[keys[i]]['quantity'],
-                    store:data[keys[i]]['storeName']
-                  ));
+                      name: data[keys[i]]['name'],
+                      quantity: data[keys[i]]['quantity'],
+                      store: data[keys[i]]['storeName']));
                 }
                 return items;
               }).toList();
@@ -62,12 +61,12 @@ class MeOrders extends StatelessWidget {
                         ),
                         Column(
                           children: items[index].map((item) {
-                          return ListTile(
-                            title: Text(item.name),
-                            subtitle: Text('Store: ${item.store}'),
-                            trailing: Text('Quantity: ${item.quantity}'),
-                            //add store name
-                          );
+                            return ListTile(
+                              title: Text(item.name),
+                              subtitle: Text('Store: ${item.store}'),
+                              trailing: Text('Quantity: ${item.quantity}'),
+                              //add store name
+                            );
                           }).toList(),
                         ),
                       ],

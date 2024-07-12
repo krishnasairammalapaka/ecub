@@ -1,10 +1,10 @@
+import 'package:badges/badges.dart' as badges;
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:ecub_s1_v2/service_page/medical_equipment/me_items.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_items2.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart';
-import 'package:badges/badges.dart' as badges;
 
 class Category {
   final String name;
@@ -40,37 +40,35 @@ class MeHomePage extends StatelessWidget {
         title: const Text('Medical Equipment Categories'),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 25.0),
-            child: StreamBuilder<int>(
-              stream: fetchCartItemCount(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.active) {
-                  return badges.Badge(
-                    badgeContent: Text(
-                      snapshot.data.toString(),
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    child: IconButton(
+              padding: const EdgeInsets.only(right: 25.0),
+              child: StreamBuilder<int>(
+                stream: fetchCartItemCount(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.active) {
+                    return badges.Badge(
+                      badgeContent: Text(
+                        snapshot.data.toString(),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      child: IconButton(
+                        icon: Icon(Icons.shopping_cart),
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/me_cart');
+                        },
+                      ),
+                    );
+                  } else {
+                    return IconButton(
                       icon: Icon(Icons.shopping_cart),
                       onPressed: () {
                         Navigator.pushNamed(context, '/me_cart');
                       },
-                    ),
-                  );
-                } else {
-                  return IconButton(
-                    icon: Icon(Icons.shopping_cart),
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/me_cart');
-                    },
-                  );
-                }
-              },
-            )
-          ),
+                    );
+                  }
+                },
+              )),
         ],
       ),
-
       body: Column(
         children: [
           future_carouselSlider(),

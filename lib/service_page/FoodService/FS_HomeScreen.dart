@@ -120,8 +120,8 @@ class _HomeScreenState extends State<FS_HomeScreen> {
               SizedBox(height: 20),
               CarouselSlider(
                 items: [
-                  {'image': 'assets/slide.png', 'route': '/home_subscribed'},
-                  {'image': 'assets/slide2.png', 'route': '/home_made.png'},
+                  {'image': 'assets/slide.png', 'route': '/offers'},
+                  {'image': 'assets/slide2.png', 'route': '/offers'},
                 ].map((item) {
                   return GestureDetector(
                     onTap: () {
@@ -165,9 +165,9 @@ class _HomeScreenState extends State<FS_HomeScreen> {
 
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/fs_dishes', arguments: {
-                        'title': "entry.key",
-                        'type': "entry.key"
+                      Navigator.pushNamed(context, '/fs_category', arguments: {
+                        'title': "Home Made Restaurants",
+                        'type': "homemade"
                       });
                     },
                     child: CategoryTile(
@@ -178,9 +178,9 @@ class _HomeScreenState extends State<FS_HomeScreen> {
 
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/fs_dishes', arguments: {
-                        'title': "entry.key",
-                        'type': "entry.key"
+                      Navigator.pushNamed(context, '/fs_category', arguments: {
+                        'title': "Home Made Restaurants",
+                        'type': "restaurant"
                       });
                     },
                     child: CategoryTile(
@@ -191,7 +191,7 @@ class _HomeScreenState extends State<FS_HomeScreen> {
 
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/fs_dishes', arguments: {
+                      Navigator.pushNamed(context, '/fs_s_home', arguments: {
                         'title': "entry.key",
                         'type': "entry.key"
                       });

@@ -112,14 +112,10 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
 
     final existingItems = _cartBox.values.toList();
 
-    // Check if the cart is empty
     if (existingItems.isNotEmpty) {
-      // Check if all items in the cart are from the same ownership
       final firstItemOwnership = FDbox?.values.firstWhere((food) => food.productId == existingItems.first.ItemId).productOwnership;
       if (firstItemOwnership != itemOwnership) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('All items in the cart must be from the same ownership.'),
-        ));
+        showOwnershipConflictDialog();
         return;
       }
     }
@@ -137,6 +133,35 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
       isProductInCart = true;
     });
   }
+
+  void showOwnershipConflictDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Ownership Conflict'),
+          content: Text('The products in your cart are from a different hotel. Do you want to reset the cart and add this product?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close the dialog
+                // await clearCart('1'); // Clear the cart
+                addToCart(); // Add the new item to the cart
+              },
+              child: Text('Reset Cart'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
 
 
@@ -171,13 +196,17 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
     // Load comments from a data source
     comments = [
       Comment(
-        userName: 'User1',
+        profilePhotoUrl: "assets/user.png",
+        userName: 'Karuppasamy',
         commentText: 'This is a great product!',
-        timestamp: DateTime.now().subtract(Duration(hours: 1)),
+        rating: 4,
+        timestamp: DateTime.now().subtract(Duration(days: 1)),
       ),
       Comment(
-        userName: 'User2',
+        profilePhotoUrl: "assets/user.png",
+        userName: 'Karthik Raja',
         commentText: 'Really loved it!',
+        rating: 3,
         timestamp: DateTime.now().subtract(Duration(days: 1)),
       ),
       // Add more comments here
@@ -458,12 +487,26 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                     itemBuilder: (context, index) {
                       final comment = comments[index];
                       return ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: AssetImage("assets/user.png"),
+                        ),
                         title: Text(comment.userName),
                         subtitle: Text(comment.commentText),
-                        trailing: Text(comment.timestamp.toString()),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(5, (starIndex) {
+                            return Icon(
+                              starIndex < comment.rating
+                                  ? Icons.star
+                                  : Icons.star_border,
+                              color: Colors.amber,
+                            );
+                          }),
+                        ),
                       );
                     },
                   ),
+
                 ],
               ),
             ),
@@ -504,15 +547,17 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                   ElevatedButton(
                     onPressed: isProductInCart
                         ? null
-                        : checkOwnership(productId)
-                        ? addToCart
-                        : null,
+                        : () {
+                      if (checkOwnership(productId)) {
+                        addToCart();
+                      } else {
+                        showOwnershipConflictDialog();
+                      }
+                    },
                     child: Text(
                       isProductInCart
                           ? 'Already Added'
-                          : checkOwnership(productId)
-                          ? 'Add to Cart'
-                          : 'Unavailable',
+                          : 'Add to Cart',
                       style: TextStyle(fontSize: 18),
                     ),
                   ),
@@ -538,18 +583,23 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
       }
     }
     return true;
-  }
+  } 
+
 
 }
 
 class Comment {
   final String userName;
   final String commentText;
+  final String profilePhotoUrl;
+  final int rating;
   final DateTime timestamp;
 
   Comment({
     required this.userName,
     required this.commentText,
-    required this.timestamp,
+    required this.profilePhotoUrl,
+    required this.rating,
+    required this.timestamp
   });
 }

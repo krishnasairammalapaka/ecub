@@ -1,7 +1,7 @@
+import 'package:badges/badges.dart' as badges;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:badges/badges.dart' as badges;
 
 class MeItems extends StatefulWidget {
   final String categoryName;
@@ -76,16 +76,18 @@ class _MeItemsState extends State<MeItems> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(itemSnapshot.exists
-          ? 'Item quantity updated'
-          : 'Item added to cart'),
+              ? 'Item quantity updated'
+              : 'Item added to cart'),
           action: SnackBarAction(
-        label: 'OK',
-        onPressed: () {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        },
+            label: 'OK',
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            },
           ),
-          duration: const Duration(seconds: 2), // Set the duration for the snackbar to be visible
-          behavior: SnackBarBehavior.floating, // Make the snackbar float above the bottom navigation bar
+          duration: const Duration(
+              seconds: 2), // Set the duration for the snackbar to be visible
+          behavior: SnackBarBehavior
+              .floating, // Make the snackbar float above the bottom navigation bar
         ),
       );
     }
@@ -114,34 +116,33 @@ class _MeItemsState extends State<MeItems> {
       appBar: AppBar(
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 25.0),
-            child: StreamBuilder<int>(
-              stream: fetchCartItemCount(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.active) {
-                  return badges.Badge(
-                    badgeContent: Text(
-                      snapshot.data.toString(),
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    child: IconButton(
+              padding: const EdgeInsets.only(right: 25.0),
+              child: StreamBuilder<int>(
+                stream: fetchCartItemCount(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.active) {
+                    return badges.Badge(
+                      badgeContent: Text(
+                        snapshot.data.toString(),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      child: IconButton(
+                        icon: Icon(Icons.shopping_cart),
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/me_cart');
+                        },
+                      ),
+                    );
+                  } else {
+                    return IconButton(
                       icon: Icon(Icons.shopping_cart),
                       onPressed: () {
                         Navigator.pushNamed(context, '/me_cart');
                       },
-                    ),
-                  );
-                } else {
-                  return IconButton(
-                    icon: Icon(Icons.shopping_cart),
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/me_cart');
-                    },
-                  );
-                }
-              },
-            )
-          ),
+                    );
+                  }
+                },
+              )),
         ],
         title: Text(widget.categoryName),
         bottom: PreferredSize(

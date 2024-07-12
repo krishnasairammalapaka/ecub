@@ -61,7 +61,9 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
           'name': item.productTitle,
           'restaurant': item.productOwnership,
           'price': item.productPrice,
-          'image': item.productImg
+          'image': item.productImg,
+          'id': item.productId,
+          'desc': item.productDesc
         }).toList();
       });
     }
@@ -100,7 +102,7 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(16),
                   image: DecorationImage(
-                    image: AssetImage('assets/hotel.png'),
+                    image: AssetImage('assets/HotelPic.jpg'),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -155,6 +157,8 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
                   restaurant: item['restaurant'],
                   price: item['price'],
                   image: item['image'],
+                  id: item['id'],
+                  Desc: item['desc'],
                 )).toList(),
               ),
             ],
@@ -192,12 +196,14 @@ class CategoryTab extends StatelessWidget {
 }
 
 class MenuItem extends StatelessWidget {
+  final String id;
   final String name;
-  final String restaurant;
   final double price;
   final String image;
+  final String Desc;
+  final String restaurant;
 
-  MenuItem({required this.name, required this.restaurant, required this.price, required this.image});
+  MenuItem({required this.name, required this.restaurant, required this.price, required this.image, required this.id, required this.Desc});
 
   @override
   Widget build(BuildContext context) {

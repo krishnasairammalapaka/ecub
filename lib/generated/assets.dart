@@ -10,6 +10,7 @@ class Assets {
   static const String assetsHamburger = 'assets/hamburger.png';
   static const String assetsHomeMade = 'assets/home_made.png';
   static const String assetsHotel = 'assets/hotel.png';
+  static const String assetsHotelPic = 'assets/HotelPic.jpg';
   static const String assetsHotelProf = 'assets/hotel_prof.png';
   static const String assetsKabab = 'assets/kabab.png';
   static const String assetsRestuarntLogo = 'assets/restuarnt_logo.png';
