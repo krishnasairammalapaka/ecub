@@ -49,8 +49,8 @@ class _FS_S_HomeState extends State<FS_S_Home>
             SizedBox(height: 12),
             CarouselSlider(
               items: [
-                {'image': 'assets/slide.png', 'route': '/offers'},
                 {'image': 'assets/slide2.png', 'route': '/offers'},
+                {'image': 'assets/slide4.png', 'route': '/offers'},
               ].map((item) {
                 return GestureDetector(
                   onTap: () {

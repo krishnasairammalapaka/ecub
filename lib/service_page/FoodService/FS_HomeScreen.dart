@@ -120,7 +120,7 @@ class _HomeScreenState extends State<FS_HomeScreen> {
               SizedBox(height: 20),
               CarouselSlider(
                 items: [
-                  {'image': 'assets/slide.png', 'route': '/offers'},
+                  {'image': 'assets/slide1.png', 'route': '/offers'},
                   {'image': 'assets/slide2.png', 'route': '/offers'},
                 ].map((item) {
                   return GestureDetector(
