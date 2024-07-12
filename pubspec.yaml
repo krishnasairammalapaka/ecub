@@ -20,12 +20,14 @@ dependencies:
   hive_flutter: ^1.1.0
   twilio_flutter: ^0.9.0
   google_maps_flutter: ^2.7.0
+  flutter_svg: ^1.0.3
   
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
   google_fonts: ^6.2.1
+  lottie: ^3.1.2
 
 dev_dependencies:
   hive_generator: ^2.0.1

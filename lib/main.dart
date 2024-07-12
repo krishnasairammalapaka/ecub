@@ -389,6 +389,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: AuthPage(),
       routes: {
+
         '/intro': (context) => IntroPage(),
         '/login': (context) => LoginPage(),
         '/signup': (context) => RegistrationPage(),

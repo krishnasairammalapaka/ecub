@@ -1,5 +1,6 @@
 import 'package:ecub_s1_v2/pages/home/home.dart';
 import 'package:ecub_s1_v2/pages/intro/intro.dart';
+import 'package:ecub_s1_v2/pages/intro/splash_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -17,7 +18,7 @@ class AuthPage extends StatelessWidget{
         if(snapshot.connectionState == ConnectionState.active){
           User? user = snapshot.data;
           if(user == null){
-            return IntroPage();
+            return SplashScreen();
           }else{
             return HomePage();
           }
