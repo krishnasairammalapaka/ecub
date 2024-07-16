@@ -46,8 +46,6 @@ class _FS_S_DescState extends State<FS_S_Desc> {
       restaurant: 'Restaurant B',
       rating: 4.0,
     ),
-  ];
-  List<MenuItem> lunchItems = [
     MenuItem(
       id: '3',
       name: 'Chicken Salad',
@@ -106,27 +104,6 @@ class _FS_S_DescState extends State<FS_S_Desc> {
                 ),
                 itemBuilder: (context, index) {
                   final item = morningItems[index];
-                  return MenuItemWidget(item: item);
-                },
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Lunch Items',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              GridView.builder(
-                itemCount: lunchItems.length,
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // Number of columns
-                  childAspectRatio: 0.9, // Adjust to fit item height
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                itemBuilder: (context, index) {
-                  final item = lunchItems[index];
                   return MenuItemWidget(item: item);
                 },
               ),

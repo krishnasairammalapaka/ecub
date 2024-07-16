@@ -58,7 +58,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   Box<Food_db>? FDbox;
   late Box<Favourites_DB> _favouritesBox;
   int count = 1;
-  late double pricePerItem;
+  late int pricePerItem;
   late String productId;
   late String ShopUsername;
   bool isProductInCart = false;
@@ -236,24 +236,49 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
       appBar: AppBar(
         title: Text(args['title'] ?? 'Product Details'),
         actions: [
-          GestureDetector(
-            onTap: () {
-              Navigator.pushNamed(context, '/fs_cart');
+          ValueListenableBuilder(
+            valueListenable: _cartBox.listenable(),
+            builder: (context, Box<Cart_Db> box, _) {
+              int totalItems = getTotalCartItemsCount();
+
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.shopping_cart,size: 40),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/fs_cart');
+                    },
+                  ),
+                  if (totalItems > 0)
+                    Positioned(
+                      right: 10,
+                      top: 10,
+                      child: Container(
+                        padding: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          '$totalItems',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
             },
-            child: Container(
-              margin: EdgeInsets.only(right: 10),
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: AssetImage('assets/cart.png'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
           ),
         ],
+
       ),
       body: Stack(
         children: [
@@ -583,7 +608,16 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
       }
     }
     return true;
-  } 
+  }
+
+  int getTotalCartItemsCount() {
+    int totalItems = 0;
+    for (var cartItem in _cartBox.values) {
+      totalItems += cartItem.ItemCount.toInt();
+    }
+    return totalItems;
+  }
+
 
 
 }

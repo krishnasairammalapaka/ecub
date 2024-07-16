@@ -1,5 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
+import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -11,6 +12,10 @@ class FS_HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<FS_HomeScreen> {
   int _selectedIndex = 0;
   Box<Food_db>? FDbox;
+  Box<Cart_Db>? _cartBox;
+
+
+
   Map<String, String> categoryImages = {};
 
   @override
@@ -21,6 +26,7 @@ class _HomeScreenState extends State<FS_HomeScreen> {
 
   Future<void> _openBox() async {
     FDbox = await Hive.openBox<Food_db>('foodDbBox');
+    _cartBox = await Hive.openBox<Cart_Db>('cartItems');
     _extractCategories();
   }
 
@@ -59,6 +65,15 @@ class _HomeScreenState extends State<FS_HomeScreen> {
     }
   }
 
+  int getTotalCartItemsCount() {
+    int totalItems = 0;
+    for (var cartItem in _cartBox!.values) {
+      totalItems += cartItem.ItemCount.toInt();
+    }
+    return totalItems;
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -85,24 +100,50 @@ class _HomeScreenState extends State<FS_HomeScreen> {
               ),
             ),
           ),
-          GestureDetector(
-            onTap: () {
-              Navigator.pushNamed(context, '/fs_cart');
+          ValueListenableBuilder(
+            valueListenable: _cartBox!.listenable(),
+            builder: (context, Box<Cart_Db> box, _) {
+              int totalItems = getTotalCartItemsCount();
+
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.shopping_cart,size: 40),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/fs_cart');
+                    },
+                  ),
+                  if (totalItems > 0)
+                    Positioned(
+                      right: 10,
+                      top: 10,
+                      child: Container(
+                        padding: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          '$totalItems',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
             },
-            child: Container(
-              margin: EdgeInsets.only(right: 10),
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: AssetImage('assets/cart.png'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
           ),
         ],
+
+
       ),
       body: SingleChildScrollView(
         child: Padding(

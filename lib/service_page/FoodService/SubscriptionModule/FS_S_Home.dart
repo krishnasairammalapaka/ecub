@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
@@ -109,16 +110,26 @@ class _FS_S_HomeState extends State<FS_S_Home>
       padding: EdgeInsets.all(16.0),
       children: [
 
-        _buildMealItem(),
+        _buildMealItem(
+          1,
+          "South Indian Veg Meal",
+          "assets/Meals.jpg",
+          5,
+          122,
+          450
+        ),
         SizedBox(height: 16),
       ],
     );
   }
 
-  Widget _buildMealItem() {
+  Widget _buildMealItem(int id, String PackName, String image, int rating, double wprice, double mprice  ) {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(context, '/fs_s_desc');
+        Navigator.pushNamed(context, '/fs_s_desc',
+            arguments: {
+              'id': id,
+            });
       },
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 8.0),
@@ -132,11 +143,11 @@ class _FS_S_HomeState extends State<FS_S_Home>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                child: new Image.asset('assets/Meals.jpg'),
+                child: new Image.asset(image),
               ),
               SizedBox(height: 8),
               Text(
-                'South Indian Veg Meal',
+                PackName,
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 4),
@@ -147,35 +158,33 @@ class _FS_S_HomeState extends State<FS_S_Home>
                     backgroundColor: Colors.orange,
                   ),
                   Spacer(),
-                  Icon(Icons.shopping_bag),
+                  Row(
+                    children: List.generate(5, (index) {
+                      return Icon(
+                        Icons.star,
+                        color: index < rating ? Colors.orange : Colors.grey,
+                        size: 16,
+                      );
+                    }
+                    )
+                  ),
+
                   SizedBox(width: 8),
-                  Icon(Icons.favorite_border),
+                  Text(rating.toString()),
+                  Spacer(),
                 ],
               ),
               SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(Icons.star, color: Colors.orange, size: 16),
-                  Icon(Icons.star, color: Colors.orange, size: 16),
-                  Icon(Icons.star, color: Colors.orange, size: 16),
-                  Icon(Icons.star, color: Colors.orange, size: 16),
-                  Icon(Icons.star, color: Colors.orange, size: 16),
-                  SizedBox(width: 8),
-                  Text('(10)'),
-                ],
-              ),
-              SizedBox(height: 8),
-              Text('Vegetable curry, Rotti, Dal, Curd, Pickle, Rice'),
               SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
                       child: _buildPriceTag(
-                          'Weekly Subscription', '₹ 122', Colors.blue)),
+                          'Weekly Subscription', '₹ $wprice', Colors.blue)),
                   SizedBox(width: 8),
                   Expanded(
                       child: _buildPriceTag(
-                          'Monthly Subscription', '₹ 450', Colors.green)),
+                          'Monthly Subscription', '₹ $mprice', Colors.green)),
                 ],
               ),
             ],
@@ -201,7 +210,7 @@ class _FS_S_HomeState extends State<FS_S_Home>
           padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(16.0),
+            borderRadius: BorderRadius.circular(5.0),
           ),
           child: Text(
             price,

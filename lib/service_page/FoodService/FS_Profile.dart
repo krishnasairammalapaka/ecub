@@ -2,38 +2,57 @@ import 'package:ecub_s1_v2/models/CheckoutHistory_DB.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class FS_Profile extends StatelessWidget {
+
+class FS_Profile extends StatefulWidget {
+  const FS_Profile({Key? key}) : super(key: key);
+
+  @override
+  State<FS_Profile> createState() => _FS_ProfileState();
+}
+
+class _FS_ProfileState extends State<FS_Profile> {
+  Stream<int> fetchCartItemCount() {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null && user.email != null) {
+      return FirebaseFirestore.instance
+          .collection('me_cart')
+          .doc(user.email)
+          .collection('items')
+          .snapshots()
+          .map((snapshot) =>
+      snapshot.docs.length); // Map the snapshots to their count
+    } else {
+      // Return a stream of 0 if the user is not logged in
+      return Stream.value(0);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('User Profile'),
-        centerTitle: true,
-      ),
-      body: ProfileContent(),
-    );
-  }
-}
-
-class ProfileContent extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          HeaderSection(),
-          Divider(),
-          AccountSection(),
-          Divider(),
-          PaymentSection(),
-          Divider(),
-          HelpSection(),
-          Divider(),
-          PastOrdersSection(),
-        ],
-      ),
+        appBar: AppBar(
+          title: Text('User Profile'),
+          centerTitle: true,
+        ),
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              HeaderSection(),
+              Divider(),
+              AccountSection(),
+              Divider(),
+              PaymentSection(),
+              Divider(),
+              HelpSection(),
+              Divider(),
+              PastOrdersSection(),
+            ],
+          ),
+        )
     );
   }
 }
@@ -51,7 +70,7 @@ class HeaderSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'MOKSH GARG',
+                "Karthik",
                 style: TextStyle(
                   fontSize: 24,
                   color: Colors.white,
@@ -210,7 +229,8 @@ class SectionTitle extends StatelessWidget {
 
 class OrdersListView extends StatelessWidget {
   Future<List<CheckoutHistory_DB>> _getCheckoutHistory() async {
-    final checkoutHistoryBox = await Hive.openBox<CheckoutHistory_DB>('checkoutHistoryBox');
+    final checkoutHistoryBox =
+        await Hive.openBox<CheckoutHistory_DB>('checkoutHistoryBox');
     return checkoutHistoryBox.values.toList();
   }
 
