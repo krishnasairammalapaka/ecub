@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
@@ -11,6 +12,9 @@ class _FS_S_HomeState extends State<FS_S_Home>
     with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   TabController? _tabController;
+
+  final firestoreInstance = FirebaseFirestore.instance;
+  CollectionReference packsCollection = FirebaseFirestore.instance.collection('fs_packs');
 
   @override
   void initState() {
@@ -34,7 +38,6 @@ class _FS_S_HomeState extends State<FS_S_Home>
         appBar: AppBar(
           title: Text('Subscriptions'),
           centerTitle: true, // Center aligns the title
-
           actions: [
             IconButton(
               icon: Icon(Icons.search),
@@ -43,7 +46,6 @@ class _FS_S_HomeState extends State<FS_S_Home>
               },
             ),
           ],
-
         ),
         body: Column(
           children: [
@@ -89,7 +91,6 @@ class _FS_S_HomeState extends State<FS_S_Home>
               ),
             ),
             SizedBox(height: 8), // Add space from the TabBar
-
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -106,32 +107,49 @@ class _FS_S_HomeState extends State<FS_S_Home>
   }
 
   Widget _buildMealList(String mealType) {
-    return ListView(
-      padding: EdgeInsets.all(16.0),
-      children: [
+    return StreamBuilder<QuerySnapshot>(
+      stream: packsCollection.snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
 
-        _buildMealItem(
-          1,
-          "South Indian Veg Meal",
-          "assets/Meals.jpg",
-          5,
-          122,
-          450
-        ),
-        SizedBox(height: 16),
-      ],
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        final packs = snapshot.data?.docs ?? [];
+
+        return ListView(
+          padding: EdgeInsets.all(16.0),
+          children: packs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final packID = doc.id; // Extract the document ID
+            // print(packID);
+            return _buildMealItem(
+              packID,
+              data['pack_name'],
+              data['pack_img'],
+              data['pack_rating'],
+              data['pack_price_w'],
+              data['pack_price_m'],
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
-  Widget _buildMealItem(int id, String PackName, String image, int rating, double wprice, double mprice  ) {
+  Widget _buildMealItem(String id, String PackName, String image, double rating, int wprice, int mprice) {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(context, '/fs_s_desc',
-            arguments: {
-              'id': id,
-            });
+        print(id);
+        Navigator.pushNamed(context, '/fs_s_desc', arguments: {
+          'id': id,
+        });
       },
       child: Container(
+
         margin: EdgeInsets.symmetric(vertical: 8.0),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey[300] ?? Colors.grey),
@@ -143,7 +161,15 @@ class _FS_S_HomeState extends State<FS_S_Home>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                child: new Image.asset(image),
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: NetworkImage(image),
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
               SizedBox(height: 8),
               Text(
@@ -165,10 +191,8 @@ class _FS_S_HomeState extends State<FS_S_Home>
                         color: index < rating ? Colors.orange : Colors.grey,
                         size: 16,
                       );
-                    }
-                    )
+                    }),
                   ),
-
                   SizedBox(width: 8),
                   Text(rating.toString()),
                   Spacer(),
@@ -179,22 +203,19 @@ class _FS_S_HomeState extends State<FS_S_Home>
               Row(
                 children: [
                   Expanded(
-                      child: _buildPriceTag(
-                          'Weekly Subscription', '₹ $wprice', Colors.blue)),
+                    child: _buildPriceTag('Weekly Subscription', '₹ $wprice', Colors.blue),
+                  ),
                   SizedBox(width: 8),
                   Expanded(
-                      child: _buildPriceTag(
-                          'Monthly Subscription', '₹ $mprice', Colors.green)),
+                    child: _buildPriceTag('Monthly Subscription', '₹ $mprice', Colors.green),
+                  ),
                 ],
               ),
             ],
           ),
         ),
-      )
+      ),
     );
-
-
-
   }
 
   Widget _buildPriceTag(String title, String price, Color color) {

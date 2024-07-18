@@ -1,495 +1,222 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'dart:math';
-import 'package:ecub_s1_v2/models/Food_db.dart';
-import 'package:ecub_s1_v2/models/Hotels_Db.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class FS_Search extends StatefulWidget {
-  @override
-  _FS_SearchState createState() => _FS_SearchState();
+class MenuItem {
+  final String id;
+  final String name;
+  final double price;
+  final String image;
+  final String desc;
+  final String restaurant;
+  final double rating;
+
+  MenuItem({
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.image,
+    required this.desc,
+    required this.restaurant,
+    required this.rating,
+  });
 }
 
-class _FS_SearchState extends State<FS_Search> {
-  int _selectedIndex = 1;
+class FS_S_Desc extends StatefulWidget {
+  @override
+  _FS_S_DescState createState() => _FS_S_DescState();
+}
 
-  TextEditingController _searchController = TextEditingController();
-  Box<Food_db>? foodBox;
-  Box<Hotels_Db>? hotelBox;
-
-  List<Food_db> foodResults = [];
-  List<Hotels_Db> hotelResults = [];
-  List<Hotels_Db> topHotels = [];
-  List<Food_db> popularFoodItems = [];
+class _FS_S_DescState extends State<FS_S_Desc> {
+  String selectedOption = 'weekly';
+  List<MenuItem> morningItems = [];
 
   @override
   void initState() {
     super.initState();
-    _openBoxes();
+    // Fetch data from Firestore when widget initializes
+    fetchPackFoods();
   }
 
-  Future<void> _openBoxes() async {
-    foodBox = await Hive.openBox<Food_db>('foodDbBox');
-    hotelBox = await Hive.openBox<Hotels_Db>('hotelDbBox');
-    if (foodBox != null && hotelBox != null) {
-      setState(() {
-        topHotels = hotelBox!.values.toList();
-        popularFoodItems = foodBox!.values.toList();
-        _shuffleList(topHotels);
-        _shuffleList(popularFoodItems);
-      });
-    }
-  }
+  void fetchPackFoods() async {
+    // Access pack_id passed as argument
+    final Map args = ModalRoute.of(context)!.settings.arguments as Map;
+    final String packId = args['id'];
 
-  void _shuffleList(List list) {
-    final random = Random();
-    for (int i = list.length - 1; i > 0; i--) {
-      int n = random.nextInt(i + 1);
-      var temp = list[i];
-      list[i] = list[n];
-      list[n] = temp;
-    }
-  }
+    // Fetch pack_foods from Firestore
+    CollectionReference packsCollection =
+    FirebaseFirestore.instance.collection('fs_pack');
 
-  void _search(String query) {
-    if (foodBox != null && hotelBox != null) {
-      List<Food_db> foodItems = foodBox!.values.where((item) {
-        return item.productTitle.toLowerCase().contains(query.toLowerCase()) ||
-            item.productDesc.toLowerCase().contains(query.toLowerCase()) ||
-            item.productMainCategory.toLowerCase().contains(query.toLowerCase());
-      }).toList();
+    // Assuming pack_foods is an array field in fs_pack containing food item IDs
+    DocumentSnapshot packSnapshot = await packsCollection.doc(packId).get();
+    List<String> foodIds = List<String>.from(packSnapshot.get('pack_foods'));
 
-      List<Hotels_Db> hotelItems = hotelBox!.values.where((item) {
-        return item.hotelName.toLowerCase().contains(query.toLowerCase());
-      }).toList();
-
-      foodItems.sort((a, b) {
-        if (a.productRating != b.productRating) {
-          return b.productRating.compareTo(a.productRating);
-        } else {
-          return a.productOwnership.compareTo(b.productOwnership);
-        }
-      });
-
-      setState(() {
-        foodResults = foodItems;
-        hotelResults = hotelItems;
-      });
-    }
-  }
-
-  void _onItemTapped(int index) {
-    if (_selectedIndex != index) {
-      setState(() {
-        _selectedIndex = index;
-      });
-
-      switch (index) {
-        case 0:
-          Navigator.pushNamed(context, '/fs_home');
-          break;
-        case 2:
-          Navigator.pushNamed(context, '/fs_favourite');
-          break;
-        case 3:
-          Navigator.pushNamed(context, '/fs_profile');
-          break;
-        default:
-          break;
+    // Fetch each food item from Firestore and update morningItems list
+    List<MenuItem> items = [];
+    for (String foodId in foodIds) {
+      DocumentSnapshot foodSnapshot =
+      await FirebaseFirestore.instance.collection('food').doc(foodId).get();
+      if (foodSnapshot.exists) {
+        MenuItem item = MenuItem(
+          id: foodSnapshot.id,
+          name: foodSnapshot.get('name'),
+          price: foodSnapshot.get('price').toDouble(),
+          image: foodSnapshot.get('image'),
+          desc: foodSnapshot.get('desc'),
+          restaurant: foodSnapshot.get('restaurant'),
+          rating: foodSnapshot.get('rating').toDouble(),
+        );
+        items.add(item);
       }
+    }
+
+    setState(() {
+      morningItems = items;
+    });
+  }
+
+  void _onCheckoutPressed() {
+    if (selectedOption == 'customized dates') {
+      Navigator.pushNamed(context, '/fs_s_cal');
+    } else {
+      Navigator.pushNamed(context, '/fs_s_checkout');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          actions: [
-            IconButton(
-              icon: Icon(Icons.tune, color: Colors.red),
-              onPressed: () {},
-            ),
-          ],
-          elevation: 0,
-        ),
-        body: SingleChildScrollView(
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Food Subscription'),
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Restaurant Near By You...',
+                'Morning Items',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 16),
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.search, color: Colors.grey),
-                  hintText: 'Pizza',
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  contentPadding:
-                  EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
+              SizedBox(height: 8),
+              GridView.builder(
+                itemCount: morningItems.length,
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, // Number of columns
+                  childAspectRatio: 0.9, // Adjust to fit item height
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
                 ),
-                onChanged: (value) {
-                  _search(value);
+                itemBuilder: (context, index) {
+                  final item = morningItems[index];
+                  return MenuItemWidget(item: item);
                 },
               ),
               SizedBox(height: 16),
-              if (foodResults.isNotEmpty) ...[
-                Text(
-                  "Food Items",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: foodResults.length,
-                  itemBuilder: (context, index) {
-                    var item = foodResults[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/fs_product', arguments: {
-                          'id': item.productId,
-                          'title': item.productTitle,
-                          'price': item.productPrice.toInt(),
-                          'image': item.productImg,
-                          'description': item.productDesc,
-                          'shop': item.productOwnership,
-                        });
-                      },
-                      child: FullSizedTile(
-                        title: item.productTitle,
-                        description: item.productDesc,
-                        imageUrl: item.productImg,
-                        category: item.productMainCategory,
-                        location: item.productOwnership,
-                        rating: item.productRating,
-                      ),
-                    );
-                  },
-                ),
-              ],
-              if (hotelResults.isNotEmpty) ...[
-                Text(
-                  "Restaurants",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: hotelResults.length,
-                  itemBuilder: (context, index) {
-                    var item = hotelResults[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/fs_hotel', arguments: {
-                          'id': item.hotelId,
-                          'name': item.hotelName,
-                        });
-                      },
-                      child: FullSizedTile(
-                        title: item.hotelName,
-                        description: item.hotelMail,
-                        imageUrl: "assets/hotel_prof.png",
-                        category: item.hotelPhoneNo,
-                        location: item.hotelAddress,
-                        rating: 4.0,
-                      ),
-                    );
-                  },
-                ),
-              ],
+              DropdownButton<String>(
+                value: selectedOption,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    selectedOption = newValue!;
+                  });
+                },
+                items: <String>['weekly', 'monthly', 'customized dates']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
               SizedBox(height: 16),
-              Column(
-                children: topHotels.map((hotel) => RestaurantTile(name: hotel.hotelName, rating: 4.5)).toList(),
-              ),
-              SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text('View All', style: TextStyle(color: Colors.red)),
+              ElevatedButton(
+                onPressed: _onCheckoutPressed,
+                child: Text('Checkout'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  textStyle: TextStyle(fontSize: 20),
                 ),
               ),
-              SizedBox(height: 8),
-              Text('Popular Restaurant',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: PopularRestaurantTile(
-                        name: 'European Pizza', subname: 'Uttora Coffee House'),
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: PopularRestaurantTile(
-                        name: 'Buffalo Pizza', subname: 'Cafenio Coffee Club'),
-                  ),
-                ],
-              ),
-
             ],
           ),
         ),
-        bottomNavigationBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          items: [
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.only(top: 10.0),
-                child: Icon(
-                  Icons.dinner_dining,
-                  size: 30,
-                ),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.only(top: 10.0),
-                child: Icon(
-                  Icons.search,
-                  size: 30,
-                ),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.only(top: 10.0),
-                child: Icon(
-                  Icons.favorite,
-                  size: 30,
-                ),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.only(top: 10.0),
-                child: Icon(
-                  Icons.person,
-                  size: 30,
-                ),
-              ),
-              label: '',
-            ),
-          ],
-          currentIndex: _selectedIndex,
-          backgroundColor: Colors.red,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white,
-          onTap: _onItemTapped,
-        ),
       ),
     );
   }
 }
 
-class CustomChip extends StatelessWidget {
-  final String label;
-  final bool selected;
+class MenuItemWidget extends StatelessWidget {
+  final MenuItem item;
 
-  CustomChip({required this.label, required this.selected});
+  MenuItemWidget({required this.item});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: selected ? Colors.red : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.red),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: selected ? Colors.white : Colors.red,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-}
-
-class FullSizedTile extends StatelessWidget {
-  final String title;
-  final String description;
-  final String imageUrl;
-  final String category;
-  final String location;
-  final double rating;
-
-  const FullSizedTile({
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.category,
-    required this.location,
-    required this.rating,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  bottomLeft: Radius.circular(12),
-                ),
-                image: DecorationImage(
-                  image: AssetImage(imageUrl),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.location_pin, size: 16, color: Colors.red),
-                        SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            location,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.star, size: 16, color: Colors.amber),
-                        SizedBox(width: 4),
-                        Text(
-                          rating.toString(),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class PopularRestaurantTile extends StatelessWidget {
-  final String name;
-  final String subname;
-
-  PopularRestaurantTile({required this.name, required this.subname});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15.0),
-        color: Colors.grey[200],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(name, style: TextStyle(fontSize: 16)),
-          SizedBox(height: 4),
-          Text(subname, style: TextStyle(color: Colors.grey[600])),
-        ],
-      ),
-    );
-  }
-}
-
-
-class RestaurantTile extends StatelessWidget {
-  final String name;
-  final double rating;
-
-  RestaurantTile({required this.name, required this.rating});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, '/fs_hotel', arguments: {
-          'id': name,
-        });
-      },
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage: AssetImage('assets/hotel_prof.png'),
-        ),
-        title: Text(name),
-        subtitle: Row(
-          children: List.generate(
-            5,
-                (index) => Icon(
-              index < rating ? Icons.star : Icons.star_border,
-              size: 18,
-              color: Colors.yellow,
+          Container(
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.grey[400],
+              borderRadius: BorderRadius.circular(8),
+              image: DecorationImage(
+                image: NetworkImage(item.image), // Assuming image is a URL
+                fit: BoxFit.cover,
+              ),
             ),
           ),
-        ),
-        trailing: Icon(Icons.arrow_forward_ios),
+          SizedBox(height: 12),
+          Text(
+            item.name,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '₹${item.price}',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 15,
+                ),
+              ),
+              Row(
+                children: List.generate(
+                  5,
+                      (index) => Icon(
+                    index < item.rating ? Icons.star : Icons.star_border,
+                    size: 16,
+                    color: Colors.amber,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
