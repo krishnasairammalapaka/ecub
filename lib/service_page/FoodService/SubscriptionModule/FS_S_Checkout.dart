@@ -2,16 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class FS_S_Checkout extends StatefulWidget {
   @override
   _FS_S_CheckoutState createState() => _FS_S_CheckoutState();
 }
 
 class _FS_S_CheckoutState extends State<FS_S_Checkout> {
-
   final User? user = FirebaseAuth.instance.currentUser;
-
 
   DateTime fromDate = DateTime.now();
   DateTime endingDate = DateTime.now().add(Duration(days: 7));
@@ -27,7 +24,8 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final args =
+    ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     packID = args['packID'];
     subscriptionType = args['subscription_type'];
 
@@ -43,22 +41,31 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
     breakfast = {
       'count': 1,
       'days': List.generate(7, (_) => true),
+      'time': TimeOfDay(hour: 7, minute: 0),
+      'isOn': true,
     };
     lunch = {
       'count': 1,
       'days': List.generate(7, (_) => true),
+      'time': TimeOfDay(hour: 12, minute: 0),
+      'isOn': true,
     };
     snack = {
       'count': 1,
       'days': List.generate(7, (_) => true),
+      'time': TimeOfDay(hour: 16, minute: 0),
+      'isOn': true,
     };
     dinner = {
       'count': 1,
       'days': List.generate(7, (_) => true),
+      'time': TimeOfDay(hour: 19, minute: 0),
+      'isOn': true,
     };
   }
 
-  Future<void> _selectDate(BuildContext context, DateTime initialDate, Function(DateTime) onDateSelected) async {
+  Future<void> _selectDate(BuildContext context, DateTime initialDate,
+      Function(DateTime) onDateSelected) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -71,7 +78,10 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
   }
 
   void _calculatePrice() async {
-    final packDoc = await FirebaseFirestore.instance.collection('fs_packs').doc(packID).get();
+    final packDoc = await FirebaseFirestore.instance
+        .collection('fs_packs')
+        .doc(packID)
+        .get();
     if (packDoc.exists) {
       final packData = packDoc.data()!;
       int packPrice;
@@ -81,7 +91,8 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
       } else if (subscriptionType == 'monthly') {
         packPrice = packData['pack_price_m'];
       } else {
-        packPrice = packData['pack_price_w'] / 7; // Assuming daily price for custom dates
+        packPrice = packData['pack_price_w'] /
+            7; // Assuming daily price for custom dates
       }
 
       setState(() {
@@ -95,22 +106,28 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
     }
   }
 
-
-
-  void updateMeal(String title, int count, List<bool> days) {
+  void updateMeal(String title, int count, List<bool> days, TimeOfDay time, bool isOn) {
     setState(() {
       if (title == 'Breakfast') {
         breakfast['count'] = count;
         breakfast['days'] = days;
+        breakfast['time'] = time;
+        breakfast['isOn'] = isOn;
       } else if (title == 'Lunch') {
         lunch['count'] = count;
         lunch['days'] = days;
+        lunch['time'] = time;
+        lunch['isOn'] = isOn;
       } else if (title == 'Snack') {
         snack['count'] = count;
         snack['days'] = days;
+        snack['time'] = time;
+        snack['isOn'] = isOn;
       } else if (title == 'Dinner') {
         dinner['count'] = count;
         dinner['days'] = days;
+        dinner['time'] = time;
+        dinner['isOn'] = isOn;
       }
     });
   }
@@ -142,29 +159,33 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
             AlarmSetting(
               title: 'Breakfast',
               initialTime: TimeOfDay(hour: 7, minute: 0),
-              onChanged: (count, days) {
-                updateMeal('Breakfast', count, days);
+              initialIsOn: true,
+              onChanged: (count, days, time, isOn) {
+                updateMeal('Breakfast', count, days, time, isOn);
               },
             ),
             AlarmSetting(
               title: 'Lunch',
               initialTime: TimeOfDay(hour: 12, minute: 0),
-              onChanged: (count, days) {
-                updateMeal('Lunch', count, days);
+              initialIsOn: true,
+              onChanged: (count, days, time, isOn) {
+                updateMeal('Lunch', count, days, time, isOn);
               },
             ),
             AlarmSetting(
               title: 'Snack',
               initialTime: TimeOfDay(hour: 16, minute: 0),
-              onChanged: (count, days) {
-                updateMeal('Snack', count, days);
+              initialIsOn: true,
+              onChanged: (count, days, time, isOn) {
+                updateMeal('Snack', count, days, time, isOn);
               },
             ),
             AlarmSetting(
               title: 'Dinner',
               initialTime: TimeOfDay(hour: 19, minute: 0),
-              onChanged: (count, days) {
-                updateMeal('Dinner', count, days);
+              initialIsOn: true,
+              onChanged: (count, days, time, isOn) {
+                updateMeal('Dinner', count, days, time, isOn);
               },
             ),
             Spacer(),
@@ -178,12 +199,11 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                   ),
                   SizedBox(height: 10),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pushNamed(
                         context,
                         '/fs_home',
                         arguments: {
-
                           'packID': packID,
                           'subscription_type': subscriptionType,
                           'fromDate': fromDate,
@@ -196,33 +216,55 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                           'lunchDays': lunch['days'],
                           'snackDays': snack['days'],
                           'dinnerDays': dinner['days'],
+                          'breakfastTime': breakfast['time'].format(context),
+                          'lunchTime': lunch['time'].format(context),
+                          'snackTime': snack['time'].format(context),
+                          'dinnerTime': dinner['time'].format(context),
+                          'breakfastIsOn': breakfast['isOn'],
+                          'lunchIsOn': lunch['isOn'],
+                          'snackIsOn': snack['isOn'],
+                          'dinnerIsOn': dinner['isOn'],
                         },
                       );
 
-                      FirebaseFirestore.instance
-                          .collection('me_cart')
-                          .doc(user?.email)
-                          .collection('items')
-                          .snapshots();
-
-                      // print(packID);
-                      // print(subscriptionType);
-                      // print(fromDate);
-                      // print(endingDate);
-                      // print(breakfast['count']);
-                      // print(lunch['count']);
-                      // print(snack['count']);
-                      // print(dinner['count']);
-                      // print(breakfast['days']);
-                      // print(lunch['days']);
-                      // print(snack['days']);
-                      // print(dinner['days']);
+                      String? userEmail =
+                          FirebaseAuth.instance.currentUser?.email;
+                      if (userEmail != null) {
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(userEmail)
+                            .collection('fs_service')
+                            .doc('packs')
+                            .set({
+                          'packID': packID,
+                          'subscription_type': subscriptionType,
+                          'fromDate': fromDate,
+                          'endingDate': endingDate,
+                          'breakfastCount': breakfast['count'],
+                          'lunchCount': lunch['count'],
+                          'snackCount': snack['count'],
+                          'dinnerCount': dinner['count'],
+                          'breakfastDays': breakfast['days'],
+                          'lunchDays': lunch['days'],
+                          'snackDays': snack['days'],
+                          'dinnerDays': dinner['days'],
+                          'breakfastTime': breakfast['time'].format(context),
+                          'lunchTime': lunch['time'].format(context),
+                          'snackTime': snack['time'].format(context),
+                          'dinnerTime': dinner['time'].format(context),
+                          'breakfastIsOn': breakfast['isOn'],
+                          'lunchIsOn': lunch['isOn'],
+                          'snackIsOn': snack['isOn'],
+                          'dinnerIsOn': dinner['isOn'],
+                        });
+                      }
                     },
                     child: Text('Finish'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                      padding:
+                      EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                       textStyle: TextStyle(fontSize: 20),
                     ),
                   ),
@@ -235,7 +277,8 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
     );
   }
 
-  Widget _buildDateSetting(String title, DateTime date, Function(DateTime) onDateSelected) {
+  Widget _buildDateSetting(
+      String title, DateTime date, Function(DateTime) onDateSelected) {
     return Card(
       child: ListTile(
         title: Text(title),
@@ -257,9 +300,15 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
 class AlarmSetting extends StatefulWidget {
   final String title;
   final TimeOfDay initialTime;
-  final Function(int foodCount, List<bool> selectedDays) onChanged;
+  final bool initialIsOn;
+  final Function(int foodCount, List<bool> selectedDays, TimeOfDay time, bool isOn) onChanged;
 
-  AlarmSetting({required this.title, required this.initialTime, required this.onChanged});
+  AlarmSetting({
+    required this.title,
+    required this.initialTime,
+    required this.initialIsOn,
+    required this.onChanged,
+  });
 
   @override
   _AlarmSettingState createState() => _AlarmSettingState();
@@ -282,6 +331,7 @@ class _AlarmSettingState extends State<AlarmSetting> {
     if (picked != null && picked != selectedTime) {
       setState(() {
         selectedTime = picked;
+        widget.onChanged(foodCount, selectedDays, selectedTime, isOn);
       });
     }
   }
@@ -290,6 +340,7 @@ class _AlarmSettingState extends State<AlarmSetting> {
   void initState() {
     super.initState();
     selectedTime = widget.initialTime;
+    isOn = widget.initialIsOn;
     foodCount = 1; // Initial food count
     selectedDays = List.generate(7, (_) => true); // Initial selected days (none)
   }
@@ -320,6 +371,7 @@ class _AlarmSettingState extends State<AlarmSetting> {
                     onChanged: (value) {
                       setState(() {
                         isOn = value;
+                        widget.onChanged(foodCount, selectedDays, selectedTime, isOn);
                       });
                     },
                   ),
@@ -333,7 +385,8 @@ class _AlarmSettingState extends State<AlarmSetting> {
                 ToggleButtons(
                   children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
                       .map((day) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Text(day),
                   ))
                       .toList(),
@@ -341,8 +394,8 @@ class _AlarmSettingState extends State<AlarmSetting> {
                   onPressed: (index) {
                     setState(() {
                       selectedDays[index] = !selectedDays[index];
+                      widget.onChanged(foodCount, selectedDays, selectedTime, isOn);
                     });
-                    widget.onChanged(foodCount, selectedDays);
                   },
                 ),
                 Row(
@@ -353,8 +406,8 @@ class _AlarmSettingState extends State<AlarmSetting> {
                       onPressed: () {
                         setState(() {
                           if (foodCount > 1) foodCount--;
+                          widget.onChanged(foodCount, selectedDays, selectedTime, isOn);
                         });
-                        widget.onChanged(foodCount, selectedDays);
                       },
                     ),
                     Text('$foodCount'),
@@ -363,8 +416,8 @@ class _AlarmSettingState extends State<AlarmSetting> {
                       onPressed: () {
                         setState(() {
                           foodCount++;
+                          widget.onChanged(foodCount, selectedDays, selectedTime, isOn);
                         });
-                        widget.onChanged(foodCount, selectedDays);
                       },
                     ),
                   ],
