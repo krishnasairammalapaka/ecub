@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+
+class DateUtil {
+  static const DATE_FORMAT = 'dd/MM/yyyy';
+  String formattedDate(DateTime dateTime) {
+    print('dateTime ($dateTime)');
+    return DateFormat(DATE_FORMAT).format(dateTime);
+  }
+}
 
 class FS_S_Checkout extends StatefulWidget {
   @override
@@ -227,6 +236,28 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                         },
                       );
 
+
+                      print( packID);
+                      print( subscriptionType);
+                      print( fromDate);
+                      print( endingDate);
+                      print( breakfast['count']);
+                      print( lunch['count']);
+                      print( snack['count']);
+                      print( dinner['count']);
+                      print( breakfast['days']);
+                      print( lunch['days']);
+                      print( snack['days']);
+                      print( dinner['days']);
+                      print( breakfast['time'].format(context));
+                      print( lunch['time'].format(context));
+                      print( snack['time'].format(context));
+                      print( dinner['time'].format(context));
+                      print( breakfast['isOn']);
+                      print( lunch['isOn']);
+                      print( snack['isOn']);
+                      print( dinner['isOn']);
+
                       String? userEmail =
                           FirebaseAuth.instance.currentUser?.email;
                       if (userEmail != null) {
@@ -238,8 +269,8 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                             .set({
                           'packID': packID,
                           'subscription_type': subscriptionType,
-                          'fromDate': fromDate,
-                          'endingDate': endingDate,
+                          'fromDate': '$fromDate',
+                          'endingDate': '$endingDate',
                           'breakfastCount': breakfast['count'],
                           'lunchCount': lunch['count'],
                           'snackCount': snack['count'],
@@ -316,12 +347,19 @@ class AlarmSetting extends StatefulWidget {
 
 class _AlarmSettingState extends State<AlarmSetting> {
   bool isExpanded = false;
-  bool isOn = true;
+  late bool isOn;
   late TimeOfDay selectedTime;
   late int foodCount;
   late List<bool> selectedDays;
 
-  _AlarmSettingState() : selectedTime = TimeOfDay(hour: 7, minute: 0);
+  @override
+  void initState() {
+    super.initState();
+    selectedTime = widget.initialTime;
+    isOn = widget.initialIsOn;
+    foodCount = 1; // Initial food count
+    selectedDays = List.generate(7, (_) => true); // Initial selected days (all selected)
+  }
 
   Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
@@ -334,15 +372,6 @@ class _AlarmSettingState extends State<AlarmSetting> {
         widget.onChanged(foodCount, selectedDays, selectedTime, isOn);
       });
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    selectedTime = widget.initialTime;
-    isOn = widget.initialIsOn;
-    foodCount = 1; // Initial food count
-    selectedDays = List.generate(7, (_) => true); // Initial selected days (none)
   }
 
   @override
@@ -385,8 +414,7 @@ class _AlarmSettingState extends State<AlarmSetting> {
                 ToggleButtons(
                   children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
                       .map((day) => Padding(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 8.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Text(day),
                   ))
                       .toList(),

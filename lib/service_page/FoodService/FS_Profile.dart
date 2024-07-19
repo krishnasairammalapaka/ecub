@@ -1,10 +1,8 @@
 import 'package:ecub_s1_v2/models/CheckoutHistory_DB.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 
 class FS_Profile extends StatefulWidget {
   const FS_Profile({Key? key}) : super(key: key);
@@ -14,50 +12,100 @@ class FS_Profile extends StatefulWidget {
 }
 
 class _FS_ProfileState extends State<FS_Profile> {
-  Stream<int> fetchCartItemCount() {
+  bool isLoading = true;
+  late Map<String, dynamic> userProfile;
+  bool hasActiveSubscription = false;
+  late String activeSubscriptionName;
+  late String packID;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserProfile();
+  }
+
+  Future<void> _fetchUserProfile() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null && user.email != null) {
-      return FirebaseFirestore.instance
-          .collection('me_cart')
+      DocumentSnapshot<Map<String, dynamic>> userDoc = await FirebaseFirestore.instance
+          .collection('users')
           .doc(user.email)
-          .collection('items')
-          .snapshots()
-          .map((snapshot) =>
-      snapshot.docs.length); // Map the snapshots to their count
-    } else {
-      // Return a stream of 0 if the user is not logged in
-      return Stream.value(0);
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userProfile = userDoc.data()!;
+          hasActiveSubscription = userProfile['isPackSubs'] ?? false;
+        });
+
+        if (hasActiveSubscription) {
+          DocumentSnapshot<Map<String, dynamic>> packDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.email)
+              .collection('fs_service')
+              .doc('packs')
+              .get();
+
+          if (packDoc.exists) {
+            setState(() {
+              packID = packDoc.data()!['packID'];
+            });
+
+            DocumentSnapshot<Map<String, dynamic>> packDetails = await FirebaseFirestore.instance
+                .collection('fs_packs')
+                .doc(packID)
+                .get();
+
+            if (packDetails.exists) {
+              setState(() {
+                activeSubscriptionName = packDetails.data()!['pack_name'];
+                isLoading = false;
+              });
+            }
+          }
+        } else {
+          setState(() {
+            isLoading = false;
+          });
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('User Profile'),
-          centerTitle: true,
+      appBar: AppBar(
+        title: Text('User Profile'),
+        centerTitle: true,
+      ),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            HeaderSection(userProfile: userProfile),
+            Divider(),
+            if (hasActiveSubscription)
+              ActiveSubscriptionSection(
+                subscriptionName: activeSubscriptionName,
+                packID: packID,
+              ),
+            Divider(),
+            PastOrdersSection(),
+          ],
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              HeaderSection(),
-              Divider(),
-              AccountSection(),
-              Divider(),
-              PaymentSection(),
-              Divider(),
-              HelpSection(),
-              Divider(),
-              PastOrdersSection(),
-            ],
-          ),
-        )
+      ),
     );
   }
 }
 
 class HeaderSection extends StatelessWidget {
+  final Map<String, dynamic> userProfile;
+
+  HeaderSection({required this.userProfile});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -70,7 +118,7 @@ class HeaderSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Karthik",
+                userProfile['firstname'] ?? 'N/A',
                 style: TextStyle(
                   fontSize: 24,
                   color: Colors.white,
@@ -89,7 +137,7 @@ class HeaderSection extends StatelessWidget {
             ],
           ),
           Text(
-            '9711898182 . mokshgarg003@gmail.com',
+            '${userProfile['phonenumber'] ?? 'N/A'} , ${userProfile['email'] ?? 'N/A'}',
             style: TextStyle(
               fontSize: 16,
               color: Colors.white70,
@@ -101,59 +149,39 @@ class HeaderSection extends StatelessWidget {
   }
 }
 
-class AccountSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionTitle(title: 'My Account'),
-          SizedBox(height: 10),
-          Text('Address, Favourites & Settings'),
-          SizedBox(height: 20),
-          AccountOption(title: 'Manage Address'),
-          AccountOption(title: 'Favourites'),
-          AccountOption(title: 'Settings'),
-        ],
-      ),
-    );
-  }
-}
+class ActiveSubscriptionSection extends StatelessWidget {
+  final String subscriptionName;
+  final String packID;
 
-class PaymentSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionTitle(title: 'Payments & Refunds'),
-          SizedBox(height: 10),
-          Text('Manage your Refunds, Payment Modes'),
-          SizedBox(height: 20),
-          AccountOption(title: 'Refund Status', subtitle: '1 active refund'),
-          AccountOption(title: 'Payment Modes'),
-        ],
-      ),
-    );
-  }
-}
+  ActiveSubscriptionSection({required this.subscriptionName, required this.packID});
 
-class HelpSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionTitle(title: 'Help'),
-          SizedBox(height: 10),
-          Text('FAQs & Links'),
-        ],
+      child: GestureDetector(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            '/fs_s_packcheck',
+            arguments: {'id': packID},
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionTitle(title: 'Active Subscription'),
+            SizedBox(height: 10),
+            Text(
+              subscriptionName,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.orange,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -170,39 +198,6 @@ class PastOrdersSection extends StatelessWidget {
           SectionTitle(title: 'Past Orders'),
           SizedBox(height: 20),
           OrdersListView(),
-        ],
-      ),
-    );
-  }
-}
-
-class AccountOption extends StatelessWidget {
-  final String title;
-  final String? subtitle;
-
-  const AccountOption({required this.title, this.subtitle});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 10.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          if (subtitle != null)
-            Text(
-              subtitle!,
-              style: TextStyle(
-                color: Colors.orange,
-              ),
-            ),
         ],
       ),
     );
@@ -230,7 +225,7 @@ class SectionTitle extends StatelessWidget {
 class OrdersListView extends StatelessWidget {
   Future<List<CheckoutHistory_DB>> _getCheckoutHistory() async {
     final checkoutHistoryBox =
-        await Hive.openBox<CheckoutHistory_DB>('checkoutHistoryBox');
+    await Hive.openBox<CheckoutHistory_DB>('checkoutHistoryBox');
     return checkoutHistoryBox.values.toList();
   }
 
