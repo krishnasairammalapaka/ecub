@@ -58,7 +58,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   Box<Food_db>? FDbox;
   late Box<Favourites_DB> _favouritesBox;
   int count = 1;
-  late int pricePerItem;
+  late double pricePerItem;
   late String productId;
   late String ShopUsername;
   bool isProductInCart = false;

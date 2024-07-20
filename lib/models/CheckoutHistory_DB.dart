@@ -17,17 +17,16 @@ class CheckoutHistory_DB extends HiveObject {
   late String TimeStamp;
 
   @HiveField(3)
-  final int key; // Add a key field for Hive box key
+  final int key;
 
   CheckoutHistory_DB({
     required this.UserId,
     required this.ItemId,
     required this.ItemCount,
     required this.TimeStamp,
-    required this.key, // Include the key in the constructor
+    required this.key,
   });
 
-  // Add a copyWith method to create a new instance with updated fields
   CheckoutHistory_DB copyWith({
     String? UserId,
     String? ItemId,

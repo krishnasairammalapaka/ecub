@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:ecub_s1_v2/models/Favourites_DB.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
+import 'package:ecub_s1_v2/components/bottom_nav_fs.dart';
 
 class FS_FavoriteScreen extends StatefulWidget {
   @override
   _FS_FavoriteScreenState createState() => _FS_FavoriteScreenState();
 }
 
-class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> {
-  int _selectedIndex = 2;
+class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> with RouteAware {
+  int _selectedIndex = 2; // Index for the Favorite screen
   Box<Favourites_DB>? _favouritesBox;
   Box<Food_db>? FDbox;
 
@@ -20,31 +21,21 @@ class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> {
     _openBoxes();
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Subscribe to route changes
+    ModalRoute.of(context)!.settings.arguments;
+  }
 
-    switch (index) {
-      case 0:
-        Navigator.pushNamed(context, '/fs_home');
-        break;
-      case 1:
-        Navigator.pushNamed(context, '/fs_search');
-        break;
-      case 3:
-        Navigator.pushNamed(context, '/fs_profile');
-        break;
-      default:
-        break;
-    }
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   Future<void> _openBoxes() async {
     _favouritesBox = await Hive.openBox<Favourites_DB>('favouritesDbBox');
     FDbox = await Hive.openBox<Food_db>('foodDbBox');
-
-
     setState(() {});
   }
 
@@ -62,12 +53,6 @@ class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        // leading: IconButton(
-        //   icon: Icon(Icons.arrow_back, color: Colors.black),
-        //   onPressed: () {
-        //     Navigator.popUntil(context, ModalRoute.withName('/fs_home'));
-        //   },
-        // ),
         title: Text(
           'My Favourite',
           style: TextStyle(color: Colors.black),
@@ -124,55 +109,31 @@ class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: [
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: const EdgeInsets.only(top: 10.0),
-              child: Icon(
-                Icons.dinner_dining,
-                size: 30,
-              ),
-            ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: const EdgeInsets.only(top: 10.0),
-              child: Icon(
-                Icons.search,
-                size: 30,
-              ),
-            ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: const EdgeInsets.only(top: 10.0),
-              child: Icon(
-                Icons.favorite,
-                size: 30,
-              ),
-            ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: const EdgeInsets.only(top: 10.0),
-              child: Icon(
-                Icons.person,
-                size: 30,
-              ),
-            ),
-            label: '',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        backgroundColor: Color(0xFF0D5EF9),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white,
-        onTap: _onItemTapped,
+      bottomNavigationBar: BottomNavBar(
+        // selectedIndex: _selectedIndex,
+        onTabChange: (index) {
+          if (_selectedIndex != index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+            switch (index) {
+              case 0:
+                Navigator.pushNamed(context, '/fs_home');
+                break;
+              case 1:
+                Navigator.pushNamed(context, '/fs_search');
+                break;
+              case 2:
+                Navigator.pushNamed(context, '/fs_favorite'); // Current Screen
+                break;
+              case 3:
+                Navigator.pushNamed(context, '/fs_profile');
+                break;
+              default:
+                break;
+            }
+          }
+        },
       ),
     );
   }

@@ -4,19 +4,33 @@ import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../components/bottom_nav_fs.dart';
+
 class FS_Profile extends StatefulWidget {
   const FS_Profile({Key? key}) : super(key: key);
-
   @override
   State<FS_Profile> createState() => _FS_ProfileState();
 }
 
-class _FS_ProfileState extends State<FS_Profile> {
+class _FS_ProfileState extends State<FS_Profile> with RouteAware {
+  int _selectedIndex = 3;
   bool isLoading = true;
   late Map<String, dynamic> userProfile;
   bool hasActiveSubscription = false;
   late String activeSubscriptionName;
   late String packID;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    ModalRoute.of(context)!.settings.arguments;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
 
   @override
   void initState() {
@@ -97,6 +111,32 @@ class _FS_ProfileState extends State<FS_Profile> {
           ],
         ),
       ),
+        bottomNavigationBar: BottomNavBar(
+          // selectedIndex: _selectedIndex,
+          onTabChange: (index) {
+            if (_selectedIndex != index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+              switch (index) {
+                case 0:
+                  Navigator.pushNamed(context, '/fs_home');
+                  break;
+                case 1:
+                  Navigator.pushNamed(context, '/fs_search');
+                  break;
+                case 2:
+                  Navigator.pushNamed(context, '/fs_favorite'); // Current Screen
+                  break;
+                case 3:
+                  Navigator.pushNamed(context, '/fs_profile');
+                  break;
+                default:
+                  break;
+              }
+            }
+          },
+        )
     );
   }
 }
@@ -225,7 +265,7 @@ class SectionTitle extends StatelessWidget {
 class OrdersListView extends StatelessWidget {
   Future<List<CheckoutHistory_DB>> _getCheckoutHistory() async {
     final checkoutHistoryBox =
-    await Hive.openBox<CheckoutHistory_DB>('checkoutHistoryBox');
+    await Hive.openBox<CheckoutHistory_DB>('checkoutHistory');
     return checkoutHistoryBox.values.toList();
   }
 
@@ -280,36 +320,45 @@ class OrderHistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            restaurant,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/fs_ordered_food',
+          arguments: {'orderId': orderId},
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              restaurant,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          Text(location),
-          Text('₹$amount'),
-          Text(date),
-          SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              ElevatedButton(
-                onPressed: () {},
-                child: Text('REORDER'),
-              ),
-              ElevatedButton(
-                onPressed: () {},
-                child: Text('RATE ORDER'),
-              ),
-            ],
-          ),
-        ],
+            Text(location),
+            Text('₹$amount'),
+            Text(date),
+            SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: () {},
+                  child: Text('REORDER'),
+                ),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: Text('RATE ORDER'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
