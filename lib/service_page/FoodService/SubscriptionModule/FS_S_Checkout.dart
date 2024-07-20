@@ -146,7 +146,7 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Checkout'),
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFF0D5EF9),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -292,7 +292,7 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                     },
                     child: Text('Finish'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
+                      backgroundColor: Color(0xFF0D5EF9),
                       foregroundColor: Colors.white,
                       padding:
                       EdgeInsets.symmetric(horizontal: 50, vertical: 15),

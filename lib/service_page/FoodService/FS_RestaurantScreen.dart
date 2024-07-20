@@ -82,7 +82,7 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
         title: Text('Restaurant View'),
         actions: [
           IconButton(
-            icon: Icon(Icons.favorite_border, color: Colors.red),
+            icon: Icon(Icons.favorite_border, color: Color(0xFF0D5EF9)),
             onPressed: () {
               // Add your favorite button action here
             },
@@ -132,15 +132,15 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
               SizedBox(height: 16),
               Row(
                 children: [
-                  Icon(Icons.star, color: Colors.red),
+                  Icon(Icons.star, color: Color(0xFF0D5EF9)),
                   SizedBox(width: 4),
                   Text('4.7'),
                   SizedBox(width: 16),
-                  Icon(Icons.delivery_dining, color: Colors.red),
+                  Icon(Icons.delivery_dining, color: Color(0xFF0D5EF9)),
                   SizedBox(width: 4),
                   Text('Free'),
                   SizedBox(width: 16),
-                  Icon(Icons.access_time, color: Colors.red),
+                  Icon(Icons.access_time, color: Color(0xFF0D5EF9)),
                   SizedBox(width: 4),
                   Text('20 min'),
                 ],
@@ -181,14 +181,14 @@ class CategoryTab extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
-        color: isSelected ? Colors.red : Colors.transparent,
+        color: isSelected ? Color(0xFF0D5EF9) : Colors.transparent,
         borderRadius: BorderRadius.circular(16),
-        border: isSelected ? null : Border.all(color: Colors.red),
+        border: isSelected ? null : Border.all(color: Color(0xFF0D5EF9)),
       ),
       child: Text(
         text,
         style: TextStyle(
-          color: isSelected ? Colors.white : Colors.red,
+          color: isSelected ? Colors.white : Color(0xFF0D5EF9),
         ),
       ),
     );
@@ -262,7 +262,7 @@ class MenuItem extends StatelessWidget {
               children: [
                 Text('₹$price',
                   style: TextStyle(
-                      color: Colors.red,
+                      color: Color(0xFF0D5EF9),
                       fontSize: 15
                   ),
                 ),

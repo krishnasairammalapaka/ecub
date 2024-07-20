@@ -85,7 +85,7 @@ class _FS_S_DescState extends State<FS_S_Desc> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Food Pack'),
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFF0D5EF9),
         foregroundColor: Colors.white,
       ),
       body: Column(
@@ -182,7 +182,7 @@ class _FS_S_DescState extends State<FS_S_Desc> {
             onPressed: () => _onCheckoutPressed(packID),
             child: Text('Checkout'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: Color(0xFF0D5EF9),
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               textStyle: TextStyle(fontSize: 20),
@@ -246,7 +246,7 @@ class MenuItemWidget extends StatelessWidget {
               Text(
                 '₹${item.price}',
                 style: TextStyle(
-                  color: Colors.red,
+                  color: Color(0xFF0D5EF9),
                   fontSize: 15,
                 ),
               ),

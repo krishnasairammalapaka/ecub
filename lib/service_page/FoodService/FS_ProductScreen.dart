@@ -256,7 +256,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                       child: Container(
                         padding: EdgeInsets.all(2),
                         decoration: BoxDecoration(
-                          color: Colors.red,
+                          color: Color(0xFF0D5EF9),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         constraints: BoxConstraints(
@@ -317,7 +317,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                           isProductFavorite
                               ? Icons.favorite
                               : Icons.favorite_border,
-                          color: isProductFavorite ? Colors.red : null,
+                          color: isProductFavorite ? Color(0xFF0D5EF9) : null,
                         ),
                         onPressed: toggleFavorite,
                       ),
@@ -330,7 +330,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                         "₹ ${args['price'] ?? 'N/A'}",
                         style: TextStyle(
                           fontSize: 20,
-                          color: Colors.red,
+                          color: Color(0xFF0D5EF9),
                         ),
                       ),
                     ],
@@ -461,7 +461,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                                         '₹ ${item.productPrice}',
                                         style: TextStyle(
                                           fontSize: 16,
-                                          color: Colors.red,
+                                          color: Color(0xFF0D5EF9),
                                         ),
                                       ),
                                     ],

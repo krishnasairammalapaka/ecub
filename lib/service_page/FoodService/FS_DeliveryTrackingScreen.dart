@@ -87,7 +87,7 @@ class FS_DeliveryTrackingScreen extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.red,
+                      color: Color(0xFF0D5EF9),
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: Row(

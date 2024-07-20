@@ -184,7 +184,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
             '₹ ${foodItem.productPrice}',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.red,
+              color: Color(0xFF0D5EF9),
             ),
           ),
           SizedBox(height: 8),
@@ -194,7 +194,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
             icon: Icon(Icons.shopping_cart),
             label: Text('Add'),
             style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white, backgroundColor: Colors.red,
+              foregroundColor: Colors.white, backgroundColor: Color(0xFF0D5EF9),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -250,7 +250,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFF0D5EF9),
         elevation: 0,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -326,7 +326,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _onFloatingButtonPressed,
         child: Icon(Icons.check),
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFF0D5EF9),
       ),
     );
   }

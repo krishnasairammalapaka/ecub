@@ -163,7 +163,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFF0D5EF9),
         elevation: 0,
         title: Text(
           'Checkout',
@@ -272,7 +272,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _showOrderConfirmationDialog,
         child: Icon(Icons.check),
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFF0D5EF9),
       ),
     );
   }

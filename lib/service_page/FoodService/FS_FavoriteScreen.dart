@@ -169,7 +169,7 @@ class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFF0D5EF9),
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white,
         onTap: _onItemTapped,

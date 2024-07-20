@@ -120,7 +120,7 @@ class _HomeScreenState extends State<FS_HomeScreen> {
                       child: Container(
                         padding: EdgeInsets.all(2),
                         decoration: BoxDecoration(
-                          color: Colors.red,
+                          color: Color(0xFF0D5EF9),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         constraints: BoxConstraints(
@@ -358,7 +358,7 @@ class _HomeScreenState extends State<FS_HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: Padding(
-              padding: const EdgeInsets.only(top: 10.0),
+              padding: const EdgeInsets.only(top: 15.0),
               child: Icon(
                 Icons.favorite,
                 size: 30,
@@ -378,7 +378,7 @@ class _HomeScreenState extends State<FS_HomeScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFF0D5EF9),
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white,
         onTap: _onItemTapped,
@@ -482,7 +482,7 @@ class FoodTile extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Colors.red,
+                    color: Color(0xFF0D5EF9),
                   ),
                 ),
                 SizedBox(height: 4),

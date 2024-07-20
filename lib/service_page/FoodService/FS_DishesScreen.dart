@@ -41,7 +41,7 @@ class _FS_DishesScreenState extends State<FS_DishesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFF0D5EF9),
         elevation: 0,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
