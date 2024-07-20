@@ -50,15 +50,7 @@ class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          'My Favourite',
-          style: TextStyle(color: Colors.black),
-        ),
-        centerTitle: true,
-      ),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -109,32 +101,7 @@ class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> with RouteAware {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavBar(
-        // selectedIndex: _selectedIndex,
-        onTabChange: (index) {
-          if (_selectedIndex != index) {
-            setState(() {
-              _selectedIndex = index;
-            });
-            switch (index) {
-              case 0:
-                Navigator.pushNamed(context, '/fs_home');
-                break;
-              case 1:
-                Navigator.pushNamed(context, '/fs_search');
-                break;
-              case 2:
-                Navigator.pushNamed(context, '/fs_favorite'); // Current Screen
-                break;
-              case 3:
-                Navigator.pushNamed(context, '/fs_profile');
-                break;
-              default:
-                break;
-            }
-          }
-        },
-      ),
+
     );
   }
 }

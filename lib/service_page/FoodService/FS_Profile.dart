@@ -89,10 +89,10 @@ class _FS_ProfileState extends State<FS_Profile> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('User Profile'),
-        centerTitle: true,
-      ),
+      // appBar: AppBar(
+      //   title: Text('User Profile'),
+      //   centerTitle: true,
+      // ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -111,32 +111,7 @@ class _FS_ProfileState extends State<FS_Profile> with RouteAware {
           ],
         ),
       ),
-        bottomNavigationBar: BottomNavBar(
-          // selectedIndex: _selectedIndex,
-          onTabChange: (index) {
-            if (_selectedIndex != index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-              switch (index) {
-                case 0:
-                  Navigator.pushNamed(context, '/fs_home');
-                  break;
-                case 1:
-                  Navigator.pushNamed(context, '/fs_search');
-                  break;
-                case 2:
-                  Navigator.pushNamed(context, '/fs_favorite'); // Current Screen
-                  break;
-                case 3:
-                  Navigator.pushNamed(context, '/fs_profile');
-                  break;
-                default:
-                  break;
-              }
-            }
-          },
-        )
+
     );
   }
 }

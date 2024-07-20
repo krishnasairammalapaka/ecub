@@ -32,7 +32,9 @@ class _FS_SearchState extends State<FS_Search> {
       List<Food_db> foodItems = foodBox!.values.where((item) {
         return item.productTitle.toLowerCase().contains(query.toLowerCase()) ||
             item.productDesc.toLowerCase().contains(query.toLowerCase()) ||
-            item.productMainCategory.toLowerCase().contains(query.toLowerCase());
+            item.productMainCategory
+                .toLowerCase()
+                .contains(query.toLowerCase());
       }).toList();
 
       List<Hotels_Db> hotelItems = hotelBox!.values.where((item) {
@@ -52,6 +54,7 @@ class _FS_SearchState extends State<FS_Search> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           bottom: TabBar(
             tabs: [
               Tab(text: 'Food Items'),
@@ -102,14 +105,15 @@ class _FS_SearchState extends State<FS_Search> {
                           var item = foodResults[index];
                           return GestureDetector(
                             onTap: () {
-                              Navigator.pushNamed(context, '/fs_product', arguments: {
-                                'id': item.productId,
-                                'title': item.productTitle,
-                                'price': item.productPrice.toInt(),
-                                'image': item.productImg,
-                                'description': item.productDesc,
-                                'shop': item.productOwnership,
-                              });
+                              Navigator.pushNamed(context, '/fs_product',
+                                  arguments: {
+                                    'id': item.productId,
+                                    'title': item.productTitle,
+                                    'price': item.productPrice.toInt(),
+                                    'image': item.productImg,
+                                    'description': item.productDesc,
+                                    'shop': item.productOwnership,
+                                  });
                             },
                             child: FullSizedTile(
                               title: item.productTitle,
@@ -149,11 +153,12 @@ class _FS_SearchState extends State<FS_Search> {
                           var item = hotelResults[index];
                           return GestureDetector(
                             onTap: () {
-                              Navigator.pushNamed(context, '/fs_hotel', arguments: {
-                                'id': item.hotelId,
-                                'username':item.hotelUsername,
-                                'name': item.hotelName,
-                              });
+                              Navigator.pushNamed(context, '/fs_hotel',
+                                  arguments: {
+                                    'id': item.hotelId,
+                                    'username': item.hotelUsername,
+                                    'name': item.hotelName,
+                                  });
                             },
                             child: FullSizedTile(
                               title: item.hotelName,

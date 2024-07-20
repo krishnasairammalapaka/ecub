@@ -6,31 +6,19 @@ import 'package:ecub_s1_v2/service_page/FoodService/FS_Profile.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/FS_Search.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:ecub_s1_v2/components/bottom_nav_fs.dart';
+import 'package:ecub_s1_v2/components/bottom_nav_fs.dart';  // Make sure this imports the correct BottomNavBar
 
 class FS_HomeScreen extends StatefulWidget {
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _FS_HomeScreenState createState() => _FS_HomeScreenState();
 }
 
-class _HomeScreenState extends State<FS_HomeScreen> with RouteAware {
-  int _selectedIndex = 2;
+class _FS_HomeScreenState extends State<FS_HomeScreen> {
+  int _selectedIndex = 0;
   Box<Food_db>? FDbox;
   Box<Cart_Db>? _cartBox;
 
   Map<String, String> categoryImages = {};
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Subscribe to route changes
-    ModalRoute.of(context)!.settings.arguments;
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
   @override
   void initState() {
@@ -42,6 +30,7 @@ class _HomeScreenState extends State<FS_HomeScreen> with RouteAware {
     FDbox = await Hive.openBox<Food_db>('foodDbBox');
     _cartBox = await Hive.openBox<Cart_Db>('cartItems');
     _extractCategories();
+    setState(() {});
   }
 
   void _extractCategories() {
@@ -56,27 +45,6 @@ class _HomeScreenState extends State<FS_HomeScreen> with RouteAware {
     }
   }
 
-  void _onItemTapped(int index) {
-    if (_selectedIndex != index) {
-      setState(() {
-        _selectedIndex = index;
-      });
-
-      switch (index) {
-        case 1:
-          Navigator.pushNamed(context, '/fs_search');
-          break;
-        case 2:
-          Navigator.pushNamed(context, '/fs_favourite');
-          break;
-        case 3:
-          Navigator.pushNamed(context, '/fs_profile');
-          break;
-        default:
-          break;
-      }
-    }
-  }
 
   int getTotalCartItemsCount() {
     int totalItems = 0;
@@ -93,7 +61,7 @@ class _HomeScreenState extends State<FS_HomeScreen> with RouteAware {
   }
 
   final List<Widget> _pages = [
-    FS_HomeScreen(),
+    FS_HomeScreenContent(),
     FS_Search(),
     FS_FavoriteScreen(),
     FS_Profile()
@@ -101,263 +69,277 @@ class _HomeScreenState extends State<FS_HomeScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          actions: [
-            GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(context, '/profile');
-              },
-              child: Container(
-                margin: EdgeInsets.only(right: 10),
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: AssetImage('assets/user.png'),
-                    fit: BoxFit.cover,
-                  ),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, '/profile');
+            },
+            child: Container(
+              margin: EdgeInsets.only(right: 10),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: AssetImage('assets/user.png'),
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
-            ValueListenableBuilder(
-              valueListenable: _cartBox!.listenable(),
-              builder: (context, Box<Cart_Db> box, _) {
-                int totalItems = getTotalCartItemsCount();
+          ),
+          ValueListenableBuilder(
+            valueListenable: _cartBox!.listenable(),
+            builder: (context, Box<Cart_Db> box, _) {
+              int totalItems = getTotalCartItemsCount();
 
-                return Stack(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.shopping_cart, size: 40),
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/fs_cart');
-                      },
-                    ),
-                    if (totalItems > 0)
-                      Positioned(
-                        right: 10,
-                        top: 10,
-                        child: Container(
-                          padding: EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: Color(0xFF0D5EF9),
-                            borderRadius: BorderRadius.circular(10),
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.shopping_cart, size: 40),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/fs_cart');
+                    },
+                  ),
+                  if (totalItems > 0)
+                    Positioned(
+                      right: 10,
+                      top: 10,
+                      child: Container(
+                        padding: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Color(0xFF0D5EF9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          '$totalItems',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
                           ),
-                          constraints: BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
-                          ),
-                          child: Text(
-                            '$totalItems',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                  ],
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: BottomNavBar(
+        onTabChange: (index) => navigateBottomBar(index),
+      ),
+    );
+  }
+}
+
+
+
+class FS_HomeScreenContent extends StatelessWidget {
+  final Box<Food_db>? FDbox;
+
+  FS_HomeScreenContent({this.FDbox,});
+
+  Map<String, String> categoryImages = {};
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Good food.\nFast delivery.",
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 20),
+            CarouselSlider(
+              items: [
+                {'image': 'assets/slide1.png', 'route': '/offers'},
+                {'image': 'assets/slide2.png', 'route': '/offers'},
+              ].map((item) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      item['route'] ?? '/defaultRoute',
+                    );
+                  },
+                  child: Builder(
+                    builder: (BuildContext context) {
+                      return Container(
+                        width: screenSize.width * 0.9,
+                        margin: EdgeInsets.symmetric(horizontal: 5.0),
+                        decoration: BoxDecoration(
+                          color: Colors.amber,
+                        ),
+                        child: Image.asset(
+                          item['image'] ?? 'assets/defaultImage.png',
+                          fit: BoxFit.cover,
+                        ),
+                      );
+                    },
+                  ),
                 );
+              }).toList(),
+              options: CarouselOptions(
+                height: screenSize.height * 0.15,
+                autoPlay: true,
+                enlargeCenterPage: true,
+                autoPlayInterval: Duration(seconds: 6),
+                autoPlayAnimationDuration: Duration(milliseconds: 800),
+                autoPlayCurve: Curves.fastOutSlowIn,
+                pauseAutoPlayOnTouch: true,
+                viewportFraction: 1.0,
+              ),
+            ),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, '/fs_category',
+                        arguments: {
+                          'title': "Home Made Restaurants",
+                          'type': "homemade"
+                        });
+                  },
+                  child: CategoryTile(
+                    title: "Home Made",
+                    image: "assets/home_made.png",
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, '/fs_category',
+                        arguments: {
+                          'title': "Home Made Restaurants",
+                          'type': "restaurant"
+                        });
+                  },
+                  child: CategoryTile(
+                    title: "Restuarent",
+                    image: "assets/restuarnt_logo.png",
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, '/fs_s_home', arguments: {
+                      'title': "entry.key",
+                      'type': "entry.key"
+                    });
+                  },
+                  child: CategoryTile(
+                    title: "Subscription",
+                    image: "assets/subscription_logo.png",
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 30),
+            categoryImages.isEmpty
+                ? Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: categoryImages.entries.map((entry) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/fs_dishes',
+                          arguments: {
+                            'title': entry.key,
+                            'type': entry.key
+                          });
+                    },
+                    child: CategoryCard(
+                      title: entry.key,
+                      image: entry.value,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            SizedBox(height: 20),
+            Text(
+              "Popular now",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 20),
+            FDbox == null
+                ? Center(child: CircularProgressIndicator())
+                : ValueListenableBuilder(
+              valueListenable: FDbox!.listenable(),
+              builder: (context, Box<Food_db> items, _) {
+                if (items.isEmpty) {
+                  return Center(child: Text('No items found.'));
+                } else {
+                  List<Food_db> sortedItems = items.values.toList();
+                  sortedItems.sort((a, b) =>
+                      b.productRating.compareTo(a.productRating));
+
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: sortedItems.length,
+                    gridDelegate:
+                    SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 2 / 3,
+                    ),
+                    itemBuilder: (context, index) {
+                      var item = sortedItems[index];
+                      if (item.productRating > 4.4) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(
+                                context, '/fs_product',
+                                arguments: {
+                                  'id': item.productId,
+                                  'title': item.productTitle,
+                                  'price': item.productPrice.toInt(),
+                                  'image': item.productImg,
+                                  'description': item.productDesc,
+                                  'shop': item.productOwnership,
+                                });
+                          },
+                          child: FoodTile(
+                            title: item.productTitle,
+                            price: item.productPrice.toInt(),
+                            image: item.productImg,
+                            rating: item.productRating,
+                          ),
+                        );
+                      }
+                      return null;
+                    },
+                  );
+                }
               },
             ),
           ],
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Good food.\nFast delivery.",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 20),
-                CarouselSlider(
-                  items: [
-                    {'image': 'assets/slide1.png', 'route': '/offers'},
-                    {'image': 'assets/slide2.png', 'route': '/offers'},
-                  ].map((item) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          item['route'] ?? '/defaultRoute',
-                        );
-                      },
-                      child: Builder(
-                        builder: (BuildContext context) {
-                          return Container(
-                            width: screenSize.width * 0.9,
-                            margin: EdgeInsets.symmetric(horizontal: 5.0),
-                            decoration: BoxDecoration(
-                              color: Colors.amber,
-                            ),
-                            child: Image.asset(
-                              item['image'] ?? 'assets/defaultImage.png',
-                              fit: BoxFit.cover,
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  }).toList(),
-                  options: CarouselOptions(
-                    height: screenSize.height * 0.15,
-                    autoPlay: true,
-                    enlargeCenterPage: true,
-                    autoPlayInterval: Duration(seconds: 6),
-                    autoPlayAnimationDuration: Duration(milliseconds: 800),
-                    autoPlayCurve: Curves.fastOutSlowIn,
-                    pauseAutoPlayOnTouch: true,
-                    viewportFraction: 1.0,
-                  ),
-                ),
-                SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/fs_category',
-                            arguments: {
-                              'title': "Home Made Restaurants",
-                              'type': "homemade"
-                            });
-                      },
-                      child: CategoryTile(
-                        title: "Home Made",
-                        image: "assets/home_made.png",
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/fs_category',
-                            arguments: {
-                              'title': "Home Made Restaurants",
-                              'type': "restaurant"
-                            });
-                      },
-                      child: CategoryTile(
-                        title: "Restuarent",
-                        image: "assets/restuarnt_logo.png",
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/fs_s_home', arguments: {
-                          'title': "entry.key",
-                          'type': "entry.key"
-                        });
-                      },
-                      child: CategoryTile(
-                        title: "Subscription",
-                        image: "assets/subscription_logo.png",
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 30),
-                categoryImages.isEmpty
-                    ? Center(child: CircularProgressIndicator())
-                    : SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: categoryImages.entries.map((entry) {
-                            return GestureDetector(
-                              onTap: () {
-                                Navigator.pushNamed(context, '/fs_dishes',
-                                    arguments: {
-                                      'title': entry.key,
-                                      'type': entry.key
-                                    });
-                              },
-                              child: CategoryCard(
-                                title: entry.key,
-                                image: entry.value,
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                SizedBox(height: 20),
-                Text(
-                  "Popular now",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 20),
-                FDbox == null
-                    ? Center(child: CircularProgressIndicator())
-                    : ValueListenableBuilder(
-                        valueListenable: FDbox!.listenable(),
-                        builder: (context, Box<Food_db> items, _) {
-                          if (items.isEmpty) {
-                            return Center(child: Text('No items found.'));
-                          } else {
-                            List<Food_db> sortedItems = items.values.toList();
-                            sortedItems.sort((a, b) =>
-                                b.productRating.compareTo(a.productRating));
-
-                            return GridView.builder(
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemCount: sortedItems.length,
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 10,
-                                childAspectRatio: 2 / 3,
-                              ),
-                              itemBuilder: (context, index) {
-                                var item = sortedItems[index];
-                                if (item.productRating > 4.4) {
-                                  return GestureDetector(
-                                    onTap: () {
-                                      Navigator.pushNamed(
-                                          context, '/fs_product',
-                                          arguments: {
-                                            'id': item.productId,
-                                            'title': item.productTitle,
-                                            'price': item.productPrice.toInt(),
-                                            'image': item.productImg,
-                                            'description': item.productDesc,
-                                            'shop': item.productOwnership,
-                                          });
-                                    },
-                                    child: FoodTile(
-                                      title: item.productTitle,
-                                      price: item.productPrice.toInt(),
-                                      image: item.productImg,
-                                      rating: item.productRating,
-                                    ),
-                                  );
-                                }
-                                return null;
-                              },
-                            );
-                          }
-                        },
-                      ),
-              ],
-            ),
-          ),
-        ),
-        bottomNavigationBar: BottomNavBar(
-          onTabChange: (index) => navigateBottomBar(index),
-        )
+      ),
     );
   }
 }
