@@ -2,11 +2,12 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/FS_FavoriteScreen.dart';
+import 'package:ecub_s1_v2/service_page/FoodService/FS_HomeScreenContent.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/FS_Profile.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/FS_Search.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:ecub_s1_v2/components/bottom_nav_fs.dart';  // Make sure this imports the correct BottomNavBar
+import 'package:ecub_s1_v2/components/bottom_nav_fs.dart';
 
 class FS_HomeScreen extends StatefulWidget {
   @override
@@ -45,11 +46,12 @@ class _FS_HomeScreenState extends State<FS_HomeScreen> {
     }
   }
 
-
   int getTotalCartItemsCount() {
     int totalItems = 0;
-    for (var cartItem in _cartBox!.values) {
-      totalItems += cartItem.ItemCount.toInt();
+    if (_cartBox != null) {
+      for (var cartItem in _cartBox!.values) {
+        totalItems += cartItem.ItemCount.toInt();
+      }
     }
     return totalItems;
   }
@@ -64,7 +66,7 @@ class _FS_HomeScreenState extends State<FS_HomeScreen> {
     FS_HomeScreenContent(),
     FS_Search(),
     FS_FavoriteScreen(),
-    FS_Profile()
+    FS_Profile(),
   ];
 
   @override
@@ -143,207 +145,6 @@ class _FS_HomeScreenState extends State<FS_HomeScreen> {
 }
 
 
-
-class FS_HomeScreenContent extends StatelessWidget {
-  final Box<Food_db>? FDbox;
-
-  FS_HomeScreenContent({this.FDbox,});
-
-  Map<String, String> categoryImages = {};
-  @override
-  Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-
-    return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Good food.\nFast delivery.",
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 20),
-            CarouselSlider(
-              items: [
-                {'image': 'assets/slide1.png', 'route': '/offers'},
-                {'image': 'assets/slide2.png', 'route': '/offers'},
-              ].map((item) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      item['route'] ?? '/defaultRoute',
-                    );
-                  },
-                  child: Builder(
-                    builder: (BuildContext context) {
-                      return Container(
-                        width: screenSize.width * 0.9,
-                        margin: EdgeInsets.symmetric(horizontal: 5.0),
-                        decoration: BoxDecoration(
-                          color: Colors.amber,
-                        ),
-                        child: Image.asset(
-                          item['image'] ?? 'assets/defaultImage.png',
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    },
-                  ),
-                );
-              }).toList(),
-              options: CarouselOptions(
-                height: screenSize.height * 0.15,
-                autoPlay: true,
-                enlargeCenterPage: true,
-                autoPlayInterval: Duration(seconds: 6),
-                autoPlayAnimationDuration: Duration(milliseconds: 800),
-                autoPlayCurve: Curves.fastOutSlowIn,
-                pauseAutoPlayOnTouch: true,
-                viewportFraction: 1.0,
-              ),
-            ),
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/fs_category',
-                        arguments: {
-                          'title': "Home Made Restaurants",
-                          'type': "homemade"
-                        });
-                  },
-                  child: CategoryTile(
-                    title: "Home Made",
-                    image: "assets/home_made.png",
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/fs_category',
-                        arguments: {
-                          'title': "Home Made Restaurants",
-                          'type': "restaurant"
-                        });
-                  },
-                  child: CategoryTile(
-                    title: "Restuarent",
-                    image: "assets/restuarnt_logo.png",
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/fs_s_home', arguments: {
-                      'title': "entry.key",
-                      'type': "entry.key"
-                    });
-                  },
-                  child: CategoryTile(
-                    title: "Subscription",
-                    image: "assets/subscription_logo.png",
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 30),
-            categoryImages.isEmpty
-                ? Center(child: CircularProgressIndicator())
-                : SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: categoryImages.entries.map((entry) {
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, '/fs_dishes',
-                          arguments: {
-                            'title': entry.key,
-                            'type': entry.key
-                          });
-                    },
-                    child: CategoryCard(
-                      title: entry.key,
-                      image: entry.value,
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            SizedBox(height: 20),
-            Text(
-              "Popular now",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 20),
-            FDbox == null
-                ? Center(child: CircularProgressIndicator())
-                : ValueListenableBuilder(
-              valueListenable: FDbox!.listenable(),
-              builder: (context, Box<Food_db> items, _) {
-                if (items.isEmpty) {
-                  return Center(child: Text('No items found.'));
-                } else {
-                  List<Food_db> sortedItems = items.values.toList();
-                  sortedItems.sort((a, b) =>
-                      b.productRating.compareTo(a.productRating));
-
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: sortedItems.length,
-                    gridDelegate:
-                    SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 2 / 3,
-                    ),
-                    itemBuilder: (context, index) {
-                      var item = sortedItems[index];
-                      if (item.productRating > 4.4) {
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(
-                                context, '/fs_product',
-                                arguments: {
-                                  'id': item.productId,
-                                  'title': item.productTitle,
-                                  'price': item.productPrice.toInt(),
-                                  'image': item.productImg,
-                                  'description': item.productDesc,
-                                  'shop': item.productOwnership,
-                                });
-                          },
-                          child: FoodTile(
-                            title: item.productTitle,
-                            price: item.productPrice.toInt(),
-                            image: item.productImg,
-                            rating: item.productRating,
-                          ),
-                        );
-                      }
-                      return null;
-                    },
-                  );
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class CategoryCard extends StatelessWidget {
   final String title;
   final String image;
@@ -388,9 +189,9 @@ class FoodTile extends StatelessWidget {
 
   FoodTile(
       {required this.title,
-      required this.price,
-      required this.image,
-      required this.rating});
+        required this.price,
+        required this.image,
+        required this.rating});
 
   @override
   Widget build(BuildContext context) {
@@ -471,14 +272,16 @@ class FoodTile extends StatelessWidget {
 class CategoryTile extends StatelessWidget {
   final String title;
   final String image;
+  final VoidCallback onTap;
 
-  CategoryTile({required this.title, required this.image});
+  CategoryTile({required this.title, required this.image, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
 
     return GestureDetector(
+      onTap: onTap,
       child: Container(
         width: screenSize.width * 0.25,
         height: screenSize.width * 0.3,
