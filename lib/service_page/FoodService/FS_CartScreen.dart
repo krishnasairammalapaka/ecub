@@ -14,6 +14,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
   Box<Food_db>? FDbox;
   Map<String, int> itemCounts = {};
   double totalAmount = 0;
+  double totalCalories = 0;
 
   @override
   void initState() {
@@ -28,6 +29,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
     setState(() {
       _initializeItemCounts();
       _calculateTotalAmount();
+      _calculateTotalCalories();
     });
   }
 
@@ -46,6 +48,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
     });
 
     _calculateTotalAmount();
+    _calculateTotalCalories();
   }
 
   void _decrementCount(String productId) {
@@ -60,6 +63,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
       }
     });
     _calculateTotalAmount();
+    _calculateTotalCalories();
   }
 
   void _deleteItem(String productId) {
@@ -68,6 +72,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
       _deleteCartItem(productId);
     });
     _calculateTotalAmount();
+    _calculateTotalCalories();
   }
 
   void _updateCartItem(String productId, int count) {
@@ -95,12 +100,35 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
     });
   }
 
-  void _onFloatingButtonPressed() {
-        if (_cartBox!.values.length <= 2) {
-            List<Food_db> foodItems = FDbox!.values.toList();
-      foodItems.shuffle();       List<Food_db> selectedItems = foodItems.take(2).toList();
+  void _calculateTotalCalories() {
+    totalCalories = 0;
+    itemCounts.forEach((productId, count) {
+      final product = FDbox!.values.firstWhereOrNull(
+              (element) => element.productId == productId);
+      if (product != null) {
+        // Static calorie data
+        final calories = _getCaloriesForProduct(product.productTitle);
+        totalCalories += calories * count;
+      }
+    });
+  }
 
-            showDialog(
+  double _getCaloriesForProduct(String productTitle) {
+    // Static calorie data
+    const calorieData = {
+      'Veggie Pizza': 150.0,
+      'Steak': 200.0,
+      'Grilled Salmon': 150.0,
+      'Beef Burger': 75.0,
+      // Add more products and their calorie information here
+    };
+
+    return calorieData[productTitle] ?? 0;
+  }
+
+  void _onFloatingButtonPressed() {
+    if (_cartBox!.values.length <= 2) {
+      showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
@@ -109,16 +137,8 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                                    Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildFoodTile(context, selectedItems[0]),
-                      _buildFoodTile(context, selectedItems[1]),
-                    ],
-                  ),
-                  SizedBox(height: 16),
                   Text(
-                    'This much calories are not enough to complete your appetite.',
+                    'This much calories are not enough to complete your appetite. Try adding more items to your cart.',
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -127,7 +147,9 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
             actions: <Widget>[
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop();                   _navigateToCheckout();                 },
+                  Navigator.of(context).pop();
+                  _navigateToCheckout();
+                },
                 child: Text('OK'),
               ),
             ],
@@ -135,92 +157,8 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
         },
       );
     } else {
-            final itemsWithCount = itemCounts.entries
-          .where((entry) => entry.value > 0)
-          .map((entry) => {
-        'id': entry.key,
-        'count': entry.value,
-      })
-          .toList();
-
-      Navigator.pushNamed(
-        context,
-        '/fs_checkout',
-        arguments: {
-          'itemsWithCount': itemsWithCount,
-          'totalAmount': totalAmount,
-        },
-      );
+      _navigateToCheckout();
     }
-  }
-
-  Widget _buildFoodTile(BuildContext context, Food_db foodItem) {
-    return Container(
-      width: 120,
-      margin: EdgeInsets.all(8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8.0),
-            child: Image.asset(
-              foodItem.productImg,
-              width: 120,
-              height: 120,
-              fit: BoxFit.cover,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            foodItem.productTitle,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            '₹ ${foodItem.productPrice}',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF0D5EF9),
-            ),
-          ),
-          SizedBox(height: 8),
-          ElevatedButton.icon(
-            onPressed: () {
-              _addToCart(foodItem);               Navigator.of(context).pop();             },
-            icon: Icon(Icons.shopping_cart),
-            label: Text('Add'),
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white, backgroundColor: Color(0xFF0D5EF9),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _addToCart(Food_db foodItem) {
-                setState(() {
-      var existingItem = _cartBox!.values.firstWhereOrNull(
-            (item) => item.ItemId == foodItem.productId,
-      );
-
-      if (existingItem == null) {
-        _cartBox!.add(Cart_Db(ItemId: foodItem.productId, ItemCount: 1, UserId: '1', key: 0));
-      } else {
-        existingItem.ItemCount += 1;
-        existingItem.save();
-      }
-
-            _initializeItemCounts();
-      _calculateTotalAmount();
-    });
   }
 
   void _navigateToCheckout() {
@@ -238,13 +176,10 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
       arguments: {
         'itemsWithCount': itemsWithCount,
         'totalAmount': totalAmount,
+        'totalCalories': totalCalories,
       },
     );
   }
-
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -262,9 +197,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
             ),
             IconButton(
               icon: Icon(Icons.search, color: Colors.white),
-              onPressed: () {
-
-              },
+              onPressed: () {},
             ),
           ],
         ),
@@ -303,9 +236,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
                             itemCounts[productId] ?? item.ItemCount.toInt();
 
                         return GestureDetector(
-                          onTap: () {
-
-                          },
+                          onTap: () {},
                           child: CartItemCard(
                             productDetails: productDetails,
                             itemCount: itemCounts[productId]!,
@@ -318,6 +249,13 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
                     );
                   }
                 },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Total Calories: $totalCalories cal',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -365,6 +303,7 @@ class CartItemCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Price: ₹ ${productDetails.productPrice}'),
+            Text('Calories: ${_getCaloriesForProduct(productDetails.productTitle)} cal'),
             Row(
               children: [
                 IconButton(
@@ -387,13 +326,16 @@ class CartItemCard extends StatelessWidget {
       ),
     );
   }
+
+  double _getCaloriesForProduct(String productTitle) {
+    const calorieData = {
+      'Veggie Pizza': 150.0,
+      'Steak': 200.0,
+      'Grilled Salmon': 150.0,
+      'Beef Burger': 75.0,
+      // Add more products and their calorie information here
+    };
+
+    return calorieData[productTitle] ?? 0;
+  }
 }
-
-
-
-
-
-
-
-
-

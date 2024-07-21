@@ -38,9 +38,9 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
     packID = args['packID'];
     subscriptionType = args['subscription_type'];
 
-    if (subscriptionType == 'monthly') {
+    if (subscriptionType == 'Monthly') {
       endingDate = fromDate.add(Duration(days: 30));
-    } else if (subscriptionType == 'weekly') {
+    } else if (subscriptionType == 'Weekly') {
       endingDate = fromDate.add(Duration(days: 7));
     }
 
@@ -95,17 +95,18 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
       final packData = packDoc.data()!;
       int packPrice;
 
-      if (subscriptionType == 'weekly') {
+      if (subscriptionType == 'Weekly') {
         packPrice = packData['pack_price_w'];
-      } else if (subscriptionType == 'monthly') {
+      } else if (subscriptionType == 'Monthly') {
         packPrice = packData['pack_price_m'];
       } else {
-        packPrice = packData['pack_price_w'] /
-            7; // Assuming daily price for custom dates
+        packPrice = (packData['pack_price_m'] /7).toInt(); // Assuming daily price for custom dates
       }
 
+      print(packPrice);
+
       setState(() {
-        if (subscriptionType == 'weekly' || subscriptionType == 'monthly') {
+        if (subscriptionType == 'Weekly' || subscriptionType == 'Monthly' || subscriptionType == 'Customized Dates') {
           price = packPrice;
         } else {
           int days = endingDate.difference(fromDate).inDays + 1;
@@ -288,9 +289,15 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                           'snackIsOn': snack['isOn'],
                           'dinnerIsOn': dinner['isOn'],
                         });
+
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(userEmail)
+                            .set({'isPackSubs':true});
                       }
+
                     },
-                    child: Text('Finish'),
+                    child: Text('Order'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF0D5EF9),
                       foregroundColor: Colors.white,

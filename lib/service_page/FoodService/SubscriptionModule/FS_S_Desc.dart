@@ -28,7 +28,7 @@ class FS_S_Desc extends StatefulWidget {
 
 class _FS_S_DescState extends State<FS_S_Desc> {
   Future<DocumentSnapshot<Map<String, dynamic>>>? futurePack;
-  String selectedOption = 'weekly';
+  String selectedOption = 'Weekly';
 
   @override
   void didChangeDependencies() {
@@ -170,7 +170,7 @@ class _FS_S_DescState extends State<FS_S_Desc> {
                 selectedOption = newValue!;
               });
             },
-            items: <String>['weekly', 'monthly', 'customized dates']
+            items: <String>['Weekly', 'Monthly', 'Customized Dates']
                 .map<DropdownMenuItem<String>>((String value) {
               return DropdownMenuItem<String>(
                 value: value,
