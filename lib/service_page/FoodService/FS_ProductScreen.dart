@@ -511,6 +511,27 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                   ),
 
                   SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Text('Sort by: '),
+                      DropdownButton<String>(
+                        value: sortOrder,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            sortOrder = newValue!;
+                            _sortComments();
+                          });
+                        },
+                        items: <String>['newest', 'oldest']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
 
                   Text(
                     'Comments',
@@ -614,34 +635,8 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                     ],
                   ),
                   SizedBox(height: 20),
-                  Text(
-                    'Comments',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Text('Sort by: '),
-                      DropdownButton<String>(
-                        value: sortOrder,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            sortOrder = newValue!;
-                            _sortComments();
-                          });
-                        },
-                        items: <String>['newest', 'oldest']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
+
+
                   ListView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
@@ -673,11 +668,76 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
               ),
             ),
           ),
-          // Your existing code...
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              color: Colors.white,
+              padding: EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  FloatingActionButton(
+                    onPressed: () {
+                      setState(() {
+                        count = count > 1 ? count - 1 : 1;
+                      });
+                    },
+                    child: Icon(Icons.remove),
+                  ),
+                  Text('$count'),
+                  FloatingActionButton(
+                    onPressed: () {
+                      setState(() {
+                        count++;
+                      });
+                    },
+                    child: Icon(Icons.add),
+                  ),
+
+
+                  ElevatedButton(
+                    onPressed: isProductInCart
+                        ? null
+                        : () {
+                      if (checkOwnership(productId)) {
+                        addToCart();
+                      } else {
+                        showOwnershipConflictDialog();
+                      }
+                    },
+                    child: Text(
+                      isProductInCart
+                          ? 'Already Added'
+                          : 'Add to Cart',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+
+  bool checkOwnership(String productId) {
+    final foodItem = FDbox?.values.firstWhere((food) => food.productId == productId);
+    final String? itemOwnership = foodItem?.productOwnership;
+
+    final existingItems = _cartBox.values.toList();
+    if (existingItems.isNotEmpty) {
+      final firstItemOwnership = FDbox?.values.firstWhere((food) => food.productId == existingItems.first.ItemId).productOwnership;
+      if (firstItemOwnership != itemOwnership) {
+        return false;
+      }
+    }
+    return true;
+  }
+
 
   int getTotalCartItemsCount() {
     final cartItems = _cartBox.values.toList();
