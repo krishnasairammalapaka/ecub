@@ -70,7 +70,7 @@ void main() async {
       Food_db(
           productId: '1',
           productTitle: 'Steak',
-          productPrice: 120,
+          productPrice: 120.00,
           productImg: 'assets/foods/steak.png',
           productDesc:
           'Delicious and juicy steak with garlic and butter, served with asparagus.',
@@ -84,7 +84,7 @@ void main() async {
       Food_db(
           productId: '2',
           productTitle: 'Chicken Quinoa',
-          productPrice: 80,
+          productPrice: 80.00,
           productImg: 'assets/foods/quinoa.png',
           productDesc:
           'Healthy and flavorful dish with grilled chicken, quinoa, and Mediterranean spices.',
@@ -98,7 +98,7 @@ void main() async {
       Food_db(
           productId: '3',
           productTitle: 'French Fries',
-          productPrice: 40,
+          productPrice: 40.00,
           productImg: 'assets/foods/frfi.jpeg',
           productDesc:
           'Healthy and flavorful dish with grilled chicken, quinoa, and Mediterranean spices.',
@@ -112,7 +112,7 @@ void main() async {
       Food_db(
           productId: '4',
           productTitle: 'Chicken Quinoa',
-          productPrice: 45,
+          productPrice: 45.00,
           productImg: 'assets/foods/quinoa.png',
           productDesc:
           'Healthy and flavorful dish with grilled chicken, quinoa, and Mediterranean spices.',
@@ -126,7 +126,7 @@ void main() async {
       Food_db(
           productId: '5',
           productTitle: 'Veggie Pizza',
-          productPrice: 60,
+          productPrice: 60.00,
           productImg: 'assets/foods/pizza.jpg',
           productDesc:
           'Classic pizza topped with fresh vegetables, mozzarella cheese, and tomato sauce.',
@@ -140,7 +140,7 @@ void main() async {
       Food_db(
           productId: '6',
           productTitle: 'Pasta Carbonara',
-          productPrice: 70,
+          productPrice: 70.00,
           productImg: 'assets/foods/pasta.jpg',
           productDesc:
           'Creamy pasta carbonara with bacon, parmesan cheese, and black pepper.',
@@ -154,7 +154,7 @@ void main() async {
       Food_db(
           productId: '7',
           productTitle: 'Grilled Salmon',
-          productPrice: 150,
+          productPrice: 150.00,
           productImg: 'assets/foods/Salmon.jpg',
           productDesc:
           'Freshly grilled salmon fillet served with lemon butter sauce and vegetables.',
@@ -168,7 +168,7 @@ void main() async {
       Food_db(
           productId: '8',
           productTitle: 'Caesar Salad',
-          productPrice: 50,
+          productPrice: 50.00,
           productImg: 'assets/foods/salad.jpg',
           productDesc:
           'Crispy romaine lettuce, croutons, parmesan cheese, and Caesar dressing.',
@@ -182,7 +182,7 @@ void main() async {
       Food_db(
           productId: '9',
           productTitle: 'Beef Burger',
-          productPrice: 90,
+          productPrice: 90.00,
           productImg: 'assets/foods/burger.jpg',
           productDesc:
           'Juicy beef patty with lettuce, tomato, cheese, and special sauce in a sesame bun.',
@@ -196,7 +196,7 @@ void main() async {
       Food_db(
           productId: '10',
           productTitle: 'Chocolate Cake',
-          productPrice: 60,
+          productPrice: 60.00,
           productImg: 'assets/foods/cake.jpg',
           productDesc:
           'Rich and moist chocolate cake with a creamy chocolate frosting.',
@@ -210,7 +210,7 @@ void main() async {
       Food_db(
           productId: '11',
           productTitle: 'Apple Pie',
-          productPrice: 55,
+          productPrice: 55.00,
           productImg: 'assets/foods/apple_pie.jpg',
           productDesc:
           'Classic homemade apple pie with a flaky crust and sweet apple filling.',
@@ -224,7 +224,7 @@ void main() async {
       Food_db(
           productId: '12',
           productTitle: 'Lasagna',
-          productPrice: 90,
+          productPrice: 90.00,
           productImg: 'assets/foods/lasagna.jpg',
           productDesc:
           'Layered lasagna with rich meat sauce, creamy ricotta, and melted mozzarella.',
@@ -238,7 +238,7 @@ void main() async {
       Food_db(
           productId: '13',
           productTitle: 'Chicken Curry',
-          productPrice: 70,
+          productPrice: 70.00,
           productImg: 'assets/foods/chicken_curry.jpg',
           productDesc:
           'Spicy and flavorful chicken curry made with fresh spices and herbs.',
@@ -252,7 +252,7 @@ void main() async {
       Food_db(
           productId: '14',
           productTitle: 'Vegetable Stir-fry',
-          productPrice: 50,
+          productPrice: 50.00,
           productImg: 'assets/foods/veg_stirfry.jpg',
           productDesc:
           'Fresh and crunchy vegetable stir-fry with a tangy soy sauce.',
@@ -266,7 +266,7 @@ void main() async {
       Food_db(
           productId: '15',
           productTitle: 'Banana Bread',
-          productPrice: 40,
+          productPrice: 40.00,
           productImg: 'assets/foods/banana_bread.jpg',
           productDesc:
           'Moist and flavorful banana bread with a hint of cinnamon.',

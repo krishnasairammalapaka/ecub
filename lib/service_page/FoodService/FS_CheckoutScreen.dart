@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
-import 'package:intl/intl.dart';
 import 'package:twilio_flutter/twilio_flutter.dart';
 import 'package:ecub_s1_v2/models/CheckoutHistory_DB.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class FS_CheckoutScreen extends StatefulWidget {
   @override
@@ -16,11 +17,11 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
   Box<Food_db>? FDbox;
   Box<CheckoutHistory_DB>? _checkoutHistoryBox;
   double totalAmount = 0;
-  String userName = 'Karuppasamy Karuppiah';
-  String userAddress = '123 Main Street, Springfield';
-  String userPhoneNumber = '+918778997952';
+  String userId = '';
+  String userName = '';
+  String userAddress = '';
+  String userPhoneNumber = '';
   String selectedPaymentOption = 'Cash on Delivery';
-
   final twilioFlutter = TwilioFlutter(
     accountSid: 'ACd609662616433afac55654bd43d55f46',
     authToken: '4770c2b10a830ae10b0027026dcbe029',
@@ -30,16 +31,37 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeUser();
     _openBoxes();
   }
 
+  Future<void> _initializeUser() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      userId = user.email!;
+      await _fetchUserDetails();
+    }
+  }
+
   Future<void> _openBoxes() async {
-    await Hive.initFlutter();
     _cartBox = await Hive.openBox<Cart_Db>('cartItems');
     FDbox = await Hive.openBox<Food_db>('foodDbBox');
     _checkoutHistoryBox = await Hive.openBox<CheckoutHistory_DB>('checkoutHistory');
     _calculateTotalAmount();
     setState(() {});
+  }
+
+  Future<void> _fetchUserDetails() async {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    print(userDoc);
+    setState(() {
+      userName = userDoc['firstname'];
+      userAddress = userDoc['email'];
+      userPhoneNumber = userDoc['phonenumber'];
+    });
+
+    // print(userAddress);
+    // print(userPhoneNumber);
   }
 
   void _calculateTotalAmount() {
@@ -88,11 +110,16 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
               child: Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 setState(() {
                   userName = tempName;
                   userAddress = tempAddress;
                   userPhoneNumber = tempPhoneNumber;
+                });
+                await FirebaseFirestore.instance.collection('users').doc(userId).update({
+                  'name': userName,
+                  'address': userAddress,
+                  'phoneNumber': userPhoneNumber,
                 });
                 Navigator.of(context).pop();
               },
@@ -140,9 +167,8 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
 
     // Transfer cart data to checkout history
     for (var item in _cartBox!.values) {
-
       final newItem = CheckoutHistory_DB(
-        UserId: '1',
+        UserId: userId,
         ItemId: item.ItemId,
         ItemCount: item.ItemCount,
         TimeStamp: "",
@@ -247,25 +273,6 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
                 );
               }).toList(),
             ),
-            // Uncomment the following block if you need to handle online or card payment options
-            // if (selectedPaymentOption == 'Card Payment') ...[
-            //   SizedBox(height: 16),
-            //   ElevatedButton(
-            //     onPressed: () {
-            //       Navigator.pushNamed(context, '/card');
-            //     },
-            //     child: Text('Enter Card Details'),
-            //   ),
-            // ]
-            // else if (selectedPaymentOption == 'Online Payment') ...[
-            //   SizedBox(height: 16),
-            //   ElevatedButton(
-            //     onPressed: () {
-            //       Navigator.pushNamed(context, '/card');
-            //     },
-            //     child: Text('Enter Card Details'),
-            //   ),
-            // ],
           ],
         ),
       ),

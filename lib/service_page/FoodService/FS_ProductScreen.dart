@@ -58,7 +58,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   Box<Food_db>? FDbox;
   late Box<Favourites_DB> _favouritesBox;
   int count = 1;
-  late double pricePerItem;
+  late int pricePerItem;
   late String productId;
   late String ShopUsername;
   bool isProductInCart = false;
@@ -151,7 +151,9 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
             TextButton(
               onPressed: () async {
                 Navigator.of(context).pop(); // Close the dialog
-                // await clearCart('1'); // Clear the cart
+                // Clear the cart
+                await _cartBox.clear();
+                setState(() {});
                 addToCart(); // Add the new item to the cart
               },
               child: Text('Reset Cart'),

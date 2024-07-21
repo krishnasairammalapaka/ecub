@@ -60,7 +60,7 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
         foodItems = allFoodItems.map((item) => {
           'name': item.productTitle,
           'restaurant': item.productOwnership,
-          'price': item.productPrice,
+          'price': item.productPrice.toInt(),
           'image': item.productImg,
           'id': item.productId,
           'desc': item.productDesc
@@ -198,7 +198,7 @@ class CategoryTab extends StatelessWidget {
 class MenuItem extends StatelessWidget {
   final String id;
   final String name;
-  final double price;
+  final int price;
   final String image;
   final String Desc;
   final String restaurant;
