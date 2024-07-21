@@ -37,6 +37,9 @@ class Food_db {
   @HiveField(10)
   final String productType;
 
+  @HiveField(11)
+  final int calories;
+
 
   Food_db({
     required this.productId,
@@ -50,5 +53,6 @@ class Food_db {
     required this.productMainCategory,
     required this.productPrepTime,
     required this.productType,
+    required this.calories
   });
 }

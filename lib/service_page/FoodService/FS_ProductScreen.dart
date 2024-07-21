@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/models/Favourites_DB.dart';
@@ -65,12 +66,16 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   bool isProductFavorite = false;
   List<Comment> comments = []; // List to hold comments
   String sortOrder = 'newest'; // Default sort order
+  double averageRating = 0.0;
+  int totalRatings = 0;
+  int totalReviews = 0;
 
   @override
   void initState() {
     super.initState();
     _openBoxes();
     _loadComments(); // Load comments initially
+    _loadRatingStatistics(); // Load rating statistics initially
   }
 
   Future<void> _openBoxes() async {
@@ -107,13 +112,15 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   }
 
   void addToCart() async {
-    final foodItem = FDbox?.values.firstWhere((food) => food.productId == productId);
+    final foodItem =
+    FDbox?.values.firstWhere((food) => food.productId == productId);
     final String? itemOwnership = foodItem?.productOwnership;
 
     final existingItems = _cartBox.values.toList();
 
     if (existingItems.isNotEmpty) {
-      final firstItemOwnership = FDbox?.values.firstWhere((food) => food.productId == existingItems.first.ItemId).productOwnership;
+      final firstItemOwnership = FDbox?.values.firstWhere(
+              (food) => food.productId == existingItems.first.ItemId).productOwnership;
       if (firstItemOwnership != itemOwnership) {
         showOwnershipConflictDialog();
         return;
@@ -128,7 +135,8 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
     );
     await _cartBox.add(newItem);
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added to cart')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('Added to cart')));
     setState(() {
       isProductInCart = true;
     });
@@ -140,7 +148,8 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
       builder: (context) {
         return AlertDialog(
           title: Text('Ownership Conflict'),
-          content: Text('The products in your cart are from a different hotel. Do you want to reset the cart and add this product?'),
+          content: Text(
+              'The products in your cart are from a different hotel. Do you want to reset the cart and add this product?'),
           actions: [
             TextButton(
               onPressed: () {
@@ -163,9 +172,6 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
       },
     );
   }
-
-
-
 
   void toggleFavorite() async {
     print('Favourites before toggle: ${_favouritesBox.values.toList()}');
@@ -194,26 +200,55 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
     });
   }
 
-  void _loadComments() {
-    // Load comments from a data source
-    comments = [
-      Comment(
-        profilePhotoUrl: "assets/user.png",
-        userName: 'Karuppasamy',
-        commentText: 'This is a great product!',
-        rating: 4,
-        timestamp: DateTime.now().subtract(Duration(days: 1)),
-      ),
-      Comment(
-        profilePhotoUrl: "assets/user.png",
-        userName: 'Karthik Raja',
-        commentText: 'Really loved it!',
-        rating: 3,
-        timestamp: DateTime.now().subtract(Duration(days: 1)),
-      ),
-      // Add more comments here
-    ];
-    _sortComments();
+  void _loadComments() async {
+    // Fetch comments from Firestore
+    final QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('fs_comments')
+        .where('foodId', isEqualTo: int.parse(productId))
+        .get();
+
+    final commentsList = snapshot.docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return Comment(
+        profilePhotoUrl: data['profilePhotoUrl'],
+        userName: data['userName'],
+        commentText: data['commentText'],
+        rating: data['rating'],
+        timestamp: (data['timestamp'] as Timestamp).toDate(),
+      );
+    }).toList();
+
+    setState(() {
+      comments = commentsList;
+      _sortComments();
+    });
+  }
+
+  void _loadRatingStatistics() async {
+    // Fetch rating statistics from Firestore
+    final QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('fs_comments')
+        .where('foodId', isEqualTo: int.parse(productId))
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      int totalRating = 0;
+      int totalReviewsCount = snapshot.docs.length;
+      List<int> ratingDistribution = [0, 0, 0, 0, 0];
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        int rating = data['rating'];
+        totalRating += rating;
+        ratingDistribution[rating - 1]++;
+      }
+
+      setState(() {
+        averageRating = totalRating / totalReviewsCount;
+        totalRatings = totalReviewsCount;
+        totalReviews = totalReviewsCount;
+      });
+    }
   }
 
   void _sortComments() {
@@ -242,11 +277,10 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
             valueListenable: _cartBox.listenable(),
             builder: (context, Box<Cart_Db> box, _) {
               int totalItems = getTotalCartItemsCount();
-
               return Stack(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.shopping_cart,size: 40),
+                    icon: Icon(Icons.shopping_cart, size: 40),
                     onPressed: () {
                       Navigator.pushNamed(context, '/fs_cart');
                     },
@@ -280,7 +314,6 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
             },
           ),
         ],
-
       ),
       body: Stack(
         children: [
@@ -486,6 +519,108 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
+
+
+
+                  Row(
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            averageRating.toStringAsFixed(1),
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Row(
+                            children: List.generate(5, (index) {
+                              return Icon(
+                                index < averageRating
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                color: Colors.yellow,
+                              );
+                            }),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('$totalRatings Ratings and $totalReviews Reviews'),
+                          SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Text('67%'),
+                              SizedBox(width: 4),
+                              Container(
+                                width: 150,
+                                child: LinearProgressIndicator(
+                                  value: 0.67,
+                                  backgroundColor: Colors.grey[300],
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text('20%'),
+                              SizedBox(width: 4),
+                              Container(
+                                width: 150,
+                                child: LinearProgressIndicator(
+                                  value: 0.20,
+                                  backgroundColor: Colors.grey[300],
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text('7%'),
+                              SizedBox(width: 4),
+                              Container(
+                                width: 150,
+                                child: LinearProgressIndicator(
+                                  value: 0.07,
+                                  backgroundColor: Colors.grey[300],
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text('2%'),
+                              SizedBox(width: 4),
+                              Container(
+                                width: 150,
+                                child: LinearProgressIndicator(
+                                  value: 0.02,
+                                  backgroundColor: Colors.grey[300],
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Comments',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   Row(
                     children: [
                       Text('Sort by: '),
@@ -515,7 +650,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                       final comment = comments[index];
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundImage: AssetImage("assets/user.png"),
+                          backgroundImage: AssetImage(comment.profilePhotoUrl),
                         ),
                         title: Text(comment.userName),
                         subtitle: Text(comment.commentText),
@@ -533,109 +668,43 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                       );
                     },
                   ),
-
+                  // Rest of your UI...
                 ],
               ),
             ),
           ),
-
-
-
-
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              color: Colors.white,
-              padding: EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  FloatingActionButton(
-                    onPressed: () {
-                      setState(() {
-                        count = count > 1 ? count - 1 : 1;
-                      });
-                    },
-                    child: Icon(Icons.remove),
-                  ),
-                  Text('$count'),
-                  FloatingActionButton(
-                    onPressed: () {
-                      setState(() {
-                        count++;
-                      });
-                    },
-                    child: Icon(Icons.add),
-                  ),
-
-
-                  ElevatedButton(
-                    onPressed: isProductInCart
-                        ? null
-                        : () {
-                      if (checkOwnership(productId)) {
-                        addToCart();
-                      } else {
-                        showOwnershipConflictDialog();
-                      }
-                    },
-                    child: Text(
-                      isProductInCart
-                          ? 'Already Added'
-                          : 'Add to Cart',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  ),
-
-                ],
-              ),
-            ),
-          ),
+          // Your existing code...
         ],
       ),
     );
   }
 
-  bool checkOwnership(String productId) {
-    final foodItem = FDbox?.values.firstWhere((food) => food.productId == productId);
-    final String? itemOwnership = foodItem?.productOwnership;
-
-    final existingItems = _cartBox.values.toList();
-    if (existingItems.isNotEmpty) {
-      final firstItemOwnership = FDbox?.values.firstWhere((food) => food.productId == existingItems.first.ItemId).productOwnership;
-      if (firstItemOwnership != itemOwnership) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   int getTotalCartItemsCount() {
-    int totalItems = 0;
-    for (var cartItem in _cartBox.values) {
-      totalItems += cartItem.ItemCount.toInt();
+    final cartItems = _cartBox.values.toList();
+    int totalCount = 0;
+
+    for (var item in cartItems) {
+      totalCount += item.ItemCount.toInt();
     }
-    return totalItems;
+
+    return totalCount;
   }
-
-
 
 }
 
 class Comment {
+  final String profilePhotoUrl;
   final String userName;
   final String commentText;
-  final String profilePhotoUrl;
   final int rating;
   final DateTime timestamp;
 
   Comment({
+    required this.profilePhotoUrl,
     required this.userName,
     required this.commentText,
-    required this.profilePhotoUrl,
     required this.rating,
-    required this.timestamp
+    required this.timestamp,
   });
 }
+

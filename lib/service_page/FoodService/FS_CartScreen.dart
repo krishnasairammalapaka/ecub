@@ -106,59 +106,9 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
       final product = FDbox!.values.firstWhereOrNull(
               (element) => element.productId == productId);
       if (product != null) {
-        // Static calorie data
-        final calories = _getCaloriesForProduct(product.productTitle);
-        totalCalories += calories * count;
+        totalCalories += product.calories * count;
       }
     });
-  }
-
-  double _getCaloriesForProduct(String productTitle) {
-    // Static calorie data
-    const calorieData = {
-      'Veggie Pizza': 150.0,
-      'Steak': 200.0,
-      'Grilled Salmon': 150.0,
-      'Beef Burger': 75.0,
-      // Add more products and their calorie information here
-    };
-
-    return calorieData[productTitle] ?? 0;
-  }
-
-  void _onFloatingButtonPressed() {
-    if (_cartBox!.values.length <= 2) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Insufficient Calories'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'This much calories are not enough to complete your appetite. Try adding more items to your cart.',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _navigateToCheckout();
-                },
-                child: Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      _navigateToCheckout();
-    }
   }
 
   void _navigateToCheckout() {
@@ -262,7 +212,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _onFloatingButtonPressed,
+        onPressed: _navigateToCheckout,
         child: Icon(Icons.check),
         backgroundColor: Color(0xFF0D5EF9),
       ),
@@ -303,7 +253,7 @@ class CartItemCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Price: ₹ ${productDetails.productPrice}'),
-            Text('Calories: ${_getCaloriesForProduct(productDetails.productTitle)} cal'),
+            Text('Calories: ${productDetails.calories} cal'),
             Row(
               children: [
                 IconButton(
@@ -325,17 +275,5 @@ class CartItemCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  double _getCaloriesForProduct(String productTitle) {
-    const calorieData = {
-      'Veggie Pizza': 150.0,
-      'Steak': 200.0,
-      'Grilled Salmon': 150.0,
-      'Beef Burger': 75.0,
-      // Add more products and their calorie information here
-    };
-
-    return calorieData[productTitle] ?? 0;
   }
 }

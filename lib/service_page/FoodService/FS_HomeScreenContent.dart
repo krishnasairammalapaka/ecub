@@ -160,7 +160,7 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                       });
                     },
                     child: CategoryTile(
-                      title: "Restuarent",
+                      title: "Restaurant",
                       image: "assets/restuarnt_logo.png",
                     ),
                   ),

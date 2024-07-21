@@ -28,13 +28,14 @@ class FooddbAdapter extends TypeAdapter<Food_db> {
       productMainCategory: fields[8] as String,
       productPrepTime: fields[9] as String,
       productType: fields[10] as String,
+      calories: fields[11] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, Food_db obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.productId)
       ..writeByte(1)
@@ -56,7 +57,9 @@ class FooddbAdapter extends TypeAdapter<Food_db> {
       ..writeByte(9)
       ..write(obj.productPrepTime)
       ..writeByte(10)
-      ..write(obj.productType);
+      ..write(obj.productType)
+      ..writeByte(11)
+      ..write(obj.calories);
   }
 
   @override
