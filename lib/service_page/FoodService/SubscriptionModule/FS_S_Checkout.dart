@@ -246,7 +246,7 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
 
                       // Define the data you want to update in Firestore
                       final data = {
-                        'active':"True",
+                        'active':"cart",
                         'packID': packID,
                         'packName': packName,
                         'subscription_type': subscriptionType,

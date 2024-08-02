@@ -232,10 +232,10 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     await _cartBox!.clear();
     setState(() {});
 
-    await FirebaseFirestore.instance.collection('fs_cart').doc(userId).collection('packs').doc('info').set({'active':'True'});
+    await FirebaseFirestore.instance.collection('fs_cart').doc(userId).collection('packs').doc('info').update({'active':'True'});
 
     // Navigate to the profile page
-    Navigator.pushNamed(context, '/fs_profile');
+    Navigator.pushNamed(context, '/fs_home');
   }
 
   @override

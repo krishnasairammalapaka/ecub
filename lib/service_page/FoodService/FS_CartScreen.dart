@@ -47,7 +47,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
         .doc('info')
         .get();
 
-    if (packDoc.exists && packDoc.data()?['active'] == "True") {
+    if (packDoc.exists && packDoc.data()?['active'] == "cart") {
       setState(() {
         _isSubscriptionActive = true;
         subscriptionPack = packDoc.data();
@@ -193,7 +193,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
                   : ValueListenableBuilder(
                 valueListenable: _cartBox!.listenable(),
                 builder: (context, Box<Cart_Db> items, _) {
-                  if (items.isEmpty) {
+                  if (items.isEmpty && _isSubscriptionActive == false) {
                     return Center(child: Text('No items in the cart.'));
                   } else {
                     return ListView.builder(

@@ -83,11 +83,11 @@ class _FS_S_DescState extends State<FS_S_Desc> {
         .map((item) => item.id)
         .toSet();
 
-// Convert sets back to lists
+    // Convert sets back to lists
     List<MenuItem> selectedFoodItems = uniqueSelectedFoodItems.toList();
     List<String> selectedFoodIds = uniqueSelectedFoodIds.toList();
 
-// Debugging: Print selected food IDs
+    // Debugging: Print selected food IDs
     print('Selected Food: $selectedFoodItems');
     print('Selected Food IDs: $selectedFoodIds');
 
@@ -158,6 +158,7 @@ class _FS_S_DescState extends State<FS_S_Desc> {
                         );
                       } else {
                         List<MenuItem> foodItems = foodSnapshot.data!.map((foodData) {
+                          bool preSelected = shouldPreSelect(foodData['id']); // Add this line
                           return MenuItem(
                             id: foodData['id'],
                             name: foodData['productTitle'],
@@ -166,8 +167,11 @@ class _FS_S_DescState extends State<FS_S_Desc> {
                             desc: foodData['productDesc'],
                             restaurant: foodData['productOwnership'],
                             rating: foodData['productRating'],
+                            selected: preSelected, // Add this line
                           );
                         }).toList();
+
+                        selectedItemsNotifier.value = foodItems;
 
                         return SingleChildScrollView(
                           child: Padding(
@@ -239,6 +243,13 @@ class _FS_S_DescState extends State<FS_S_Desc> {
         ],
       ),
     );
+  }
+
+
+  bool shouldPreSelect(String foodId) {
+
+    List<String> preSelectedFoodIds = ['foodId1', 'foodId2', 'foodId3'];
+    return preSelectedFoodIds.contains(foodId);
   }
 }
 
