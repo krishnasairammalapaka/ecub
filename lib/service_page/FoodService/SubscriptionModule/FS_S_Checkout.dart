@@ -23,6 +23,7 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
   DateTime endingDate = DateTime.now().add(Duration(days: 7));
   int price = 0;
   late String packID;
+  late String packName;
   late String subscriptionType;
   late List<String> foodlist;
 
@@ -96,6 +97,7 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
     if (packDoc.exists) {
       final packData = packDoc.data()!;
       int packPrice;
+      packName = packData['pack_name'];
 
       if (subscriptionType == 'Weekly') {
         packPrice = packData['pack_price_w'] as int;
@@ -244,7 +246,9 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
 
                       // Define the data you want to update in Firestore
                       final data = {
+                        'active':"True",
                         'packID': packID,
+                        'packName': packName,
                         'subscription_type': subscriptionType,
                         'fromDate': fromDate,
                         'endingDate': endingDate,
@@ -271,33 +275,18 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                       // Update Firestore
                       await collectionRef.set(data);
 
+                      final CartcollectionRef = firestore
+                          .collection('fs_cart')
+                          .doc(userEmail)
+                          .collection('packs')
+                          .doc('info');
+
+                      await CartcollectionRef.set(data);
+
                       // Navigate to the next screen
                       Navigator.pushNamed(
                         context,
-                        '/fs_home',
-                        arguments: {
-                          'packID': packID,
-                          'subscription_type': subscriptionType,
-                          'fromDate': fromDate,
-                          'endingDate': endingDate,
-                          'breakfastCount': breakfast['count'],
-                          'lunchCount': lunch['count'],
-                          'snackCount': snack['count'],
-                          'dinnerCount': dinner['count'],
-                          'breakfastDays': breakfast['days'],
-                          'lunchDays': lunch['days'],
-                          'snackDays': snack['days'],
-                          'dinnerDays': dinner['days'],
-                          'breakfastTime': breakfast['time'].format(context),
-                          'lunchTime': lunch['time'].format(context),
-                          'snackTime': snack['time'].format(context),
-                          'dinnerTime': dinner['time'].format(context),
-                          'breakfastIsOn': breakfast['isOn'],
-                          'lunchIsOn': lunch['isOn'],
-                          'snackIsOn': snack['isOn'],
-                          'dinnerIsOn': dinner['isOn'],
-                          'totalPrice': price,
-                        },
+                        '/fs_cart'
                       );
                     } else {
                       print('User is not logged in.');
@@ -426,7 +415,7 @@ class _AlarmSettingState extends State<AlarmSetting> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Meals per Day: $mealCount',
+                    'Meals per Day: ',
                     style: TextStyle(fontSize: 16),
                   ),
                   IconButton(
@@ -441,6 +430,8 @@ class _AlarmSettingState extends State<AlarmSetting> {
                     }
                         : null,
                   ),
+                  Text('$mealCount',
+                    style: TextStyle(fontSize: 16),),
                   IconButton(
                     icon: Icon(Icons.add),
                     onPressed: () {

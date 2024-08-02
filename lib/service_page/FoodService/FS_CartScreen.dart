@@ -1,6 +1,8 @@
 import 'package:collection/collection.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore package
 import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
 
@@ -15,11 +17,14 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
   Map<String, int> itemCounts = {};
   double totalAmount = 0;
   double totalCalories = 0;
+  bool _isSubscriptionActive = false;
+  Map<String, dynamic>? subscriptionPack;
 
   @override
   void initState() {
     super.initState();
     _openBoxes();
+    _checkSubscriptionStatus();
   }
 
   Future<void> _openBoxes() async {
@@ -31,6 +36,23 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
       _calculateTotalAmount();
       _calculateTotalCalories();
     });
+  }
+
+  Future<void> _checkSubscriptionStatus() async {
+    final userEmail = FirebaseAuth.instance.currentUser?.email;
+    final packDoc = await FirebaseFirestore.instance
+        .collection('fs_cart')
+        .doc(userEmail)
+        .collection('packs')
+        .doc('info')
+        .get();
+
+    if (packDoc.exists && packDoc.data()?['active'] == "True") {
+      setState(() {
+        _isSubscriptionActive = true;
+        subscriptionPack = packDoc.data();
+      });
+    }
   }
 
   void _initializeItemCounts() {
@@ -98,6 +120,10 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
         totalAmount += product.productPrice * count;
       }
     });
+
+    if (_isSubscriptionActive && subscriptionPack != null) {
+      totalAmount += subscriptionPack!['price'];
+    }
   }
 
   void _calculateTotalCalories() {
@@ -109,6 +135,10 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
         totalCalories += product.calories * count;
       }
     });
+
+    if (_isSubscriptionActive && subscriptionPack != null) {
+      totalCalories += subscriptionPack!['calories'];
+    }
   }
 
   void _navigateToCheckout() {
@@ -167,34 +197,42 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
                     return Center(child: Text('No items in the cart.'));
                   } else {
                     return ListView.builder(
-                      itemCount: items.length,
+                      itemCount: items.length + (_isSubscriptionActive ? 1 : 0),
                       itemBuilder: (context, index) {
-                        var item = items.getAt(index);
-                        if (item == null) {
-                          return Center(child: Text('Item not found.'));
+                        if (index < items.length) {
+                          var item = items.getAt(index);
+                          if (item == null) {
+                            return Center(child: Text('Item not found.'));
+                          }
+
+                          var productId = item.ItemId;
+                          var productDetails = FDbox!.values.firstWhereOrNull(
+                                  (element) => element.productId == productId);
+
+                          if (productDetails == null) {
+                            return Center(child: Text('Product not found.'));
+                          }
+
+                          itemCounts[productId] =
+                              itemCounts[productId] ?? item.ItemCount.toInt();
+
+                          return GestureDetector(
+                            onTap: () {},
+                            child: CartItemCard(
+                              productDetails: productDetails,
+                              itemCount: itemCounts[productId]!,
+                              onIncrement: () => _incrementCount(productId),
+                              onDecrement: () => _decrementCount(productId),
+                              onDelete: () => _deleteItem(productId),
+                            ),
+                          );
+                        } else if (_isSubscriptionActive) {
+                          return SubscriptionPackCard(
+                            subscriptionPack: subscriptionPack!,
+                          );
+                        } else {
+                          return Container();
                         }
-
-                        var productId = item.ItemId;
-                        var productDetails = FDbox!.values.firstWhereOrNull(
-                                (element) => element.productId == productId);
-
-                        if (productDetails == null) {
-                          return Center(child: Text('Product not found.'));
-                        }
-
-                        itemCounts[productId] =
-                            itemCounts[productId] ?? item.ItemCount.toInt();
-
-                        return GestureDetector(
-                          onTap: () {},
-                          child: CartItemCard(
-                            productDetails: productDetails,
-                            itemCount: itemCounts[productId]!,
-                            onIncrement: () => _incrementCount(productId),
-                            onDecrement: () => _decrementCount(productId),
-                            onDelete: () => _deleteItem(productId),
-                          ),
-                        );
                       },
                     );
                   }
@@ -271,6 +309,29 @@ class CartItemCard extends StatelessWidget {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class SubscriptionPackCard extends StatelessWidget {
+  final Map<String, dynamic> subscriptionPack;
+
+  SubscriptionPackCard({required this.subscriptionPack});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: Icon(Icons.card_membership, size: 64, color: Colors.blue),
+        title: Text('Subscription Pack'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Name: ${subscriptionPack['packName']} pack'),
+            Text('Price: ₹ ${subscriptionPack['totalPrice']}'),
           ],
         ),
       ),

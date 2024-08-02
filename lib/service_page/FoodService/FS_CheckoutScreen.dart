@@ -17,11 +17,15 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
   Box<Food_db>? FDbox;
   Box<CheckoutHistory_DB>? _checkoutHistoryBox;
   double totalAmount = 0;
+  int packPPrice = 0;
   String userId = '';
   String userName = '';
   String userAddress = '';
   String userPhoneNumber = '';
   String selectedPaymentOption = 'Cash on Delivery';
+  bool hasSubscription = false;
+  Map<String, dynamic>? subscriptionPack;
+
   final twilioFlutter = TwilioFlutter(
     accountSid: 'ACd609662616433afac55654bd43d55f46',
     authToken: '4770c2b10a830ae10b0027026dcbe029',
@@ -40,6 +44,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     if (user != null) {
       userId = user.email!;
       await _fetchUserDetails();
+      await _checkSubscription();
     }
   }
 
@@ -47,7 +52,6 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     _cartBox = await Hive.openBox<Cart_Db>('cartItems');
     FDbox = await Hive.openBox<Food_db>('foodDbBox');
     _checkoutHistoryBox = await Hive.openBox<CheckoutHistory_DB>('checkoutHistory');
-    _calculateTotalAmount();
     setState(() {});
   }
 
@@ -60,12 +64,46 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     });
   }
 
+  Future<void> _checkSubscription() async {
+    DocumentSnapshot subscriptionDoc = await FirebaseFirestore.instance
+        .collection('fs_cart')
+        .doc(userId)
+        .collection('packs')
+        .doc('info')
+        .get();
+
+    if (subscriptionDoc.exists) {
+      var data = subscriptionDoc.data() as Map<String, dynamic>;
+      if (data['active'] == "cart") {
+        setState(() {
+          packPPrice = data['totalPrice'];
+          hasSubscription = true;
+          subscriptionPack = data;
+        });
+        _calculateTotalAmount(); // Calculate total amount after setting the pack price
+      } else {
+        setState(() {
+          hasSubscription = false;
+          subscriptionPack = null;
+        });
+      }
+    }
+  }
+
   void _calculateTotalAmount() {
     totalAmount = 0;
-    for (var item in _cartBox!.values) {
-      var product = FDbox!.values.firstWhere((element) => element.productId == item.ItemId);
-      totalAmount += item.ItemCount * product.productPrice;
+    if (_cartBox != null && FDbox != null) {
+      for (var item in _cartBox!.values) {
+        var product = FDbox!.values.firstWhere((element) => element.productId == item.ItemId);
+        totalAmount += item.ItemCount * product.productPrice;
+      }
     }
+    if (hasSubscription && subscriptionPack != null) {
+      totalAmount += packPPrice;
+    }
+    setState(() {}); // Update the UI with the new total amount
+    print(totalAmount);
+    print(packPPrice);
   }
 
   void _showEditUserDetailsDialog() {
@@ -112,7 +150,10 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
                   userAddress = tempAddress;
                   userPhoneNumber = tempPhoneNumber;
                 });
-                await FirebaseFirestore.instance.collection('users').doc(userId).update({
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(userId)
+                    .update({
                   'name': userName,
                   'address': userAddress,
                   'phoneNumber': userPhoneNumber,
@@ -158,7 +199,8 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     // Send confirmation SMS using TwilioFlutter
     await twilioFlutter.sendSMS(
       toNumber: userPhoneNumber,
-      messageBody: 'Your order has been placed successfully. Total amount: ₹ $totalAmount',
+      messageBody:
+          'Your order has been placed successfully. Total amount: ₹ $totalAmount',
     );
 
     // Transfer cart data to checkout history
@@ -173,7 +215,8 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
       await _checkoutHistoryBox!.add(newItem);
 
       // Add to Firestore orders collection with additional fields
-      var productDetails = FDbox!.values.firstWhere((element) => element.productId == item.ItemId);
+      var productDetails = FDbox!.values
+          .firstWhere((element) => element.productId == item.ItemId);
       await FirebaseFirestore.instance.collection('orders').add({
         'userId': userId,
         'itemId': item.ItemId,
@@ -188,6 +231,8 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     // Clear the cart
     await _cartBox!.clear();
     setState(() {});
+
+    await FirebaseFirestore.instance.collection('fs_cart').doc(userId).collection('packs').doc('info').set({'active':'True'});
 
     // Navigate to the profile page
     Navigator.pushNamed(context, '/fs_profile');
@@ -214,35 +259,46 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
               child: _cartBox == null || FDbox == null || !FDbox!.isOpen
                   ? Center(child: CircularProgressIndicator())
                   : ValueListenableBuilder(
-                valueListenable: _cartBox!.listenable(),
-                builder: (context, Box<Cart_Db> items, _) {
-                  if (items.isEmpty) {
-                    return Center(child: Text('No items in the cart.'));
-                  } else {
-                    return ListView.builder(
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        var item = items.getAt(index);
-                        if (item == null) {
-                          return Center(child: Text('Item not found.'));
+                      valueListenable: _cartBox!.listenable(),
+                      builder: (context, Box<Cart_Db> items, _) {
+                        if (items.isEmpty) {
+                          return Center(child: Text('No items in the cart.'));
+                        } else {
+                          return ListView.builder(
+                            itemCount: items.length,
+                            itemBuilder: (context, index) {
+                              var item = items.getAt(index);
+                              if (item == null) {
+                                return Center(child: Text('Item not found.'));
+                              }
+
+                              var productId = item.ItemId;
+
+                              var productDetails = FDbox!.values.firstWhere(
+                                  (element) => element.productId == productId);
+
+                              return CheckoutItemCard(
+                                productDetails: productDetails,
+                                itemCount: item.ItemCount.toInt(),
+                              );
+                            },
+                          );
                         }
-
-                        var productId = item.ItemId;
-
-                        var productDetails = FDbox!.values.firstWhere(
-                                (element) => element.productId == productId);
-
-                        return CheckoutItemCard(
-                          productDetails: productDetails,
-                          itemCount: item.ItemCount.toInt(),
-                        );
                       },
-                    );
-                  }
-                },
-              ),
+                    ),
             ),
             SizedBox(height: 16),
+            if (hasSubscription && subscriptionPack != null) ...[
+              Text(
+                'Subscription Pack:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SubsCard(
+                packName: subscriptionPack!['packName'],
+                packPrice: subscriptionPack!['totalPrice'],
+              ),
+              SizedBox(height: 26),
+            ],
             Text(
               'User Details:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -273,8 +329,11 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
                   selectedPaymentOption = newValue!;
                 });
               },
-              items: <String>['Cash on Delivery', 'Online Payment', 'Card Payment']
-                  .map<DropdownMenuItem<String>>((String value) {
+              items: <String>[
+                'Cash on Delivery',
+                'Online Payment',
+                'Card Payment'
+              ].map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(value),
@@ -313,6 +372,32 @@ class CheckoutItemCard extends StatelessWidget {
           children: [
             Text('Price: ₹ ${productDetails.productPrice}'),
             Text('Quantity: $itemCount'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class SubsCard extends StatelessWidget {
+  final String packName;
+  final int packPrice;
+
+  SubsCard({
+    required this.packName,
+    required this.packPrice,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: Icon(Icons.card_membership, size: 64, color: Colors.blue),
+        title: Text(packName),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Price: ₹ ${packPrice}'),
           ],
         ),
       ),
