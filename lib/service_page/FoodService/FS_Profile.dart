@@ -1,8 +1,8 @@
 import 'package:ecub_s1_v2/models/CheckoutHistory_DB.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class FS_Profile extends StatefulWidget {
   const FS_Profile({Key? key}) : super(key: key);
@@ -219,15 +219,21 @@ class SectionTitle extends StatelessWidget {
 }
 
 class OrdersListView extends StatelessWidget {
-  Future<List<CheckoutHistory_DB>> _getCheckoutHistory() async {
-    final checkoutHistoryBox =
-    await Hive.openBox<CheckoutHistory_DB>('checkoutHistoryBox');
-    return checkoutHistoryBox.values.toList();
+  Future<List<DocumentSnapshot<Map<String, dynamic>>>> _getCheckoutHistory() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('orders')
+          .get();
+      return querySnapshot.docs;
+    } else {
+      return [];
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<CheckoutHistory_DB>>(
+    return FutureBuilder<List<DocumentSnapshot<Map<String, dynamic>>>>(
       future: _getCheckoutHistory(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -243,39 +249,49 @@ class OrdersListView extends StatelessWidget {
             physics: NeverScrollableScrollPhysics(),
             itemCount: orders.length,
             itemBuilder: (context, index) {
-              final order = orders[index];
-              return OrderHistoryItem(
-                orderId: order.key.toString(),
-                restaurant: 'Restaurant Name',
-                location: 'Location',
-                date: order.TimeStamp,
-                amount: 0,
-              );
+              final order = orders[index].data()!;
+              final userEmail = FirebaseAuth.instance.currentUser?.email;
+
+              if (order['userId'] == userEmail) {
+                final date = (order['timestamp'] as Timestamp).toDate();
+
+                return OrderHistoryItem(
+                  orderId: orders[index].id,
+                  restaurant: order['itemName'] ?? 'Unknown Restaurant',
+                  amount: order['itemPrice']?.toDouble() ?? 0,
+                  date: date,
+                );
+              } else {
+                return SizedBox.shrink();
+              }
             },
           );
         }
       },
     );
+
+
   }
 }
 
 class OrderHistoryItem extends StatelessWidget {
   final String orderId;
   final String restaurant;
-  final String location;
-  final int amount;
-  final String date;
+  final double amount;
+  final DateTime date;
 
   const OrderHistoryItem({
     required this.orderId,
     required this.restaurant,
-    required this.location,
     required this.amount,
     required this.date,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Format the date into a readable string
+    final formattedDate = DateFormat('MMMM d, yyyy at h:mm a').format(date);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: Column(
@@ -288,9 +304,8 @@ class OrderHistoryItem extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(location),
           Text('₹$amount'),
-          Text(date),
+          Text(formattedDate),  // Display formatted date
           SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -299,10 +314,10 @@ class OrderHistoryItem extends StatelessWidget {
                 onPressed: () {},
                 child: Text('REORDER'),
               ),
-              ElevatedButton(
-                onPressed: () {},
-                child: Text('RATE ORDER'),
-              ),
+              // ElevatedButton(
+              //   onPressed: () {},
+              //   child: Text('RATE ORDER'),
+              // ),
             ],
           ),
         ],
