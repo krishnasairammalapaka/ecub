@@ -53,15 +53,11 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
 
   Future<void> _fetchUserDetails() async {
     DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    print(userDoc);
     setState(() {
       userName = userDoc['firstname'];
       userAddress = userDoc['email'];
       userPhoneNumber = userDoc['phonenumber'];
     });
-
-    // print(userAddress);
-    // print(userPhoneNumber);
   }
 
   void _calculateTotalAmount() {
@@ -175,6 +171,18 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
         key: DateTime.now().millisecondsSinceEpoch,
       );
       await _checkoutHistoryBox!.add(newItem);
+
+      // Add to Firestore orders collection with additional fields
+      var productDetails = FDbox!.values.firstWhere((element) => element.productId == item.ItemId);
+      await FirebaseFirestore.instance.collection('orders').add({
+        'userId': userId,
+        'itemId': item.ItemId,
+        'itemCount': item.ItemCount,
+        'timestamp': FieldValue.serverTimestamp(),
+        'status': 'Pending',
+        'itemName': productDetails.productTitle,
+        'itemPrice': productDetails.productPrice * item.ItemCount,
+      });
     }
 
     // Clear the cart
