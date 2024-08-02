@@ -5,8 +5,8 @@ import 'package:intl/intl.dart';
 
 class DateUtil {
   static const DATE_FORMAT = 'dd/MM/yyyy';
+
   String formattedDate(DateTime dateTime) {
-    print('dateTime ($dateTime)');
     return DateFormat(DATE_FORMAT).format(dateTime);
   }
 }
@@ -24,6 +24,7 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
   int price = 0;
   late String packID;
   late String subscriptionType;
+  late List<String> foodlist;
 
   late Map<String, dynamic> breakfast;
   late Map<String, dynamic> lunch;
@@ -37,14 +38,13 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
     ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     packID = args['packID'];
     subscriptionType = args['subscription_type'];
+    foodlist = args['selectedFoodIds'];
 
     if (subscriptionType == 'Monthly') {
       endingDate = fromDate.add(Duration(days: 30));
     } else if (subscriptionType == 'Weekly') {
       endingDate = fromDate.add(Duration(days: 7));
     }
-
-    _calculatePrice();
 
     // Initialize meal settings data
     breakfast = {
@@ -71,6 +71,8 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
       'time': TimeOfDay(hour: 19, minute: 0),
       'isOn': true,
     };
+
+    _calculatePrice();
   }
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate,
@@ -96,27 +98,46 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
       int packPrice;
 
       if (subscriptionType == 'Weekly') {
-        packPrice = packData['pack_price_w'];
+        packPrice = packData['pack_price_w'] as int;
       } else if (subscriptionType == 'Monthly') {
-        packPrice = packData['pack_price_m'];
+        packPrice = packData['pack_price_m'] as int;
       } else {
-        packPrice = (packData['pack_price_m'] /7).toInt(); // Assuming daily price for custom dates
+        // For customized dates, use a similar logic to calculate daily price
+        packPrice = (packData['pack_price_m'] / 30)
+            .toInt(); // Assume 30 days in a month
       }
 
-      print(packPrice);
+      // Calculate per meal price
+      int perMealPrice =
+          packPrice ~/ 28; // Weekly price divided by the total meals in a week
 
+      // Initialize totalMeals as an integer
+      int totalMeals = 0;
+
+      // Define a helper function to sum meal counts
+      int sumMealCounts(Map<String, dynamic> meal) {
+        int count = meal['count'] as int? ?? 0;
+        List<dynamic> days = meal['days'] ?? [];
+        int daysCount = days.where((day) => day == true).length;
+        bool isOn = meal['isOn'] as bool? ?? true;
+        return isOn ? count * daysCount : 0;
+      }
+
+      // Sum up the total meal count based on selections
+      totalMeals += sumMealCounts(breakfast);
+      totalMeals += sumMealCounts(lunch);
+      totalMeals += sumMealCounts(snack);
+      totalMeals += sumMealCounts(dinner);
+
+      // Calculate the total price based on per meal price and total meals
       setState(() {
-        if (subscriptionType == 'Weekly' || subscriptionType == 'Monthly' || subscriptionType == 'Customized Dates') {
-          price = packPrice;
-        } else {
-          int days = endingDate.difference(fromDate).inDays + 1;
-          price = (days * packPrice);
-        }
+        price = totalMeals * perMealPrice;
       });
     }
   }
 
-  void updateMeal(String title, int count, List<bool> days, TimeOfDay time, bool isOn) {
+  void updateMeal(
+      String title, int count, List<bool> days, TimeOfDay time, bool isOn) {
     setState(() {
       if (title == 'Breakfast') {
         breakfast['count'] = count;
@@ -139,6 +160,8 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
         dinner['time'] = time;
         dinner['isOn'] = isOn;
       }
+
+      _calculatePrice(); // Calculate price whenever meal settings are updated
     });
   }
 
@@ -149,67 +172,106 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
         title: Text('Checkout'),
         backgroundColor: Color(0xFF0D5EF9),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            _buildDateSetting('From Date', fromDate, (date) {
-              setState(() {
-                fromDate = date;
-                _calculatePrice();
-              });
-            }),
-            _buildDateSetting('Ending Date', endingDate, (date) {
-              setState(() {
-                endingDate = date;
-                _calculatePrice();
-              });
-            }),
-            SizedBox(height: 20),
-            AlarmSetting(
-              title: 'Breakfast',
-              initialTime: TimeOfDay(hour: 7, minute: 0),
-              initialIsOn: true,
-              onChanged: (count, days, time, isOn) {
-                updateMeal('Breakfast', count, days, time, isOn);
-              },
-            ),
-            AlarmSetting(
-              title: 'Lunch',
-              initialTime: TimeOfDay(hour: 12, minute: 0),
-              initialIsOn: true,
-              onChanged: (count, days, time, isOn) {
-                updateMeal('Lunch', count, days, time, isOn);
-              },
-            ),
-            AlarmSetting(
-              title: 'Snack',
-              initialTime: TimeOfDay(hour: 16, minute: 0),
-              initialIsOn: true,
-              onChanged: (count, days, time, isOn) {
-                updateMeal('Snack', count, days, time, isOn);
-              },
-            ),
-            AlarmSetting(
-              title: 'Dinner',
-              initialTime: TimeOfDay(hour: 19, minute: 0),
-              initialIsOn: true,
-              onChanged: (count, days, time, isOn) {
-                updateMeal('Dinner', count, days, time, isOn);
-              },
-            ),
-            Spacer(),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Column(
-                children: [
-                  Text(
-                    'Total Price: ₹${price}',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: () async {
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _buildDateSetting('From Date', fromDate, (date) {
+                setState(() {
+                  fromDate = date;
+                  _calculatePrice();
+                });
+              }),
+              _buildDateSetting('Ending Date', endingDate, (date) {
+                setState(() {
+                  endingDate = date;
+                  _calculatePrice();
+                });
+              }),
+              SizedBox(height: 20),
+              AlarmSetting(
+                title: 'Breakfast',
+                initialTime: TimeOfDay(hour: 7, minute: 0),
+                initialIsOn: true,
+                onChanged: (count, days, time, isOn) {
+                  updateMeal('Breakfast', count, days, time, isOn);
+                },
+              ),
+              AlarmSetting(
+                title: 'Lunch',
+                initialTime: TimeOfDay(hour: 12, minute: 0),
+                initialIsOn: true,
+                onChanged: (count, days, time, isOn) {
+                  updateMeal('Lunch', count, days, time, isOn);
+                },
+              ),
+              AlarmSetting(
+                title: 'Snack',
+                initialTime: TimeOfDay(hour: 16, minute: 0),
+                initialIsOn: true,
+                onChanged: (count, days, time, isOn) {
+                  updateMeal('Snack', count, days, time, isOn);
+                },
+              ),
+              AlarmSetting(
+                title: 'Dinner',
+                initialTime: TimeOfDay(hour: 19, minute: 0),
+                initialIsOn: true,
+                onChanged: (count, days, time, isOn) {
+                  updateMeal('Dinner', count, days, time, isOn);
+                },
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Total Price: ₹$price',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    // Create a reference to the Firestore collection
+                    final firestore = FirebaseFirestore.instance;
+                    final userEmail = FirebaseAuth.instance.currentUser?.email;
+
+                    if (userEmail != null) {
+                      final collectionRef = firestore
+                          .collection('users')
+                          .doc(userEmail)
+                          .collection('fs_service')
+                          .doc('packs'); // Use the correct document ID or create a unique one if needed
+
+                      // Define the data you want to update in Firestore
+                      final data = {
+                        'packID': packID,
+                        'subscription_type': subscriptionType,
+                        'fromDate': fromDate,
+                        'endingDate': endingDate,
+                        'breakfastCount': breakfast['count'],
+                        'lunchCount': lunch['count'],
+                        'snackCount': snack['count'],
+                        'dinnerCount': dinner['count'],
+                        'breakfastDays': breakfast['days'],
+                        'lunchDays': lunch['days'],
+                        'snackDays': snack['days'],
+                        'dinnerDays': dinner['days'],
+                        'breakfastTime': breakfast['time'].format(context),
+                        'lunchTime': lunch['time'].format(context),
+                        'snackTime': snack['time'].format(context),
+                        'dinnerTime': dinner['time'].format(context),
+                        'breakfastIsOn': breakfast['isOn'],
+                        'lunchIsOn': lunch['isOn'],
+                        'snackIsOn': snack['isOn'],
+                        'dinnerIsOn': dinner['isOn'],
+                        'totalPrice': price,
+                        'selectedFoodIds': foodlist // Ensure foodlist is properly defined
+                      };
+
+                      // Update Firestore
+                      await collectionRef.set(data);
+
+                      // Navigate to the next screen
                       Navigator.pushNamed(
                         context,
                         '/fs_home',
@@ -234,103 +296,59 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                           'lunchIsOn': lunch['isOn'],
                           'snackIsOn': snack['isOn'],
                           'dinnerIsOn': dinner['isOn'],
+                          'totalPrice': price,
                         },
                       );
+                    } else {
+                      print('User is not logged in.');
+                    }
+                  } catch (e) {
+                    // Handle any errors
+                    print('Error updating Firestore: $e');
+                  }
+                },
+                child: Text('Confirm Subscription'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF0D5EF9),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  textStyle: TextStyle(fontSize: 18),
+                ),
+              )
 
-
-                      print( packID);
-                      print( subscriptionType);
-                      print( fromDate);
-                      print( endingDate);
-                      print( breakfast['count']);
-                      print( lunch['count']);
-                      print( snack['count']);
-                      print( dinner['count']);
-                      print( breakfast['days']);
-                      print( lunch['days']);
-                      print( snack['days']);
-                      print( dinner['days']);
-                      print( breakfast['time'].format(context));
-                      print( lunch['time'].format(context));
-                      print( snack['time'].format(context));
-                      print( dinner['time'].format(context));
-                      print( breakfast['isOn']);
-                      print( lunch['isOn']);
-                      print( snack['isOn']);
-                      print( dinner['isOn']);
-
-                      String? userEmail =
-                          FirebaseAuth.instance.currentUser?.email;
-                      if (userEmail != null) {
-                        await FirebaseFirestore.instance
-                            .collection('users')
-                            .doc(userEmail)
-                            .collection('fs_service')
-                            .doc('packs')
-                            .set({
-                          'packID': packID,
-                          'subscription_type': subscriptionType,
-                          'fromDate': '$fromDate',
-                          'endingDate': '$endingDate',
-                          'breakfastCount': breakfast['count'],
-                          'lunchCount': lunch['count'],
-                          'snackCount': snack['count'],
-                          'dinnerCount': dinner['count'],
-                          'breakfastDays': breakfast['days'],
-                          'lunchDays': lunch['days'],
-                          'snackDays': snack['days'],
-                          'dinnerDays': dinner['days'],
-                          'breakfastTime': breakfast['time'].format(context),
-                          'lunchTime': lunch['time'].format(context),
-                          'snackTime': snack['time'].format(context),
-                          'dinnerTime': dinner['time'].format(context),
-                          'breakfastIsOn': breakfast['isOn'],
-                          'lunchIsOn': lunch['isOn'],
-                          'snackIsOn': snack['isOn'],
-                          'dinnerIsOn': dinner['isOn'],
-                        });
-
-                        await FirebaseFirestore.instance
-                            .collection('users')
-                            .doc(userEmail)
-                            .set({'isPackSubs':true});
-                      }
-
-                    },
-                    child: Text('Order'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF0D5EF9),
-                      foregroundColor: Colors.white,
-                      padding:
-                      EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                      textStyle: TextStyle(fontSize: 20),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildDateSetting(
-      String title, DateTime date, Function(DateTime) onDateSelected) {
-    return Card(
-      child: ListTile(
-        title: Text(title),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+      String label, DateTime date, Function(DateTime) onDateSelected) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 8),
+        Row(
           children: [
-            Text('${date.toLocal()}'.split(' ')[0]),
+            Expanded(
+              child: Text(
+                DateFormat('dd/MM/yyyy').format(date),
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
             IconButton(
               icon: Icon(Icons.calendar_today),
               onPressed: () => _selectDate(context, date, onDateSelected),
             ),
           ],
         ),
-      ),
+        SizedBox(height: 16),
+      ],
     );
   }
 }
@@ -339,7 +357,7 @@ class AlarmSetting extends StatefulWidget {
   final String title;
   final TimeOfDay initialTime;
   final bool initialIsOn;
-  final Function(int foodCount, List<bool> selectedDays, TimeOfDay time, bool isOn) onChanged;
+  final Function(int, List<bool>, TimeOfDay, bool) onChanged;
 
   AlarmSetting({
     required this.title,
@@ -353,19 +371,16 @@ class AlarmSetting extends StatefulWidget {
 }
 
 class _AlarmSettingState extends State<AlarmSetting> {
-  bool isExpanded = false;
-  late bool isOn;
   late TimeOfDay selectedTime;
-  late int foodCount;
-  late List<bool> selectedDays;
+  late bool isOn;
+  int mealCount = 1;
+  List<bool> selectedDays = List.generate(7, (_) => true);
 
   @override
   void initState() {
     super.initState();
     selectedTime = widget.initialTime;
     isOn = widget.initialIsOn;
-    foodCount = 1; // Initial food count
-    selectedDays = List.generate(7, (_) => true); // Initial selected days (all selected)
   }
 
   Future<void> _selectTime(BuildContext context) async {
@@ -376,7 +391,7 @@ class _AlarmSettingState extends State<AlarmSetting> {
     if (picked != null && picked != selectedTime) {
       setState(() {
         selectedTime = picked;
-        widget.onChanged(foodCount, selectedDays, selectedTime, isOn);
+        widget.onChanged(mealCount, selectedDays, selectedTime, isOn);
       });
     }
   }
@@ -384,82 +399,96 @@ class _AlarmSettingState extends State<AlarmSetting> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                isExpanded = !isExpanded;
-              });
-            },
-            child: ListTile(
-              title: Text(widget.title),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
+      elevation: 4,
+      margin: EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(widget.title, style: TextStyle(fontSize: 18)),
+                Switch(
+                  value: isOn,
+                  onChanged: (value) {
+                    setState(() {
+                      isOn = value;
+                      widget.onChanged(
+                          mealCount, selectedDays, selectedTime, isOn);
+                    });
+                  },
+                ),
+              ],
+            ),
+            if (isOn) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${selectedTime.format(context)}'),
-                  IconButton(
-                    icon: Icon(Icons.alarm),
-                    onPressed: () => _selectTime(context),
+                  Text(
+                    'Meals per Day: $mealCount',
+                    style: TextStyle(fontSize: 16),
                   ),
-                  Switch(
-                    value: isOn,
-                    onChanged: (value) {
+                  IconButton(
+                    icon: Icon(Icons.remove),
+                    onPressed: mealCount > 1
+                        ? () {
                       setState(() {
-                        isOn = value;
-                        widget.onChanged(foodCount, selectedDays, selectedTime, isOn);
+                        mealCount--;
+                        widget.onChanged(
+                            mealCount, selectedDays, selectedTime, isOn);
+                      });
+                    }
+                        : null,
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.add),
+                    onPressed: () {
+                      setState(() {
+                        mealCount++;
+                        widget.onChanged(
+                            mealCount, selectedDays, selectedTime, isOn);
                       });
                     },
                   ),
                 ],
               ),
-            ),
-          ),
-          if (isExpanded)
-            Column(
-              children: [
-                ToggleButtons(
-                  children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-                      .map((day) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text(day),
-                  ))
-                      .toList(),
-                  isSelected: selectedDays,
-                  onPressed: (index) {
-                    setState(() {
-                      selectedDays[index] = !selectedDays[index];
-                      widget.onChanged(foodCount, selectedDays, selectedTime, isOn);
-                    });
-                  },
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.remove),
-                      onPressed: () {
-                        setState(() {
-                          if (foodCount > 1) foodCount--;
-                          widget.onChanged(foodCount, selectedDays, selectedTime, isOn);
-                        });
-                      },
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Time: ${selectedTime.format(context)}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.access_time),
+                    onPressed: () => _selectTime(context),
+                  ),
+                ],
+              ),
+              Wrap(
+                spacing: 8.0,
+                children: List.generate(7, (index) {
+                  return ChoiceChip(
+                    label: Text(
+                      DateFormat('E').format(
+                        DateTime.now().add(Duration(days: index)),
+                      ),
                     ),
-                    Text('$foodCount'),
-                    IconButton(
-                      icon: Icon(Icons.add),
-                      onPressed: () {
-                        setState(() {
-                          foodCount++;
-                          widget.onChanged(foodCount, selectedDays, selectedTime, isOn);
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-        ],
+                    selected: selectedDays[index],
+                    onSelected: (selected) {
+                      setState(() {
+                        selectedDays[index] = selected;
+                        widget.onChanged(
+                            mealCount, selectedDays, selectedTime, isOn);
+                      });
+                    },
+                  );
+                }),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

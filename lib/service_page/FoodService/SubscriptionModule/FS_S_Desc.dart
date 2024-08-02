@@ -9,6 +9,7 @@ class MenuItem {
   final String desc;
   final String restaurant;
   final double rating;
+  bool selected;
 
   MenuItem({
     required this.id,
@@ -18,7 +19,13 @@ class MenuItem {
     required this.desc,
     required this.restaurant,
     required this.rating,
+    this.selected = false,
   });
+
+  @override
+  String toString() {
+    return 'MenuItem{id: $id, name: $name, price: $price, selected: $selected}';
+  }
 }
 
 class FS_S_Desc extends StatefulWidget {
@@ -29,6 +36,7 @@ class FS_S_Desc extends StatefulWidget {
 class _FS_S_DescState extends State<FS_S_Desc> {
   Future<DocumentSnapshot<Map<String, dynamic>>>? futurePack;
   String selectedOption = 'Weekly';
+  ValueNotifier<List<MenuItem>> selectedItemsNotifier = ValueNotifier([]);
 
   @override
   void didChangeDependencies() {
@@ -66,14 +74,38 @@ class _FS_S_DescState extends State<FS_S_Desc> {
     final Map<String, dynamic> args =
     ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     var userMail = args['userMail'];
+
+    Set<MenuItem> uniqueSelectedFoodItems = selectedItemsNotifier.value
+        .where((item) => item.selected)
+        .toSet();
+
+    Set<String> uniqueSelectedFoodIds = uniqueSelectedFoodItems
+        .map((item) => item.id)
+        .toSet();
+
+// Convert sets back to lists
+    List<MenuItem> selectedFoodItems = uniqueSelectedFoodItems.toList();
+    List<String> selectedFoodIds = uniqueSelectedFoodIds.toList();
+
+// Debugging: Print selected food IDs
+    print('Selected Food: $selectedFoodItems');
+    print('Selected Food IDs: $selectedFoodIds');
+
     Navigator.pushNamed(
       context,
       '/fs_s_checkout',
       arguments: {
         'packID': packID,
         'subscription_type': selectedOption,
+        'selectedFoodItems': selectedFoodItems,
+        'selectedFoodIds': selectedFoodIds,
       },
     );
+  }
+
+  void _onSelectItem(MenuItem item) {
+    item.selected = !item.selected;
+    selectedItemsNotifier.value = List.from(selectedItemsNotifier.value);
   }
 
   @override
@@ -90,7 +122,6 @@ class _FS_S_DescState extends State<FS_S_Desc> {
       ),
       body: Column(
         children: [
-
           Expanded(
             child: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
               future: futurePack,
@@ -113,45 +144,61 @@ class _FS_S_DescState extends State<FS_S_Desc> {
                       } else if (foodSnapshot.hasError) {
                         return ExpansionTile(
                           title: Text(data['pack_name']),
-                          children: [Center(child: Text('Error: ${foodSnapshot.error}'))],
+                          children: [
+                            Center(child: Text('Error: ${foodSnapshot.error}'))
+                          ],
                         );
-                      } else if (!foodSnapshot.hasData || foodSnapshot.data!.isEmpty) {
+                      } else if (!foodSnapshot.hasData ||
+                          foodSnapshot.data!.isEmpty) {
                         return ExpansionTile(
                           title: Text(data['pack_name']),
-                          children: [Center(child: Text('No food items found'))],
+                          children: [
+                            Center(child: Text('No food items found'))
+                          ],
                         );
                       } else {
+                        List<MenuItem> foodItems = foodSnapshot.data!.map((foodData) {
+                          return MenuItem(
+                            id: foodData['id'],
+                            name: foodData['productTitle'],
+                            price: foodData['productPrice'],
+                            image: foodData['productImg'],
+                            desc: foodData['productDesc'],
+                            restaurant: foodData['productOwnership'],
+                            rating: foodData['productRating'],
+                          );
+                        }).toList();
+
                         return SingleChildScrollView(
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Column(
                               children: [
-                                GridView.builder(
-                                  itemCount: foodSnapshot.data!.length,
-                                  shrinkWrap: true,
-                                  physics: NeverScrollableScrollPhysics(),
-                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    childAspectRatio: 0.9,
-                                    crossAxisSpacing: 10,
-                                    mainAxisSpacing: 10,
-                                  ),
-                                  itemBuilder: (context, index) {
-                                    var foodData = foodSnapshot.data![index];
-                                    MenuItem item = MenuItem(
-                                      id: foodData['id'],
-                                      name: foodData['productTitle'],
-                                      price: foodData['productPrice'],
-                                      image: foodData['productImg'],
-                                      desc: foodData['productDesc'],
-                                      restaurant: foodData['productOwnership'],
-                                      rating: foodData['productRating'],
+                                ValueListenableBuilder<List<MenuItem>>(
+                                  valueListenable: selectedItemsNotifier,
+                                  builder: (context, selectedItems, _) {
+                                    return GridView.builder(
+                                      itemCount: foodItems.length,
+                                      shrinkWrap: true,
+                                      physics: NeverScrollableScrollPhysics(),
+                                      gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        childAspectRatio: 0.9,
+                                        crossAxisSpacing: 10,
+                                        mainAxisSpacing: 10,
+                                      ),
+                                      itemBuilder: (context, index) {
+                                        MenuItem item = foodItems[index];
+                                        return MenuItemWidget(
+                                          item: item,
+                                          onSelect: () => _onSelectItem(item),
+                                        );
+                                      },
                                     );
-                                    return MenuItemWidget(item: item);
                                   },
                                 ),
                                 SizedBox(height: 16),
-
                               ],
                             ),
                           ),
@@ -188,8 +235,7 @@ class _FS_S_DescState extends State<FS_S_Desc> {
               textStyle: TextStyle(fontSize: 20),
             ),
           ),
-          SizedBox(height: 15,)
-
+          SizedBox(height: 15),
         ],
       ),
     );
@@ -198,71 +244,81 @@ class _FS_S_DescState extends State<FS_S_Desc> {
 
 class MenuItemWidget extends StatelessWidget {
   final MenuItem item;
+  final VoidCallback onSelect;
 
-  MenuItemWidget({required this.item});
+  MenuItemWidget({required this.item, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.grey[400],
-              borderRadius: BorderRadius.circular(8),
-              image: DecorationImage(
-                image: NetworkImage(item.image),
-                fit: BoxFit.cover,
-              ),
+    return GestureDetector(
+      onTap: onSelect,
+      child: Container(
+        padding: EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: item.selected
+              ? Colors.lightBlueAccent.withOpacity(0.5)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: Offset(0, 3),
             ),
-          ),
-          SizedBox(height: 12),
-          Text(
-            item.name,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '₹${item.price}',
-                style: TextStyle(
-                  color: Color(0xFF0D5EF9),
-                  fontSize: 15,
-                ),
-              ),
-              Row(
-                children: List.generate(
-                  5,
-                      (index) => Icon(
-                    index < item.rating ? Icons.star : Icons.star_border,
-                    size: 16,
-                    color: Colors.amber,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Container(
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(8),
+                    image: DecorationImage(
+                      image: NetworkImage(item.image),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
+                if (item.selected)
+                  Positioned(
+                    top: 5,
+                    right: 5,
+                    child: Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: 7),
+            Text(
+              item.name,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
-            ],
-          ),
-        ],
+            ),
+            SizedBox(height: 10),
+            Text(
+              '₹${item.price}',
+              style: TextStyle(
+                color: Color(0xFF0D5EF9),
+                fontSize: 15,
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: item.selected
+                  ? Icon(Icons.check_circle, color: Colors.green)
+                  : Icon(Icons.radio_button_unchecked, color: Colors.grey),
+            ),
+          ],
+        ),
       ),
     );
   }
