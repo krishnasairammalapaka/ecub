@@ -9,6 +9,8 @@ class MenuItem {
   final String desc;
   final String restaurant;
   final double rating;
+  final String foodAvailTime;
+  final bool isVeg;
   bool selected;
 
   MenuItem({
@@ -19,6 +21,8 @@ class MenuItem {
     required this.desc,
     required this.restaurant,
     required this.rating,
+    required this.foodAvailTime,
+    required this.isVeg,
     this.selected = false,
   });
 
@@ -54,8 +58,14 @@ class _FS_S_DescState extends State<FS_S_Desc> {
         .get();
   }
 
-  Future<List<Map<String, dynamic>>> fetchFoodItems(List<String> foodIds) async {
-    List<Map<String, dynamic>> foodItems = [];
+  Future<Map<String, List<MenuItem>>> fetchFoodItems(List<String> foodIds) async {
+    Map<String, List<MenuItem>> categorizedFoodItems = {
+      'breakfast': [],
+      'lunch': [],
+      'snack': [],
+      'dinner': [],
+    };
+
     for (String foodId in foodIds) {
       DocumentSnapshot<Map<String, dynamic>> foodDoc = await FirebaseFirestore.instance
           .collection('fs_food_items')
@@ -64,10 +74,23 @@ class _FS_S_DescState extends State<FS_S_Desc> {
       if (foodDoc.exists) {
         var foodData = foodDoc.data()!;
         foodData['id'] = foodDoc.id;
-        foodItems.add(foodData);
+        MenuItem menuItem = MenuItem(
+          id: foodData['id'],
+          name: foodData['productTitle'],
+          price: foodData['productPrice'],
+          image: foodData['productImg'],
+          desc: foodData['productDesc'],
+          restaurant: foodData['productOwnership'],
+          rating: foodData['productRating'],
+          foodAvailTime: foodData['foodAvailTime'],
+          isVeg: foodData['isVeg'],
+          selected: shouldPreSelect(foodData['id']),
+        );
+
+        categorizedFoodItems[foodData['foodAvailTime']]?.add(menuItem);
       }
     }
-    return foodItems;
+    return categorizedFoodItems;
   }
 
   void _onCheckoutPressed(String packID) {
@@ -104,7 +127,9 @@ class _FS_S_DescState extends State<FS_S_Desc> {
   }
 
   void _onSelectItem(MenuItem item) {
-    item.selected = !item.selected;
+    setState(() {
+      item.selected = !item.selected;
+    });
     selectedItemsNotifier.value = List.from(selectedItemsNotifier.value);
   }
 
@@ -129,79 +154,33 @@ class _FS_S_DescState extends State<FS_S_Desc> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(child: Text('Error1: ${snapshot.error}'));
                 } else if (!snapshot.hasData || !snapshot.data!.exists) {
                   return Center(child: Text('No data found'));
                 } else {
                   Map<String, dynamic> data = snapshot.data!.data()!;
                   List<String> foodIds = List<String>.from(data['pack_foods']);
 
-                  return FutureBuilder<List<Map<String, dynamic>>>(
+                  return FutureBuilder<Map<String, List<MenuItem>>>(
                     future: fetchFoodItems(foodIds),
                     builder: (context, foodSnapshot) {
                       if (foodSnapshot.connectionState == ConnectionState.waiting) {
                         return Center(child: CircularProgressIndicator());
                       } else if (foodSnapshot.hasError) {
-                        return ExpansionTile(
-                          title: Text(data['pack_name']),
-                          children: [
-                            Center(child: Text('Error: ${foodSnapshot.error}'))
-                          ],
-                        );
-                      } else if (!foodSnapshot.hasData ||
-                          foodSnapshot.data!.isEmpty) {
-                        return ExpansionTile(
-                          title: Text(data['pack_name']),
-                          children: [
-                            Center(child: Text('No food items found'))
-                          ],
-                        );
+                        return Center(child: Text('Error2: ${foodSnapshot.error}'));
+                      } else if (!foodSnapshot.hasData || foodSnapshot.data!.isEmpty) {
+                        return Center(child: Text('No food items found'));
                       } else {
-                        List<MenuItem> foodItems = foodSnapshot.data!.map((foodData) {
-                          bool preSelected = shouldPreSelect(foodData['id']); // Add this line
-                          return MenuItem(
-                            id: foodData['id'],
-                            name: foodData['productTitle'],
-                            price: foodData['productPrice'],
-                            image: foodData['productImg'],
-                            desc: foodData['productDesc'],
-                            restaurant: foodData['productOwnership'],
-                            rating: foodData['productRating'],
-                            selected: preSelected, // Add this line
-                          );
-                        }).toList();
-
-                        selectedItemsNotifier.value = foodItems;
-
+                        Map<String, List<MenuItem>> categorizedFoodItems = foodSnapshot.data!;
                         return SingleChildScrollView(
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Column(
                               children: [
-                                ValueListenableBuilder<List<MenuItem>>(
-                                  valueListenable: selectedItemsNotifier,
-                                  builder: (context, selectedItems, _) {
-                                    return GridView.builder(
-                                      itemCount: foodItems.length,
-                                      shrinkWrap: true,
-                                      physics: NeverScrollableScrollPhysics(),
-                                      gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        childAspectRatio: 0.9,
-                                        crossAxisSpacing: 10,
-                                        mainAxisSpacing: 10,
-                                      ),
-                                      itemBuilder: (context, index) {
-                                        MenuItem item = foodItems[index];
-                                        return MenuItemWidget(
-                                          item: item,
-                                          onSelect: () => _onSelectItem(item),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
+                                buildCategorySection('Breakfast', categorizedFoodItems['breakfast']!),
+                                buildCategorySection('Lunch', categorizedFoodItems['lunch']!),
+                                buildCategorySection('Snacks', categorizedFoodItems['snack']!),
+                                buildCategorySection('Dinner', categorizedFoodItems['dinner']!),
                                 SizedBox(height: 16),
                               ],
                             ),
@@ -245,11 +224,49 @@ class _FS_S_DescState extends State<FS_S_Desc> {
     );
   }
 
-
   bool shouldPreSelect(String foodId) {
-
     List<String> preSelectedFoodIds = ['foodId1', 'foodId2', 'foodId3'];
     return preSelectedFoodIds.contains(foodId);
+  }
+
+  Widget buildCategorySection(String title, List<MenuItem> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 10),
+        ValueListenableBuilder<List<MenuItem>>(
+          valueListenable: selectedItemsNotifier,
+          builder: (context, selectedItems, _) {
+            return GridView.builder(
+              itemCount: items.length,
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.9,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemBuilder: (context, index) {
+                MenuItem item = items[index];
+                return MenuItemWidget(
+                  item: item,
+                  onSelect: () => _onSelectItem(item),
+                );
+              },
+            );
+          },
+        ),
+        SizedBox(height: 20),
+      ],
+    );
   }
 }
 
@@ -269,11 +286,11 @@ class MenuItemWidget extends StatelessWidget {
           color: item.selected
               ? Colors.lightBlueAccent.withOpacity(0.5)
               : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.5),
-              spreadRadius: 2,
+              spreadRadius: 1,
               blurRadius: 5,
               offset: Offset(0, 3),
             ),
@@ -314,14 +331,27 @@ class MenuItemWidget extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 10),
-            Text(
-              '₹${item.price}',
-              style: TextStyle(
-                color: Color(0xFF0D5EF9),
-                fontSize: 15,
-              ),
+            SizedBox(height: 5),
+            Row(
+              children: [
+                Text(
+                  item.isVeg ? 'Vegetarian' : 'Non-Vegetarian',
+                  style: TextStyle(
+                    color: item.isVeg ? Colors.green : Colors.red,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(width: 10),
+                Text(
+                  '₹${item.price}',
+                  style: TextStyle(
+                    color: Color(0xFF0D5EF9),
+                    fontSize: 15,
+                  ),
+                ),
+              ],
             ),
+
             Align(
               alignment: Alignment.centerRight,
               child: item.selected
