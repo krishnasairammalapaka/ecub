@@ -39,9 +39,8 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
   }
 
   Future<void> fetchPackInfo() async {
-    // try {
-      final args =
-      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    try {
+      final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
 
       final userEmail = FirebaseAuth.instance.currentUser?.email;
       if (userEmail != null) {
@@ -59,7 +58,13 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
             subscriptionType = packDoc['subscription_type'];
             foodlist = packData['selectedFoodIds'];
 
-            fromDate = DateTime.now();
+            // Convert Firestore Timestamp to DateTime
+            Timestamp fromTimestamp = packData['fromDate'];
+            Timestamp endingTimestamp = packData['endingDate'];
+            fromDate = fromTimestamp.toDate();
+            endingDate = endingTimestamp.toDate();
+
+            // Adjust the endingDate based on subscriptionType if needed
             if (subscriptionType == 'Monthly') {
               endingDate = fromDate.add(Duration(days: 30));
             } else if (subscriptionType == 'Weekly') {
@@ -96,10 +101,11 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
           });
         }
       }
-    // } catch (e) {
-    //   print('Error fetching pack info: $e');
-    // }
+    } catch (e) {
+      print('Error fetching pack info: $e');
+    }
   }
+
 
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate,
