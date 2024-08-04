@@ -45,6 +45,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
       userId = user.email!;
       await _fetchUserDetails();
       await _checkSubscription();
+      _calculateTotalAmount();
     }
   }
 
