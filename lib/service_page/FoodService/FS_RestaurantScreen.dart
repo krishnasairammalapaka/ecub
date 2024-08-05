@@ -1,7 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:ecub_s1_v2/models/Hotels_Db.dart';
-import 'package:ecub_s1_v2/models/Food_db.dart';
 
 class FS_RestaurantScreen extends StatefulWidget {
   @override
@@ -9,8 +7,7 @@ class FS_RestaurantScreen extends StatefulWidget {
 }
 
 class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
-  Box<Food_db>? FDbox;
-  Box<Hotels_Db>? hotelBox;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String hotelName = '';
   String hotelMail = '';
   String hotelAddress = '';
@@ -18,56 +15,54 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
   List<Map<String, dynamic>> foodItems = [];
 
   @override
-  void initState() {
-    super.initState();
-    _openBoxes();
-  }
-
-  Future<void> _openBoxes() async {
-    hotelBox = await Hive.openBox<Hotels_Db>('hotelDbBox');
-    FDbox = await Hive.openBox<Food_db>('foodDbBox');
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _fetchHotelInfo();
   }
 
-  void _fetchHotelInfo() {
+  void _fetchHotelInfo() async {
     final args = ModalRoute.of(context)?.settings.arguments as Map;
-    final hotelusername = args['username'];
-    final hotelList = hotelBox?.values.toList();
+    final hotelUsername = args['username'];
 
-    if (hotelList != null) {
-      for (var hotel in hotelList) {
-        if (hotel.hotelUsername == hotelusername) {
-          setState(() {
-            hotelName = hotel.hotelName;
-            hotelMail = hotel.hotelMail;
-            hotelAddress = hotel.hotelAddress;
-            hotelUsername = hotel.hotelUsername;
-          });
+    // Querying the collection to find the document where hotelUsername matches
+    final hotelQuerySnapshot = await _firestore
+        .collection('fs_hotels')
+        .where('hotelUsername', isEqualTo: hotelUsername)
+        .get();
 
-          _fetchFoodItems();
-          break;
-        }
-      }
+    if (hotelQuerySnapshot.docs.isNotEmpty) {
+      final hotelData = hotelQuerySnapshot.docs.first.data();
+      setState(() {
+        hotelName = hotelData['hotelName'];
+        hotelMail = hotelData['hotelMail'];
+        hotelAddress = hotelData['hotelAddress'];
+        this.hotelUsername = hotelData['hotelUsername'];
+      });
+      _fetchFoodItems();
+    } else {
+      // Handle case where hotel data is not found
+      print('No hotel found with the given username.');
     }
   }
 
+  void _fetchFoodItems() async {
+    final foodItemsSnapshot = await _firestore.collection('fs_food_items1').where('productOwnership', isEqualTo: hotelUsername).get();
 
-  void _fetchFoodItems() {
-    final allFoodItems = FDbox?.values.where((item) => item.productOwnership == hotelUsername).toList();
-
-    if (allFoodItems != null) {
+    if (foodItemsSnapshot.docs.isNotEmpty) {
       setState(() {
-        foodItems = allFoodItems.map((item) => {
-          'name': item.productTitle,
-          'restaurant': item.productOwnership,
-          'price': item.productPrice.toInt(),
-          'image': item.productImg,
-          'id': item.productId,
-          'desc': item.productDesc
+        foodItems = foodItemsSnapshot.docs.map((doc) => {
+          'name': doc['productTitle'],
+          'restaurant': doc['productOwnership'],
+          'price': doc['productPrice'],
+          'image': doc['productImg'],
+          'id': doc['productId'],
+          'desc': doc['productDesc']
         }).toList();
       });
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -158,7 +153,7 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
                   price: item['price'],
                   image: item['image'],
                   id: item['id'],
-                  Desc: item['desc'],
+                  desc: item['desc'],
                 )).toList(),
               ),
             ],
@@ -167,7 +162,6 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
       ),
     );
   }
-
 }
 
 class CategoryTab extends StatelessWidget {
@@ -198,24 +192,37 @@ class CategoryTab extends StatelessWidget {
 class MenuItem extends StatelessWidget {
   final String id;
   final String name;
-  final int price;
+  final double price;
   final String image;
-  final String Desc;
+  final String desc;
   final String restaurant;
 
-  MenuItem({required this.name, required this.restaurant, required this.price, required this.image, required this.id, required this.Desc});
+  MenuItem({required this.name, required this.restaurant, required this.price, required this.image, required this.id, required this.desc});
+
+  bool isNetworkImage(String url) {
+    return url.startsWith('http');
+  }
+
+  String convertToAssetImage(String imageUrl) {
+    if (imageUrl.startsWith('https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/')) {
+      return imageUrl.replaceFirst('https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/', '');
+    }
+    return imageUrl; // Return the original URL if it's not a matching network image
+  }
 
   @override
   Widget build(BuildContext context) {
+    final assetImage = convertToAssetImage(image);
+
     return GestureDetector(
       onTap: () {
         Navigator.pushNamed(context, '/fs_product',
             arguments: {
               'id': id,
               'title': name,
-              'price': price,
-              'image': image,
-              'description': Desc,
+              'price': price.toInt(),
+              'image': assetImage,
+              'description': desc,
               'shop': restaurant,
             });
       },
@@ -242,7 +249,7 @@ class MenuItem extends StatelessWidget {
                 color: Colors.grey[400],
                 borderRadius: BorderRadius.circular(8),
                 image: DecorationImage(
-                  image: AssetImage(image),
+                  image: AssetImage(assetImage),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -255,7 +262,6 @@ class MenuItem extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            // Text(restaurant),
             SizedBox(height: 10,),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -266,16 +272,11 @@ class MenuItem extends StatelessWidget {
                       fontSize: 15
                   ),
                 ),
-
               ],
             ),
           ],
         ),
-      )
+      ),
     );
-
-
-
-
   }
 }
