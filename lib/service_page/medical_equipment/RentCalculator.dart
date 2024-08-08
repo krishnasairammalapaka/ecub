@@ -1,17 +1,23 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class RentCalculator extends StatefulWidget {
   final String shopName;
   final String productName; // Add productName
-  final String shopAddress; // Add shopAddress
+  final String image_url; // Add shopAddress
+  final String price;
+  final String shopAddress;
 
   const RentCalculator({
-    Key? key,
+    super.key,
     required this.shopName,
     required this.productName, // Initialize productName
-    required this.shopAddress, // Initialize shopAddress
-  }) : super(key: key);
+    required this.shopAddress,
+    required this.image_url, // Initialize shopAddress
+    required this.price,
+  });
 
   @override
   _RentCalculatorState createState() => _RentCalculatorState();
@@ -37,6 +43,50 @@ class _RentCalculatorState extends State<RentCalculator> {
       }
       _detailsSubmitted = true;
     });
+  }
+
+  Future<void> addItemToCart(
+      String name, String storeName, String address, String imageUrl) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null && user.email != null) {
+      DocumentReference itemRef = FirebaseFirestore.instance
+          .collection('me_cart_rent')
+          .doc(user.email)
+          .collection('items')
+          .doc("${name}_$storeName");
+
+      DocumentSnapshot itemSnapshot = await itemRef.get();
+      if (itemSnapshot.exists) {
+        int currentQuantity = itemSnapshot['quantity'];
+        await itemRef.update({'quantity': currentQuantity + 1});
+      } else {
+        await itemRef.set({
+          'name': name,
+          'storeName': storeName,
+          'address': address,
+          'imageUrl': imageUrl,
+          'quantity': 1,
+        });
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(itemSnapshot.exists
+              ? 'Item quantity updated'
+              : 'Item added to cart'),
+          action: SnackBarAction(
+            label: 'OK',
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+            },
+          ),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      // pop navigator
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -90,6 +140,14 @@ class _RentCalculatorState extends State<RentCalculator> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: Image.network(
+                widget.image_url,
+                height: 200,
+                width: 200,
+                // fit: BoxFit.cover,
+              ),
+            ),
             SizedBox(height: 20),
             Center(
               child: Text(
@@ -162,6 +220,10 @@ class _RentCalculatorState extends State<RentCalculator> {
             if (_isWeekly)
               TextField(
                 decoration: InputDecoration(
+                  // on tap outside
+                  hintText: 'Enter number of weeks',
+                  border: OutlineInputBorder(),
+                  
                   labelText: 'Number of Weeks',
                 ),
                 keyboardType: TextInputType.number,
@@ -175,6 +237,8 @@ class _RentCalculatorState extends State<RentCalculator> {
             else
               TextField(
                 decoration: InputDecoration(
+                  hintText: 'Enter number of months',
+                  border: OutlineInputBorder(),
                   labelText: 'Number of Months',
                 ),
                 keyboardType: TextInputType.number,
@@ -189,7 +253,7 @@ class _RentCalculatorState extends State<RentCalculator> {
             Row(
               children: [
                 Text(
-                  'Select Delivery Date:',
+                  'Select Starting Date:',
                   style: TextStyle(fontSize: 16),
                 ),
                 SizedBox(width: 10),
@@ -206,12 +270,12 @@ class _RentCalculatorState extends State<RentCalculator> {
                   _calculateTotalRent();
                 },
                 style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all<Color>(
+                  backgroundColor: WidgetStateProperty.all<Color>(
                       Color.fromARGB(255, 240, 105, 105)),
-                  padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
+                  padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
                     EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   ),
-                  shape: MaterialStateProperty.all<OutlinedBorder>(
+                  shape: WidgetStateProperty.all<OutlinedBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -229,7 +293,7 @@ class _RentCalculatorState extends State<RentCalculator> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Total Rent: \Rs $_totalRent',
+                    'Total Rent: ₹ $_totalRent',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 10),
@@ -246,15 +310,22 @@ class _RentCalculatorState extends State<RentCalculator> {
                   SizedBox(height: 20),
                   Center(
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        addItemToCart(
+                          widget.productName,
+                          widget.shopName,
+                          widget.shopAddress,
+                          widget.image_url,
+                        );
+                      },
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all<Color>(
+                        backgroundColor: WidgetStateProperty.all<Color>(
                           Colors.blue,
                         ),
-                        padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
+                        padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
                           EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                         ),
-                        shape: MaterialStateProperty.all<OutlinedBorder>(
+                        shape: WidgetStateProperty.all<OutlinedBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -266,6 +337,9 @@ class _RentCalculatorState extends State<RentCalculator> {
                       ),
                     ),
                   ),
+                  SizedBox(
+                    height: 20,
+                  )
                 ],
               ),
           ],
@@ -278,10 +352,12 @@ class _RentCalculatorState extends State<RentCalculator> {
 void main() {
   runApp(MaterialApp(
     home: RentCalculator(
-        shopName: 'Example Shop', // Example shop name
-        productName: 'Example Product', // Example product name
-        shopAddress: 'Example Address' // Example address
-        ),
+      shopName: 'Example Shop', // Example shop name
+      productName: 'Example Product', // Example product name
+      shopAddress: 'Example Address',
+      image_url: '', // Example address
+      price: '100',
+    ),
     theme: ThemeData(
       scaffoldBackgroundColor: Colors.white,
     ),

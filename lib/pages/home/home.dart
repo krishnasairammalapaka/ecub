@@ -1,4 +1,5 @@
 import 'package:ecub_s1_v2/components/bottom_nav_bar.dart';
+import 'package:ecub_s1_v2/components/speech_recog_page.dart';
 import 'package:ecub_s1_v2/pages/home/home_screen.dart';
 import 'package:ecub_s1_v2/profile/profile.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_cart.dart';
@@ -94,6 +95,24 @@ class _HomePageState extends State<HomePage> {
                 ],
               )
             : null,
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              builder: (context) => SpeechRecognitionScreen(),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+              ),
+            );
+          },
+          backgroundColor: Colors.green, // Custom background color
+          elevation: 10.0, // Custom elevation
+          shape: RoundedRectangleBorder(
+            // Custom shape
+            borderRadius: BorderRadius.all(Radius.circular(16.0)),
+          ),
+          child: Icon(Icons.mic),
+        ),
         body: Center(
           child: _pages[_selectedIndex],
         ),

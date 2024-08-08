@@ -6,6 +6,10 @@ import 'package:ecub_s1_v2/pages/sign_pages/forget_password.dart';
 import 'package:ecub_s1_v2/pages/sign_pages/login_page.dart';
 import 'package:ecub_s1_v2/pages/sign_pages/registration_page.dart';
 import 'package:ecub_s1_v2/coming_soon.dart';
+import 'package:ecub_s1_v2/service_page/FoodService/FS_CategoryScreen.dart';
+import 'package:ecub_s1_v2/service_page/FoodService/SubscriptionModule/FS_S_Checkout.dart';
+import 'package:ecub_s1_v2/service_page/FoodService/SubscriptionModule/FS_S_Desc.dart';
+import 'package:ecub_s1_v2/service_page/FoodService/SubscriptionModule/FS_S_Home.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_cart.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_home.dart';
 // import 'package:ecub_s1_v2/service_page/medical_equipment/me_item_details.dart';
@@ -31,18 +35,14 @@ import 'package:ecub_s1_v2/service_page/FoodService/FS_DishesScreen.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/FS_CartScreen.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/FS_CheckoutScreen.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/FS_Search.dart';
-import 'package:ecub_s1_v2/service_page/FoodService/FS_CategoryScreen.dart';
-import 'package:ecub_s1_v2/service_page/FoodService/SubscriptionModule/FS_S_Checkout.dart';
-import 'package:ecub_s1_v2/service_page/FoodService/SubscriptionModule/FS_S_Desc.dart';
-import 'package:ecub_s1_v2/service_page/FoodService/SubscriptionModule/FS_S_Home.dart';
-import 'package:ecub_s1_v2/service_page/FoodService/SubscriptionModule/FS_S_PackCheck.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Hive.initFlutter();
   // ignore: unused_local_variable
-  var box = await Hive.openBox('user_data');
+  var box=await Hive.openBox('user_data');
 
   // ------------- Food Service ---------------
   Hive.registerAdapter<Cart_Db>(CartDbAdapter());
@@ -51,6 +51,8 @@ void main() async {
   Hive.registerAdapter<Favourites_DB>(FavouritesDBAdapter());
   Hive.registerAdapter<CheckoutHistory_DB>(CheckoutHistoryDBAdapter());
 
+
+
   await Hive.openBox('Cart_Db');
 
   // Open boxes
@@ -58,6 +60,8 @@ void main() async {
   var loginBox = await Hive.openBox("login_state");
   var foodBox = await Hive.openBox<Food_db>('foodDbBox');
   var hotelBox = await Hive.openBox<Hotels_Db>('hotelDbBox');
+
+
 
   // Store static data only if the box is empty
   if (foodBox.isEmpty) {
@@ -388,7 +392,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/intro': (context) => IntroPage(),
         '/login': (context) => LoginPage(),
-        '/signup': (context) => RegistrationPage(),
+        '/signup': (context) => SignUpPage(),
         '/forget_password': (context) => ForgetPassword(),
         '/home': (context) => HomePage(),
         '/dc': (context) => ComingSoon(),
@@ -398,6 +402,7 @@ class MyApp extends StatelessWidget {
         '/me': (context) => MeHomePage(),
         '/me_cart': (context) => Mecart(),
         '/me_orders': (context) => MeOrders(),
+
 
         // #FoodService Module Pages
         '/fs_home': (context) => FS_HomeScreen(),
@@ -415,8 +420,8 @@ class MyApp extends StatelessWidget {
 
         '/fs_s_home': (context) => FS_S_Home(),
         '/fs_s_desc': (context) => FS_S_Desc(),
-        '/fs_s_checkout': (context) => FS_S_Checkout(),
-        '/fs_s_packcheck': (context) => FS_S_PackCheck()
+        '/fs_s_checkout': (context) => FS_S_Checkout()
+      
       },
     );
   }

@@ -127,7 +127,9 @@ class _FS_S_DescState extends State<FS_S_Desc> {
   }
 
   void _onSelectItem(MenuItem item) {
-    item.selected = !item.selected;
+    setState(() {
+      item.selected = !item.selected;
+    });
     selectedItemsNotifier.value = List.from(selectedItemsNotifier.value);
   }
 

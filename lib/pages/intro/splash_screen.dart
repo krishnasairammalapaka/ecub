@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:ecub_s1_v2/pages/intro/intro.dart';
+// import 'package:ecub_s1_v2/pages/intro/intro.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -12,11 +12,8 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
-    Future.delayed(const Duration(seconds: 5), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => IntroPage()),
-      );
+    Future.delayed(const Duration(seconds: 3), () {
+      Navigator.pushNamed(context, '/login');
     });
   }
 

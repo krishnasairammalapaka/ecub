@@ -1,15 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive/hive.dart';
+import '../sign_pages/registration_page.dart';
 
 class LoginPage extends StatelessWidget {
-  LoginPage({super.key});
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
-  // Initialize Firebase App
+  // Initialize Firebase
   Future<FirebaseApp> _initializeFirebase() async {
     FirebaseApp firebaseApp = await Firebase.initializeApp();
     return firebaseApp;
@@ -22,20 +23,15 @@ class LoginPage extends StatelessWidget {
           .collection('users')
           .doc(user.email)
           .get();
-      // print(1);
       try {
-        // Open the Hive box asynchronously before using it
         var box = await Hive.openBox('user_data');
         if (userData['firstname'] != null) {
-          // Check for null value
           await box.put('email', userData['email']);
           await box.put('phonenumber', userData['phonenumber']);
           await box.put('age', userData['age']);
           await box.put('firstname', userData['firstname']);
           await box.put('lastname', userData['lastname']);
         }
-        // Optionally close the box if you're done with it
-        // await box.close();
       } catch (e) {
         print("Error storing data in Hive: $e");
       }
@@ -63,115 +59,264 @@ class LoginPage extends StatelessWidget {
     }
   }
 
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _validateEmail(String email) {
+    final RegExp emailRegex = RegExp(
+      r'^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+',
+    );
+    return emailRegex.hasMatch(email);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: _initializeFirebase(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return Scaffold(
-            body: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: const [
-                    Color.fromARGB(255, 243, 195, 210),
-                    Color.fromARGB(255, 255, 250, 250),
-                    Color.fromARGB(255, 255, 250, 250),
-                    Color.fromARGB(255, 221, 210, 251)
-                  ],
-                ),
-              ),
-              child: Center(
+    return SafeArea(
+      child: FutureBuilder(
+        future: _initializeFirebase(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Scaffold(
+              backgroundColor: Colors.white,
+              // appBar: AppBar(
+              //   leading: IconButton(
+              //     icon: Icon(Icons.arrow_back, color: Colors.black),
+              //     onPressed: () {
+              //       Navigator.pop(context);
+              //     },
+              //   ),
+              //   backgroundColor: Colors.transparent,
+              //   elevation: 0,
+              // ),
+              body: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.all(15.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0, vertical: 16.0),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Text(
-                        "Login to ECUB",
-                        style: TextStyle(
-                          fontSize: 30.0,
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromARGB(255, 122, 7, 7),
-                        ),
-                      ),
-                      SizedBox(height: 35.0),
-                      TextField(
-                        controller: emailController,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.blue[50],
-                          hintText: "Enter your Email number",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(21),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 40),
+                      Center(
+                        child: Text(
+                          'Login to ECUB',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
                           ),
                         ),
                       ),
-                      SizedBox(height: 20.0),
-                      TextField(
-                        controller: passwordController,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.blue[50],
-                          hintText: "Enter your password",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(21),
+                      SizedBox(height: 8),
+                      Center(
+                        child: Text(
+                          'Welcome back!',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
                           ),
-                        ),
-                        obscureText: true,
-                      ),
-                      SizedBox(height: 20.0),
-                      ElevatedButton(
-                        onPressed: () {
-                          _loginWithEmailPassword(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red[400],
-                          foregroundColor: Colors.black,
-                        ),
-                        child:
-                            const Text("Login", style: TextStyle(fontSize: 15)),
-                      ),
-                      SizedBox(height: 40.0),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/forget_password');
-                        },
-                        child: const Text(
-                          "forgot password?",
-                          style: TextStyle(color: Colors.blue),
                         ),
                       ),
                       SizedBox(height: 40),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text("Don't have an account?"),
-                          // SizedBox(width: 2),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/signup');
-                            },
-                            child: Text(
-                              'Sign Up',
-                              style: TextStyle(
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.bold),
+                      Center(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                            side: BorderSide(color: Colors.grey),
+                            padding: EdgeInsets.symmetric(
+                                vertical: 12, horizontal: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
                             ),
+                            shadowColor: Colors.grey.withOpacity(0.5),
+                            elevation: 5,
                           ),
-                        ],
+                          // icon: FaIcon(FontAwesomeIcons.google,
+                          //     color: Colors.red, size: 24.0),
+                          label: Text(
+                            'Continue with Google',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          onPressed: () {},
+                        ),
                       ),
+                      SizedBox(height: 16),
+                      Center(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                            side: BorderSide(color: Colors.grey),
+                            padding: EdgeInsets.symmetric(
+                                vertical: 12, horizontal: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            shadowColor: Colors.grey.withOpacity(0.5),
+                            elevation: 5,
+                          ),
+                          // icon: FaIcon(FontAwesomeIcons.apple,
+                          //     color: Colors.blue, size: 24.0),
+                          label: Text(
+                            ' Continue with Apple ',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          onPressed: () {},
+                        ),
+                      ),
+                      SizedBox(height: 30),
+                      Center(
+                        child: Text(
+                          'OR',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 30),
+                      Text(
+                        'Email',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      TextField(
+                        controller: emailController,
+                        decoration: InputDecoration(
+                          hintText: 'hi@example.com',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding:
+                              EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Password',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      TextField(
+                        controller: passwordController,
+                        decoration: InputDecoration(
+                          hintText: 'Enter your password',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding:
+                              EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        ),
+                        obscureText: true,
+                      ),
+                      SizedBox(height: 30),
+                      Center(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                vertical: 16, horizontal: 24),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            shadowColor: Colors.blue.withOpacity(0.5),
+                            elevation: 5,
+                          ),
+                          onPressed: () {
+                            if (!_validateEmail(emailController.text)) {
+                              _showErrorDialog(
+                                  context, 'Please enter a valid email address.');
+                              return;
+                            }
+                            _loginWithEmailPassword(context);
+                          },
+                          child: Text(
+                            'Submit',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      Center(
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/forget_password');
+                          },
+                          child: Text(
+                            'Forgot password',
+                            style: TextStyle(fontSize: 16, color: Colors.blue),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Don’t have an account?",
+                              style: TextStyle(fontSize: 16, color: Colors.black),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => SignUpPage()),
+                                );
+                              },
+                              child: Text(
+                                'Create new',
+                                style:
+                                    TextStyle(fontSize: 16, color: Colors.blue),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 40),
                     ],
                   ),
                 ),
               ),
-            ),
-          );
-        }
-        return CircularProgressIndicator(); // Show loading indicator while waiting for Firebase initialization
-      },
+            );
+          }
+          return CircularProgressIndicator();
+        },
+      ),
     );
   }
+}
+
+void main() {
+  runApp(MaterialApp(
+    home: LoginPage(),
+    debugShowCheckedModeBanner: false,
+  ));
 }

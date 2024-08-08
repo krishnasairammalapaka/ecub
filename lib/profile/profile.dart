@@ -60,25 +60,25 @@ class ProfileScreen extends StatelessWidget {
           ),
           ),
           //add mecart and me orders icon buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/me_cart');
-                },
-                icon: Icon(Icons.shopping_cart),
-                label: Text('View Cart'),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/me_orders');
-                },
-                icon: Icon(Icons.shopping_bag),
-                label: Text('View Orders'),
-              ),
-            ],
-          ),
+          // Row(
+          //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          //   children: [
+          //     ElevatedButton.icon(
+          //       onPressed: () {
+          //         Navigator.pushNamed(context, '/me_cart');
+          //       },
+          //       icon: Icon(Icons.shopping_cart),
+          //       label: Text('View Cart'),
+          //     ),
+          //     ElevatedButton.icon(
+          //       onPressed: () {
+          //         Navigator.pushNamed(context, '/me_orders');
+          //       },
+          //       icon: Icon(Icons.shopping_bag),
+          //       label: Text('View Orders'),
+          //     ),
+          //   ],
+          // ),
         ],
       ),
     );

@@ -13,10 +13,14 @@ class Assets {
   static const String assetsHotelPic = 'assets/HotelPic.jpg';
   static const String assetsHotelProf = 'assets/hotel_prof.png';
   static const String assetsKabab = 'assets/kabab.png';
+  static const String assetsMeals = 'assets/Meals.jpg';
   static const String assetsRestuarntLogo = 'assets/restuarnt_logo.png';
   static const String assetsSalads = 'assets/salads.png';
-  static const String assetsSlide = 'assets/slide.png';
+  static const String assetsSlide1 = 'assets/slide1.png';
   static const String assetsSlide2 = 'assets/slide2.png';
+  static const String assetsSlide3 = 'assets/slide3.png';
+  static const String assetsSlide4 = 'assets/slide4.png';
+  static const String assetsSplashscreen = 'assets/splashscreen.gif';
   static const String assetsSubscriptionLogo = 'assets/subscription_logo.png';
   static const String assetsUser = 'assets/user.png';
   static const String foodsApplePie = 'assets/foods/apple_pie.jpg';
@@ -35,5 +39,7 @@ class Assets {
   static const String foodsVegStirfry = 'assets/foods/veg_stirfry.jpg';
   static const String imagesEcubLogo = 'assets/images/ecub_logo.png';
   static const String imagesGoogle = 'assets/images/google.png';
+  static const String imagesMeAd = 'assets/images/me_ad.jpg';
+  static const String mlModelsModel = 'assets/ml_models/model.tflite';
 
 }

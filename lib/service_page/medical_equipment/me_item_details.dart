@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:ecub_s1_v2/service_page/medical_equipment/RentCalculator.dart';
+// import 'package:ecub_s1_v2/service_page/medical_equipment/RentCalculator.dart';
+import 'package:ecub_s1_v2/service_page/medical_equipment/me_item_desc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -127,81 +128,22 @@ class _MeItemDetailsState extends State<MeItemDetails> {
                       style: GoogleFonts.lato(
                           fontSize: 24, fontWeight: FontWeight.bold),
                     ),
+                    const SizedBox(height: 30),
                     Text(
-                      'Description',
+                      'For Description  and price click on select store',
                       style: GoogleFonts.lato(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.deepPurple),
                     ),
                     const SizedBox(height: 10),
-                    Card(
-                      elevation: 4,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          'This is a description of the item. It can be a long description or a short one. It can contain details about the item, such as its features, specifications, and more.',
-                          style: GoogleFonts.lato(fontSize: 16),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 40),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          'Price        ',
-                          style: GoogleFonts.lato(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.deepPurple),
-                        ),
-                        const SizedBox(width: 10),
-                        Card(
-                          elevation: 4,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              'Rs. 1000 ',
-                              style: GoogleFonts.lato(fontSize: 16),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Text(
-                          'Min-Max',
-                          style: GoogleFonts.lato(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.deepPurple),
-                        ),
-                        const SizedBox(width: 10),
-                        Card(
-                          elevation: 4,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              '100-1000',
-                              style: GoogleFonts.lato(fontSize: 16),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Column(
-                      children: [
-                        storeList(context, 'Buy', Colors.red[800],
-                            Icons.shopping_cart),
+                        storeListBuy(context, 'Select Store', Colors.green[400],
+                            Icons.ads_click_outlined),
                         const SizedBox(height: 10),
-                        storeList(
-                            context,
-                            'Rent',
-                            const Color.fromARGB(255, 42, 128, 46),
-                            Icons.store),
                       ],
                     ),
                   ],
@@ -214,112 +156,15 @@ class _MeItemDetailsState extends State<MeItemDetails> {
     );
   }
 
-  ElevatedButton storeList(
+  String _currentSortOption = 'Prize';
+  ElevatedButton storeListBuy(
       BuildContext context, String label, Color? color, IconData icon) {
     return ElevatedButton.icon(
       icon: Icon(icon),
       label: Text(label),
       onPressed: () async {
         final categoryName = widget.categoryName;
-        showModalBottomSheet(
-          context: context,
-          builder: (context) {
-            return FutureBuilder<QuerySnapshot>(
-              future: FirebaseFirestore.instance
-                  .collection('medical_eqipment_categories')
-                  .doc(categoryName)
-                  .collection('data')
-                  .get(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done &&
-                    snapshot.hasData) {
-                  final stores = snapshot.data!.docs.map((doc) {
-                    return Stores(
-                      name: doc['Name'],
-                      address: doc['Address'],
-                      rating: doc['Rating'],
-                    );
-                  }).toList();
-                  return ListView.builder(
-                    itemCount: stores.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 5, 16, 5),
-                        child: Card(
-                          elevation: 5,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: InkWell(
-                            onTap: () {
-                              if (label.trim() == 'Rent') {
-                                addItemToCart(
-                                  widget.itemName,
-                                  stores[index].name,
-                                  stores[index].address,
-                                  stores[index].rating.toString(),
-                                  widget.itemImage,
-                                );
-                                Navigator.pop(context);
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => RentCalculator(
-                                      shopName: stores[index].name,
-                                      productName: widget.itemName,
-                                      shopAddress: stores[index].address,
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                addItemToCart(
-                                  widget.itemName,
-                                  stores[index].name,
-                                  stores[index].address,
-                                  stores[index].rating.toString(),
-                                  widget.itemImage,
-                                );
-                                Navigator.pop(context);
-                              }
-                            },
-                            child: ListTile(
-                              leading: Icon(Icons.store, color: Colors.red),
-                              title: Text(
-                                stores[index].name,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Text(stores[index].address),
-                              trailing: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  "${stores[index].rating}⭐",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                } else if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                } else {
-                  return const CircularProgressIndicator();
-                }
-              },
-            );
-          },
-        );
+        store_list(context, categoryName);
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
@@ -330,16 +175,173 @@ class _MeItemDetailsState extends State<MeItemDetails> {
       ),
     );
   }
+
+  Future<dynamic> store_list(BuildContext context, String categoryName) {
+    return showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return Column(
+            children: [
+              DropdownButton<String>(
+                value: _currentSortOption,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _currentSortOption = newValue!;
+                  });
+                },
+                items: <String>['Rating', 'Name', 'Prize']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+              Expanded(
+                child: FutureBuilder<QuerySnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('medical_eqipment_categories1')
+                      .doc(categoryName)
+                      .collection('data')
+                      .get(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done &&
+                        snapshot.hasData) {
+                      var stores = snapshot.data!.docs.map((doc) {
+                        return Stores(
+                          name: doc['Name'],
+                          address: doc['Address'],
+                          rating: doc['Rating'],
+                          prize: doc['prize'],
+                          rent: doc['rent'],
+                        );
+                      }).toList();
+                      switch (_currentSortOption) {
+                        case 'Name':
+                          stores.sort((a, b) => a.name.compareTo(b.name));
+                          break;
+                        case 'Rating':
+                          stores.sort((a, b) {
+                            int compareRating = b.rating.compareTo(a.rating);
+                            if (compareRating == 0) {
+                              return a.prize.compareTo(b.prize);
+                            }
+                            return compareRating;
+                          });
+                          break;
+                        case 'Prize':
+                          stores.sort((a, b) => a.prize.compareTo(b.prize));
+                          break;
+                      }
+
+                      return ListView.builder(
+                        itemCount: stores.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 5, 16, 5),
+                            child: Card(
+                              elevation: 5,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: InkWell(
+                                onTap: () {
+                                  // addItemToCart(
+                                  //   widget.itemName,
+                                  //   stores[index]!.name,
+                                  //   stores[index]!.address,
+                                  //   stores[index]!.rating.toString(),
+                                  //   widget.itemImage,
+                                  // );
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MeItemDesc(
+                                        storeName: stores[index].name,
+                                        categoryName: categoryName,
+                                        itemName: widget.itemName,
+                                        imageUrl: widget.itemImage,
+                                        price: stores[index].prize.toString(),
+                                        storeAddress: stores[index].address,
+                                        // rent: stores[index].rent,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: ListTile(
+                                  leading:
+                                      Icon(Icons.store, color: Colors.red),
+                                  title: Text(
+                                    stores[index].name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  subtitle: Text(stores[index].address),
+                                  trailing: Container(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).primaryColor,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          "${stores[index].rating}⭐",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        Text(
+                                          "Prize: ₹${stores[index].prize}",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        Text(
+                                          "Rent: ${stores[index].rent}",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else {
+                      return const CircularProgressIndicator();
+                    }
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      );
+  }
 }
 
 class Stores {
   final String name;
   final String address;
   final double rating;
+  final int prize;
+  final String rent;
 
   Stores({
     required this.name,
     required this.address,
     required this.rating,
+    required this.prize,
+    required this.rent,
   });
 }

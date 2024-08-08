@@ -23,7 +23,7 @@ class MeOrders extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Medical Equipment Orders'),
+        title: const Text('Orders'),
       ),
       body: FutureBuilder<QuerySnapshot>(
           future: FirebaseFirestore.instance

@@ -3,107 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
-import 'FS_S_Desc.dart';
-
-class MenuItem {
-  final String Time;
-  final String id;
-  final String name;
-  final String image;
-  final bool isVeg;
-  final int price;
-  late final bool selected;
-
-  MenuItem({
-    required this.Time,
-    required this.id,
-    required this.name,
-    required this.image,
-    required this.isVeg,
-    required this.price,
-    required this.selected,
-  });
-}
-
-class _TodaysMenu extends StatefulWidget {
-  final String FoodTime;
-  final String packId;
-
-  _TodaysMenu({required this.packId, required this.FoodTime });
-
-  @override
-  __TodaysMenuState createState() => __TodaysMenuState();
-}
-
-class __TodaysMenuState extends State<_TodaysMenu> {
-  Future<List<MenuItem>> fetchMenuItems() async {
-    List<MenuItem> menuItems = [];
-    try {
-      DocumentSnapshot doc = await FirebaseFirestore.instance
-          .collection('fs_packs')
-          .doc(widget.packId)
-          .collection('todayMenu')
-          .doc(widget.FoodTime)
-          .get();
-      print(widget.packId);
-      String foodId = doc['FoodId'];
-
-
-      DocumentSnapshot foodDoc = await FirebaseFirestore.instance
-          .collection('fs_food_items')
-          .doc(foodId)
-          .get();
-      if (foodDoc.exists) {
-        Map<String, dynamic> foodData = foodDoc.data() as Map<String, dynamic>;
-        menuItems.add(MenuItem(
-          Time: widget.FoodTime,
-          id: foodId,
-          name: foodData['productTitle'],
-          image: foodData['productImg'],
-          isVeg: foodData['isVeg'],
-          price: foodData['productPrice'],
-          selected: true,
-        ));
-      }
-
-    } catch (e) {
-      print('Error fetching menu items: $e');
-    }
-    return menuItems;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<MenuItem>>(
-      future: fetchMenuItems(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
-        } else if (snapshot.hasError) {
-          return Text('Error fetching menu');
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Text('No menu available');
-        } else {
-          List<MenuItem> menuItems = snapshot.data!;
-          return Column(
-            children: menuItems.map((item) {
-              return MenuItemWidget(
-                item: item,
-                onSelect: () {
-                  setState(() {
-                    item.selected = !item.selected;
-                  });
-                },
-              );
-            }).toList(),
-          );
-        }
-      },
-    );
-  }
-}
-
-
 class DateUtil {
   static const DATE_FORMAT = 'dd/MM/yyyy';
 
@@ -140,8 +39,9 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
   }
 
   Future<void> fetchPackInfo() async {
-    try {
-      final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    // try {
+      final args =
+      ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
 
       final userEmail = FirebaseAuth.instance.currentUser?.email;
       if (userEmail != null) {
@@ -159,13 +59,7 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
             subscriptionType = packDoc['subscription_type'];
             foodlist = packData['selectedFoodIds'];
 
-            // Convert Firestore Timestamp to DateTime
-            Timestamp fromTimestamp = packData['fromDate'];
-            Timestamp endingTimestamp = packData['endingDate'];
-            fromDate = fromTimestamp.toDate();
-            endingDate = endingTimestamp.toDate();
-
-            // Adjust the endingDate based on subscriptionType if needed
+            fromDate = DateTime.now();
             if (subscriptionType == 'Monthly') {
               endingDate = fromDate.add(Duration(days: 30));
             } else if (subscriptionType == 'Weekly') {
@@ -202,11 +96,10 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
           });
         }
       }
-    } catch (e) {
-      print('Error fetching pack info: $e');
-    }
+    // } catch (e) {
+    //   print('Error fetching pack info: $e');
+    // }
   }
-
 
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate,
@@ -312,10 +205,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-
-
-
-
               _buildDateSetting('From Date', fromDate, (date) {
                 setState(() {
                   fromDate = date;
@@ -329,8 +218,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                 });
               }),
               SizedBox(height: 20),
-              _TodaysMenu(packId: packID, FoodTime: 'breakfast' ),
-              SizedBox(height: 10,),
               AlarmSetting(
                 title: 'Breakfast',
                 initialTime: TimeOfDay(hour: 7, minute: 0),
@@ -339,9 +226,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                   updateMeal('Breakfast', count, days, time, isOn);
                 },
               ),
-
-              _TodaysMenu(packId: packID, FoodTime: 'lunch' ),
-              SizedBox(height: 10,),
               AlarmSetting(
                 title: 'Lunch',
                 initialTime: TimeOfDay(hour: 12, minute: 0),
@@ -350,9 +234,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                   updateMeal('Lunch', count, days, time, isOn);
                 },
               ),
-
-              _TodaysMenu(packId: packID, FoodTime: 'snacks' ),
-              SizedBox(height: 10,),
               AlarmSetting(
                 title: 'Snack',
                 initialTime: TimeOfDay(hour: 16, minute: 0),
@@ -361,9 +242,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                   updateMeal('Snack', count, days, time, isOn);
                 },
               ),
-
-              _TodaysMenu(packId: packID, FoodTime: 'dinner' ),
-              SizedBox(height: 10,),
               AlarmSetting(
                 title: 'Dinner',
                 initialTime: TimeOfDay(hour: 19, minute: 0),
@@ -456,8 +334,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
       ),
     );
   }
-
-
 
   Widget _buildDateSetting(
       String label, DateTime date, Function(DateTime) onDateSelected) {
@@ -625,110 +501,6 @@ class _AlarmSettingState extends State<AlarmSetting> {
                 }),
               ),
             ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
-class MenuItemWidget extends StatelessWidget {
-  final MenuItem item;
-  final VoidCallback onSelect;
-
-  MenuItemWidget({required this.item, required this.onSelect});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onSelect,
-      child: Container(
-
-        padding: EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: item.selected
-              ? Colors.lightBlueAccent.withOpacity(0.5)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.5),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              item.Time,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Stack(
-              children: [
-                Container(
-                  height: 150,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[400],
-                    borderRadius: BorderRadius.circular(8),
-                    image: DecorationImage(
-                      image: NetworkImage(item.image),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                if (item.selected)
-                  Positioned(
-                    top: 5,
-                    right: 5,
-                    child: Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                    ),
-                  ),
-              ],
-            ),
-            SizedBox(height: 7),
-            Text(
-              item.name,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 5),
-            Row(
-              children: [
-                Text(
-                  item.isVeg ? 'Vegetarian' : 'Non-Vegetarian',
-                  style: TextStyle(
-                    color: item.isVeg ? Colors.green : Colors.red,
-                    fontSize: 14,
-                  ),
-                ),
-                SizedBox(width: 10),
-                Text(
-                  '₹${item.price}',
-                  style: TextStyle(
-                    color: Color(0xFF0D5EF9),
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-
-            Align(
-              alignment: Alignment.centerRight,
-              child: item.selected
-                  ? Icon(Icons.check_circle, color: Colors.green)
-                  : Icon(Icons.radio_button_unchecked, color: Colors.grey),
-            ),
           ],
         ),
       ),
