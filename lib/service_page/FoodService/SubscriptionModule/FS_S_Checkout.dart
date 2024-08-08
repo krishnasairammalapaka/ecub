@@ -285,8 +285,8 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
 
                       // Navigate to the next screen
                       Navigator.pushNamed(
-                        context,
-                        '/fs_cart'
+                          context,
+                          '/fs_cart'
                       );
                     } else {
                       print('User is not logged in.');

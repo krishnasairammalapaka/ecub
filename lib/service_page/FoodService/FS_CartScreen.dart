@@ -142,23 +142,43 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
   }
 
   void _navigateToCheckout() {
-    final itemsWithCount = itemCounts.entries
-        .where((entry) => entry.value > 0)
-        .map((entry) => {
-      'id': entry.key,
-      'count': entry.value,
-    })
-        .toList();
+    if (itemCounts.isEmpty && !_isSubscriptionActive) {
+      // Show popup if the cart is empty
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Cart is Empty'),
+          content: Text('There are no items in your cart.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                Navigator.pushNamedAndRemoveUntil(context, '/fs_home', (route) => false); // Redirect to home
+              },
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      final itemsWithCount = itemCounts.entries
+          .where((entry) => entry.value > 0)
+          .map((entry) => {
+        'id': entry.key,
+        'count': entry.value,
+      })
+          .toList();
 
-    Navigator.pushNamed(
-      context,
-      '/fs_checkout',
-      arguments: {
-        'itemsWithCount': itemsWithCount,
-        'totalAmount': totalAmount,
-        'totalCalories': totalCalories,
-      },
-    );
+      Navigator.pushNamed(
+        context,
+        '/fs_checkout',
+        arguments: {
+          'itemsWithCount': itemsWithCount,
+          'totalAmount': totalAmount,
+          'totalCalories': totalCalories,
+        },
+      );
+    }
   }
 
   @override

@@ -1,4 +1,3 @@
-import 'package:ecub_s1_v2/components/pay_home_food.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:ecub_s1_v2/models/Cart_Db.dart';
@@ -46,20 +45,19 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
       userId = user.email!;
       await _fetchUserDetails();
       await _checkSubscription();
+      _calculateTotalAmount();
     }
   }
 
   Future<void> _openBoxes() async {
     _cartBox = await Hive.openBox<Cart_Db>('cartItems');
     FDbox = await Hive.openBox<Food_db>('foodDbBox');
-    _checkoutHistoryBox =
-        await Hive.openBox<CheckoutHistory_DB>('checkoutHistory');
+    _checkoutHistoryBox = await Hive.openBox<CheckoutHistory_DB>('checkoutHistory');
     setState(() {});
   }
 
   Future<void> _fetchUserDetails() async {
-    DocumentSnapshot userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
     setState(() {
       userName = userDoc['firstname'];
       userAddress = userDoc['email'];
@@ -97,8 +95,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     totalAmount = 0;
     if (_cartBox != null && FDbox != null) {
       for (var item in _cartBox!.values) {
-        var product = FDbox!.values
-            .firstWhere((element) => element.productId == item.ItemId);
+        var product = FDbox!.values.firstWhere((element) => element.productId == item.ItemId);
         totalAmount += item.ItemCount * product.productPrice;
       }
     }
@@ -189,11 +186,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
             TextButton(
               onPressed: () {
                 _confirmOrder();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => PayHomeFood()),
-                );
-                // Navigator.of(context).pop();
+                Navigator.of(context).pop();
               },
               child: Text('Confirm'),
             ),
@@ -208,7 +201,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     await twilioFlutter.sendSMS(
       toNumber: userPhoneNumber,
       messageBody:
-          'Your order has been placed successfully. Total amount: ₹ $totalAmount',
+      'Your order has been placed successfully. Total amount: ₹ $totalAmount',
     );
 
     // Transfer cart data to checkout history
@@ -240,12 +233,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     await _cartBox!.clear();
     setState(() {});
 
-    await FirebaseFirestore.instance
-        .collection('fs_cart')
-        .doc(userId)
-        .collection('packs')
-        .doc('info')
-        .update({'active': 'True'});
+    await FirebaseFirestore.instance.collection('fs_cart').doc(userId).collection('packs').doc('info').update({'active':'True'});
 
     // Navigate to the profile page
     Navigator.pushNamed(context, '/fs_home');
@@ -272,33 +260,33 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
               child: _cartBox == null || FDbox == null || !FDbox!.isOpen
                   ? Center(child: CircularProgressIndicator())
                   : ValueListenableBuilder(
-                      valueListenable: _cartBox!.listenable(),
-                      builder: (context, Box<Cart_Db> items, _) {
-                        if (items.isEmpty) {
-                          return Center(child: Text('No items in the cart.'));
-                        } else {
-                          return ListView.builder(
-                            itemCount: items.length,
-                            itemBuilder: (context, index) {
-                              var item = items.getAt(index);
-                              if (item == null) {
-                                return Center(child: Text('Item not found.'));
-                              }
-
-                              var productId = item.ItemId;
-
-                              var productDetails = FDbox!.values.firstWhere(
-                                  (element) => element.productId == productId);
-
-                              return CheckoutItemCard(
-                                productDetails: productDetails,
-                                itemCount: item.ItemCount.toInt(),
-                              );
-                            },
-                          );
+                valueListenable: _cartBox!.listenable(),
+                builder: (context, Box<Cart_Db> items, _) {
+                  if (items.isEmpty) {
+                    return Center(child: Text('No items in the cart.'));
+                  } else {
+                    return ListView.builder(
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        var item = items.getAt(index);
+                        if (item == null) {
+                          return Center(child: Text('Item not found.'));
                         }
+
+                        var productId = item.ItemId;
+
+                        var productDetails = FDbox!.values.firstWhere(
+                                (element) => element.productId == productId);
+
+                        return CheckoutItemCard(
+                          productDetails: productDetails,
+                          itemCount: item.ItemCount.toInt(),
+                        );
                       },
-                    ),
+                    );
+                  }
+                },
+              ),
             ),
             SizedBox(height: 16),
             if (hasSubscription && subscriptionPack != null) ...[

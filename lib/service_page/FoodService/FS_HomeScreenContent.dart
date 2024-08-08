@@ -184,25 +184,25 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
               categoryImages.isEmpty
                   ? Center(child: CircularProgressIndicator())
                   : SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: categoryImages.entries.map((entry) {
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/fs_dishes',
-                                  arguments: {
-                                    'title': entry.key,
-                                    'type': entry.key
-                                  });
-                            },
-                            child: CategoryCard(
-                              title: entry.key,
-                              image: entry.value,
-                            ),
-                          );
-                        }).toList(),
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: categoryImages.entries.map((entry) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/fs_dishes',
+                            arguments: {
+                              'title': entry.key,
+                              'type': entry.key
+                            });
+                      },
+                      child: CategoryCard(
+                        title: entry.key,
+                        image: entry.value,
                       ),
-                    ),
+                    );
+                  }).toList(),
+                ),
+              ),
               SizedBox(height: 20),
               Text(
                 "Popular now",
@@ -215,55 +215,55 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
               FDbox == null
                   ? Center(child: CircularProgressIndicator())
                   : ValueListenableBuilder(
-                      valueListenable: FDbox!.listenable(),
-                      builder: (context, Box<Food_db> items, _) {
-                        if (items.isEmpty) {
-                          return Center(child: Text('No items found.'));
-                        } else {
-                          List<Food_db> sortedItems = items.values.toList();
-                          sortedItems.sort((a, b) =>
-                              b.productRating.compareTo(a.productRating));
+                valueListenable: FDbox!.listenable(),
+                builder: (context, Box<Food_db> items, _) {
+                  if (items.isEmpty) {
+                    return Center(child: Text('No items found.'));
+                  } else {
+                    List<Food_db> sortedItems = items.values.toList();
+                    sortedItems.sort((a, b) =>
+                        b.productRating.compareTo(a.productRating));
 
-                          return GridView.builder(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: sortedItems.length,
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 10,
-                              mainAxisSpacing: 10,
-                              childAspectRatio: 2 / 3,
-                            ),
-                            itemBuilder: (context, index) {
-                              var item = sortedItems[index];
-                              if (item.productRating > 4.4) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    Navigator.pushNamed(context, '/fs_product',
-                                        arguments: {
-                                          'id': item.productId,
-                                          'title': item.productTitle,
-                                          'price': item.productPrice.toInt(),
-                                          'image': item.productImg,
-                                          'description': item.productDesc,
-                                          'shop': item.productOwnership,
-                                        });
-                                  },
-                                  child: FoodTile(
-                                    title: item.productTitle,
-                                    price: item.productPrice.toInt(),
-                                    image: item.productImg,
-                                    rating: item.productRating,
-                                  ),
-                                );
-                              }
-                              return null;
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: sortedItems.length,
+                      gridDelegate:
+                      SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 2 / 3,
+                      ),
+                      itemBuilder: (context, index) {
+                        var item = sortedItems[index];
+                        if (item.productRating > 4.4) {
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(context, '/fs_product',
+                                  arguments: {
+                                    'id': item.productId,
+                                    'title': item.productTitle,
+                                    'price': item.productPrice.toInt(),
+                                    'image': item.productImg,
+                                    'description': item.productDesc,
+                                    'shop': item.productOwnership,
+                                  });
                             },
+                            child: FoodTile(
+                              title: item.productTitle,
+                              price: item.productPrice.toInt(),
+                              image: item.productImg,
+                              rating: item.productRating,
+                            ),
                           );
                         }
+                        return null;
                       },
-                    ),
+                    );
+                  }
+                },
+              ),
             ],
           ),
         ),
@@ -317,9 +317,9 @@ class FoodTile extends StatelessWidget {
 
   FoodTile(
       {required this.title,
-      required this.price,
-      required this.image,
-      required this.rating});
+        required this.price,
+        required this.image,
+        required this.rating});
 
   @override
   Widget build(BuildContext context) {
