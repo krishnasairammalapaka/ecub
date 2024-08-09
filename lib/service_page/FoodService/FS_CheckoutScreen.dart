@@ -6,6 +6,7 @@ import 'package:twilio_flutter/twilio_flutter.dart';
 import 'package:ecub_s1_v2/models/CheckoutHistory_DB.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart'; // Add this package for map functionality
 
 class FS_CheckoutScreen extends StatefulWidget {
   @override
@@ -22,6 +23,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
   String userName = '';
   String userAddress = '';
   String userPhoneNumber = '';
+  LatLng? userLocation; // Track user's location
   String selectedPaymentOption = 'Cash on Delivery';
   bool hasSubscription = false;
   Map<String, dynamic>? subscriptionPack;
@@ -57,13 +59,121 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
   }
 
   Future<void> _fetchUserDetails() async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    setState(() {
-      userName = userDoc['firstname'];
-      userAddress = userDoc['email'];
-      userPhoneNumber = userDoc['phonenumber'];
-    });
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        // Get document data as a Map
+        Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
+
+        setState(() {
+          userName = userData?['firstname'] ?? 'No name';
+          userPhoneNumber = userData?['phonenumber'] ?? 'No phone number';
+
+          // Check if 'address' field exists and set a placeholder if not
+          userAddress = userData?.containsKey('address') == true
+              ? userData!['address'] ?? 'Enter address'
+              : 'Enter address'; // Placeholder value
+
+          print('Address: $userAddress');
+          // Uncomment and adjust this section if you want to handle location
+          // double? lat = userData?['latitude'];
+          // double? lon = userData?['longitude'];
+          // if (lat != null && lon != null) {
+          //   userLocation = LatLng(lat, lon);
+          // }
+        });
+      } else {
+        print('User document does not exist');
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
   }
+
+
+  void _showEditAddressDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        String tempAddress = userAddress;
+
+        return AlertDialog(
+          title: Text('Edit Address'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: InputDecoration(labelText: 'Address'),
+                onChanged: (value) => tempAddress = value,
+                controller: TextEditingController(text: tempAddress),
+              ),
+              SizedBox(height: 16),
+              // ElevatedButton(
+              //   onPressed: () {
+              //     // Navigate to the map screen to pick a location
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //         builder: (context) => MapScreen(
+              //           onLocationSelected: (LatLng location) {
+              //             setState(() {
+              //               userLocation = location;
+              //               // Save location to Firestore
+              //               FirebaseFirestore.instance
+              //                   .collection('users')
+              //                   .doc(userId)
+              //                   .update({
+              //                 'address': tempAddress,
+              //                 'latitude': location.latitude,
+              //                 'longitude': location.longitude,
+              //               }).then((_) {
+              //                 print('Address and location updated successfully');
+              //               }).catchError((e) {
+              //                 print('Error updating address and location: $e');
+              //               });
+              //             });
+              //             Navigator.pop(context);
+              //           },
+              //         ),
+              //       ),
+              //     );
+              //   },
+              //   child: Text('Pick Location on Map'),
+              // ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                setState(() {
+                  userAddress = tempAddress;
+                });
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(userId)
+                    .update({
+                  'address': userAddress,
+                }).then((_) {
+                  print('Address updated successfully');
+                }).catchError((e) {
+                  print('Error updating address: $e');
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   Future<void> _checkSubscription() async {
     DocumentSnapshot subscriptionDoc = await FirebaseFirestore.instance
@@ -105,6 +215,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     setState(() {}); // Update the UI with the new total amount
     print(totalAmount);
     print(packPPrice);
+
   }
 
   void _showEditUserDetailsDialog() {
@@ -124,11 +235,6 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
                 decoration: InputDecoration(labelText: 'Name'),
                 onChanged: (value) => tempName = value,
                 controller: TextEditingController(text: tempName),
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Address'),
-                onChanged: (value) => tempAddress = value,
-                controller: TextEditingController(text: tempAddress),
               ),
               TextField(
                 decoration: InputDecoration(labelText: 'Phone Number'),
@@ -168,6 +274,8 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
       },
     );
   }
+
+
 
   void _showOrderConfirmationDialog() {
     showDialog(
@@ -306,10 +414,25 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
             ),
             ListTile(
               title: Text(userName),
-              subtitle: Text('$userAddress\n$userPhoneNumber'),
+              subtitle: Text('$userPhoneNumber'),
               trailing: IconButton(
                 icon: Icon(Icons.edit),
                 onPressed: _showEditUserDetailsDialog,
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Address Information:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            ListTile(
+              title: Text(userAddress),
+              subtitle: userLocation != null
+                  ? Text('Lat: ${userLocation!.latitude}, Lon: ${userLocation!.longitude}')
+                  : null,
+              trailing: IconButton(
+                icon: Icon(Icons.edit),
+                onPressed: _showEditAddressDialog,
               ),
             ),
             SizedBox(height: 16),
@@ -401,6 +524,28 @@ class SubsCard extends StatelessWidget {
             Text('Price: ₹ ${packPrice}'),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class MapScreen extends StatelessWidget {
+  final Function(LatLng) onLocationSelected;
+
+  MapScreen({required this.onLocationSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Select Location')),
+      body: GoogleMap(
+        initialCameraPosition: CameraPosition(
+          target: LatLng(0, 0), // Default position
+          zoom: 10,
+        ),
+        onTap: (LatLng location) {
+          onLocationSelected(location);
+        },
       ),
     );
   }

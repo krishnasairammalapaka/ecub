@@ -213,7 +213,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
                   : ValueListenableBuilder(
                 valueListenable: _cartBox!.listenable(),
                 builder: (context, Box<Cart_Db> items, _) {
-                  if (items.isEmpty && _isSubscriptionActive == false) {
+                  if (items.isEmpty && !_isSubscriptionActive) {
                     return Center(child: Text('No items in the cart.'));
                   } else {
                     return ListView.builder(
@@ -227,7 +227,8 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
 
                           var productId = item.ItemId;
                           var productDetails = FDbox!.values.firstWhereOrNull(
-                                  (element) => element.productId == productId);
+                                (element) => element.productId == productId,
+                          );
 
                           if (productDetails == null) {
                             return Center(child: Text('Product not found.'));
@@ -259,16 +260,18 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
                 },
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'Total Calories: $totalCalories cal',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            if (!_isSubscriptionActive)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  'Total Calories: $totalCalories cal',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
-            ),
           ],
         ),
       ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToCheckout,
         child: Icon(Icons.check),
