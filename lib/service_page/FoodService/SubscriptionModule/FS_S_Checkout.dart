@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -25,7 +26,6 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
   late String packID;
   late String packName;
   late String subscriptionType;
-  late List<String> foodlist;
 
   late Map<String, dynamic> breakfast;
   late Map<String, dynamic> lunch;
@@ -35,11 +35,15 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args =
-    ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     packID = args['packID'];
     subscriptionType = args['subscription_type'];
-    foodlist = args['selectedFoodIds'];
+
+    // Capture the meal selection arguments as arrays
+    List<dynamic> breakfastSelected = args['breakfastSelected'] ?? [];
+    List<dynamic> lunchSelected = args['lunchSelected'] ?? [];
+    List<dynamic> snacksSelected = args['snacksSelected'] ?? [];
+    List<dynamic> dinnerSelected = args['dinnerSelected'] ?? [];
 
     if (subscriptionType == 'Monthly') {
       endingDate = fromDate.add(Duration(days: 30));
@@ -47,34 +51,59 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
       endingDate = fromDate.add(Duration(days: 7));
     }
 
-    // Initialize meal settings data
-    breakfast = {
-      'count': 1,
-      'days': List.generate(7, (_) => true),
-      'time': TimeOfDay(hour: 7, minute: 0),
-      'isOn': true,
-    };
-    lunch = {
-      'count': 1,
-      'days': List.generate(7, (_) => true),
-      'time': TimeOfDay(hour: 12, minute: 0),
-      'isOn': true,
-    };
-    snack = {
-      'count': 1,
-      'days': List.generate(7, (_) => true),
-      'time': TimeOfDay(hour: 16, minute: 0),
-      'isOn': true,
-    };
-    dinner = {
-      'count': 1,
-      'days': List.generate(7, (_) => true),
-      'time': TimeOfDay(hour: 19, minute: 0),
-      'isOn': true,
-    };
+    // Initialize meal settings data only if there are selected items
+    if (breakfastSelected.isNotEmpty) {
+      breakfast = {
+        'items': breakfastSelected,
+        'count': breakfastSelected.length,
+        'days': List.generate(7, (_) => true),
+        'time': TimeOfDay(hour: 7, minute: 0),
+        'isOn': true,
+      };
+    } else {
+      breakfast = {}; // Empty map if not selected
+    }
+
+    if (lunchSelected.isNotEmpty) {
+      lunch = {
+        'items': lunchSelected,
+        'count': lunchSelected.length,
+        'days': List.generate(7, (_) => true),
+        'time': TimeOfDay(hour: 12, minute: 0),
+        'isOn': true,
+      };
+    } else {
+      lunch = {}; // Empty map if not selected
+    }
+
+    if (snacksSelected.isNotEmpty) {
+      snack = {
+        'items': snacksSelected,
+        'count': snacksSelected.length,
+        'days': List.generate(7, (_) => true),
+        'time': TimeOfDay(hour: 16, minute: 0),
+        'isOn': true,
+      };
+    } else {
+      snack = {}; // Empty map if not selected
+    }
+
+    if (dinnerSelected.isNotEmpty) {
+      dinner = {
+        'items': dinnerSelected,
+        'count': dinnerSelected.length,
+        'days': List.generate(7, (_) => true),
+        'time': TimeOfDay(hour: 19, minute: 0),
+        'isOn': true,
+      };
+    } else {
+      dinner = {}; // Empty map if not selected
+    }
 
     _calculatePrice();
   }
+
+
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate,
       Function(DateTime) onDateSelected) async {
@@ -192,38 +221,43 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                 });
               }),
               SizedBox(height: 20),
-              AlarmSetting(
-                title: 'Breakfast',
-                initialTime: TimeOfDay(hour: 7, minute: 0),
-                initialIsOn: true,
-                onChanged: (count, days, time, isOn) {
-                  updateMeal('Breakfast', count, days, time, isOn);
-                },
-              ),
-              AlarmSetting(
-                title: 'Lunch',
-                initialTime: TimeOfDay(hour: 12, minute: 0),
-                initialIsOn: true,
-                onChanged: (count, days, time, isOn) {
-                  updateMeal('Lunch', count, days, time, isOn);
-                },
-              ),
-              AlarmSetting(
-                title: 'Snack',
-                initialTime: TimeOfDay(hour: 16, minute: 0),
-                initialIsOn: true,
-                onChanged: (count, days, time, isOn) {
-                  updateMeal('Snack', count, days, time, isOn);
-                },
-              ),
-              AlarmSetting(
-                title: 'Dinner',
-                initialTime: TimeOfDay(hour: 19, minute: 0),
-                initialIsOn: true,
-                onChanged: (count, days, time, isOn) {
-                  updateMeal('Dinner', count, days, time, isOn);
-                },
-              ),
+              // Conditionally render meal settings based on selection
+              if (breakfast.isNotEmpty)
+                AlarmSetting(
+                  title: 'Breakfast',
+                  initialTime: TimeOfDay(hour: 7, minute: 0),
+                  initialIsOn: true,
+                  onChanged: (count, days, time, isOn) {
+                    updateMeal('Breakfast', count, days, time, isOn);
+                  },
+                ),
+              if (lunch.isNotEmpty)
+                AlarmSetting(
+                  title: 'Lunch',
+                  initialTime: TimeOfDay(hour: 12, minute: 0),
+                  initialIsOn: true,
+                  onChanged: (count, days, time, isOn) {
+                    updateMeal('Lunch', count, days, time, isOn);
+                  },
+                ),
+              if (snack.isNotEmpty)
+                AlarmSetting(
+                  title: 'Snack',
+                  initialTime: TimeOfDay(hour: 16, minute: 0),
+                  initialIsOn: true,
+                  onChanged: (count, days, time, isOn) {
+                    updateMeal('Snack', count, days, time, isOn);
+                  },
+                ),
+              if (dinner.isNotEmpty)
+                AlarmSetting(
+                  title: 'Dinner',
+                  initialTime: TimeOfDay(hour: 19, minute: 0),
+                  initialIsOn: true,
+                  onChanged: (count, days, time, isOn) {
+                    updateMeal('Dinner', count, days, time, isOn);
+                  },
+                ),
               SizedBox(height: 20),
               Text(
                 'Total Price: ₹$price',
@@ -233,7 +267,6 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
               ElevatedButton(
                 onPressed: () async {
                   try {
-                    // Create a reference to the Firestore collection
                     final firestore = FirebaseFirestore.instance;
                     final userEmail = FirebaseAuth.instance.currentUser?.email;
 
@@ -242,57 +275,53 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                           .collection('users')
                           .doc(userEmail)
                           .collection('fs_service')
-                          .doc('packs'); // Use the correct document ID or create a unique one if needed
+                          .doc('packs');
 
-                      // Define the data you want to update in Firestore
                       final data = {
-                        'active':"cart",
+                        'active': "cart",
                         'packID': packID,
                         'packName': packName,
                         'subscription_type': subscriptionType,
                         'fromDate': fromDate,
                         'endingDate': endingDate,
-                        'breakfastCount': breakfast['count'],
-                        'lunchCount': lunch['count'],
-                        'snackCount': snack['count'],
-                        'dinnerCount': dinner['count'],
-                        'breakfastDays': breakfast['days'],
-                        'lunchDays': lunch['days'],
-                        'snackDays': snack['days'],
-                        'dinnerDays': dinner['days'],
-                        'breakfastTime': breakfast['time'].format(context),
-                        'lunchTime': lunch['time'].format(context),
-                        'snackTime': snack['time'].format(context),
-                        'dinnerTime': dinner['time'].format(context),
-                        'breakfastIsOn': breakfast['isOn'],
-                        'lunchIsOn': lunch['isOn'],
-                        'snackIsOn': snack['isOn'],
-                        'dinnerIsOn': dinner['isOn'],
+                        'breakfastCount': breakfast.isNotEmpty ? breakfast['count'] : null,
+                        'lunchCount': lunch.isNotEmpty ? lunch['count'] : null,
+                        'snackCount': snack.isNotEmpty ? snack['count'] : null,
+                        'dinnerCount': dinner.isNotEmpty ? dinner['count'] : null,
+                        'breakfastDays': breakfast.isNotEmpty ? breakfast['days'] : null,
+                        'lunchDays': lunch.isNotEmpty ? lunch['days'] : null,
+                        'snackDays': snack.isNotEmpty ? snack['days'] : null,
+                        'dinnerDays': dinner.isNotEmpty ? dinner['days'] : null,
+                        'breakfastTime': breakfast.isNotEmpty ? breakfast['time'].format(context) : null,
+                        'lunchTime': lunch.isNotEmpty ? lunch['time'].format(context) : null,
+                        'snackTime': snack.isNotEmpty ? snack['time'].format(context) : null,
+                        'dinnerTime': dinner.isNotEmpty ? dinner['time'].format(context) : null,
+                        'breakfastIsOn': breakfast.isNotEmpty ? breakfast['isOn'] : null,
+                        'lunchIsOn': lunch.isNotEmpty ? lunch['isOn'] : null,
+                        'snackIsOn': snack.isNotEmpty ? snack['isOn'] : null,
+                        'dinnerIsOn': dinner.isNotEmpty ? dinner['isOn'] : null,
                         'totalPrice': price,
-                        'selectedFoodIds': foodlist // Ensure foodlist is properly defined
+                        'breakfastSelected': breakfast.isNotEmpty ? breakfast['items'] : [],
+                        'lunchSelected': lunch.isNotEmpty ? lunch['items'] : [],
+                        'snacksSelected': snack.isNotEmpty ? snack['items'] : [],
+                        'dinnerSelected': dinner.isNotEmpty ? dinner['items'] : [],
                       };
 
-                      // Update Firestore
                       await collectionRef.set(data);
 
-                      final CartcollectionRef = firestore
+                      final cartCollectionRef = firestore
                           .collection('fs_cart')
                           .doc(userEmail)
                           .collection('packs')
                           .doc('info');
 
-                      await CartcollectionRef.set(data);
+                      await cartCollectionRef.set(data);
 
-                      // Navigate to the next screen
-                      Navigator.pushNamed(
-                          context,
-                          '/fs_cart'
-                      );
+                      Navigator.pushNamed(context, '/fs_cart');
                     } else {
                       print('User is not logged in.');
                     }
                   } catch (e) {
-                    // Handle any errors
                     print('Error updating Firestore: $e');
                   }
                 },
@@ -303,14 +332,14 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   textStyle: TextStyle(fontSize: 18),
                 ),
-              )
-
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
 
   Widget _buildDateSetting(
       String label, DateTime date, Function(DateTime) onDateSelected) {

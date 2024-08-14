@@ -46,19 +46,20 @@ class _FS_S_DescState extends State<FS_S_Desc> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final Map<String, dynamic> args =
-    ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     var packID = args['id'];
     futurePack = fetchPack(packID);
   }
 
-  Future<DocumentSnapshot<Map<String, dynamic>>> fetchPack(String packID) async {
+  Future<DocumentSnapshot<Map<String, dynamic>>> fetchPack(
+      String packID) async {
     return await FirebaseFirestore.instance
         .collection('fs_packs')
         .doc(packID)
         .get();
   }
 
-  Future<Map<String, List<MenuItem>>> fetchFoodItems(List<String> foodIds) async {
+  Future<Map<String, List<MenuItem>>> fetchFoodItems(String packID) async {
     Map<String, List<MenuItem>> categorizedFoodItems = {
       'breakfast': [],
       'lunch': [],
@@ -66,53 +67,83 @@ class _FS_S_DescState extends State<FS_S_Desc> {
       'dinner': [],
     };
 
-    for (String foodId in foodIds) {
-      DocumentSnapshot<Map<String, dynamic>> foodDoc = await FirebaseFirestore.instance
-          .collection('fs_food_items')
-          .doc(foodId)
-          .get();
-      if (foodDoc.exists) {
-        var foodData = foodDoc.data()!;
-        foodData['id'] = foodDoc.id;
-        MenuItem menuItem = MenuItem(
-          id: foodData['id'],
-          name: foodData['productTitle'],
-          price: foodData['productPrice'],
-          image: foodData['productImg'],
-          desc: foodData['productDesc'],
-          restaurant: foodData['productOwnership'],
-          rating: foodData['productRating'],
-          foodAvailTime: foodData['foodAvailTime'],
-          isVeg: foodData['isVeg'],
-          selected: shouldPreSelect(foodData['id']),
-        );
+    for (String category in categorizedFoodItems.keys) {
+      DocumentSnapshot<Map<String, dynamic>> categoryDoc =
+          await FirebaseFirestore.instance
+              .collection('fs_packs')
+              .doc(packID)
+              .collection('pack_foods')
+              .doc(category)
+              .get();
+      if (categoryDoc.exists) {
+        List<String> foodIds = List<String>.from(categoryDoc.data()!['food']);
+        for (String foodId in foodIds) {
+          DocumentSnapshot<Map<String, dynamic>> foodDoc =
+              await FirebaseFirestore.instance
+                  .collection('fs_food_items')
+                  .doc(foodId)
+                  .get();
+          if (foodDoc.exists) {
+            var foodData = foodDoc.data()!;
+            foodData['id'] = foodDoc.id;
+            MenuItem menuItem = MenuItem(
+              id: foodData['id'],
+              name: foodData['productTitle'],
+              price: foodData['productPrice'],
+              image: foodData['productImg'],
+              desc: foodData['productDesc'],
+              restaurant: foodData['productOwnership'],
+              rating: foodData['productRating'],
+              foodAvailTime: category,
+              // use the category directly
+              isVeg: foodData['isVeg'],
+              selected: shouldPreSelect(foodData['id']),
+            );
 
-        categorizedFoodItems[foodData['foodAvailTime']]?.add(menuItem);
+            categorizedFoodItems[category]?.add(menuItem);
+          }
+        }
       }
     }
     return categorizedFoodItems;
   }
 
   void _onCheckoutPressed(String packID) {
-    final Map<String, dynamic> args =
-    ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final Map<String, dynamic> args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     var userMail = args['userMail'];
 
-    Set<MenuItem> uniqueSelectedFoodItems = selectedItemsNotifier.value
-        .where((item) => item.selected)
-        .toSet();
+    // Separate selected food items by category
+    List<MenuItem> selectedFoodItems = selectedItemsNotifier.value.where((item) => item.selected).toList();
 
-    Set<String> uniqueSelectedFoodIds = uniqueSelectedFoodItems
+    List<String> breakfastSelected = selectedFoodItems
+        .where((item) => item.foodAvailTime == 'breakfast')
         .map((item) => item.id)
-        .toSet();
+        .toList();
 
-    // Convert sets back to lists
-    List<MenuItem> selectedFoodItems = uniqueSelectedFoodItems.toList();
-    List<String> selectedFoodIds = uniqueSelectedFoodIds.toList();
+    List<String> lunchSelected = selectedFoodItems
+        .where((item) => item.foodAvailTime == 'lunch')
+        .map((item) => item.id)
+        .toList();
 
-    // Debugging: Print selected food IDs
-    print('Selected Food: $selectedFoodItems');
-    print('Selected Food IDs: $selectedFoodIds');
+    List<String> snacksSelected = selectedFoodItems
+        .where((item) => item.foodAvailTime == 'snack')
+        .map((item) => item.id)
+        .toList();
+
+    List<String> dinnerSelected = selectedFoodItems
+        .where((item) => item.foodAvailTime == 'dinner')
+        .map((item) => item.id)
+        .toList();
+
+    if (selectedFoodItems.isEmpty) {
+      print('No food items selected');
+    } else {
+      // Debugging: Print selected food IDs
+      print('Breakfast: $breakfastSelected');
+      print('Lunch: $lunchSelected');
+      print('Snacks: $snacksSelected');
+      print('Dinner: $dinnerSelected');
+    }
 
     Navigator.pushNamed(
       context,
@@ -120,21 +151,32 @@ class _FS_S_DescState extends State<FS_S_Desc> {
       arguments: {
         'packID': packID,
         'subscription_type': selectedOption,
-        'selectedFoodItems': selectedFoodItems,
-        'selectedFoodIds': selectedFoodIds,
+        'breakfastSelected': breakfastSelected,
+        'lunchSelected': lunchSelected,
+        'snacksSelected': snacksSelected,
+        'dinnerSelected': dinnerSelected,
       },
     );
   }
 
+
+
   void _onSelectItem(MenuItem item) {
     item.selected = !item.selected;
-    selectedItemsNotifier.value = List.from(selectedItemsNotifier.value);
+    if (item.selected) {
+      selectedItemsNotifier.value = List.from(selectedItemsNotifier.value)..add(item);
+    } else {
+      selectedItemsNotifier.value = List.from(selectedItemsNotifier.value)..removeWhere((i) => i.id == item.id);
+    }
+    selectedItemsNotifier.notifyListeners();
   }
+
+
 
   @override
   Widget build(BuildContext context) {
     final Map<String, dynamic> args =
-    ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     var packID = args['id'];
 
     return Scaffold(
@@ -156,29 +198,34 @@ class _FS_S_DescState extends State<FS_S_Desc> {
                 } else if (!snapshot.hasData || !snapshot.data!.exists) {
                   return Center(child: Text('No data found'));
                 } else {
-                  Map<String, dynamic> data = snapshot.data!.data()!;
-                  List<String> foodIds = List<String>.from(data['pack_foods']);
-
                   return FutureBuilder<Map<String, List<MenuItem>>>(
-                    future: fetchFoodItems(foodIds),
+                    future: fetchFoodItems(packID),
                     builder: (context, foodSnapshot) {
-                      if (foodSnapshot.connectionState == ConnectionState.waiting) {
+                      if (foodSnapshot.connectionState ==
+                          ConnectionState.waiting) {
                         return Center(child: CircularProgressIndicator());
                       } else if (foodSnapshot.hasError) {
-                        return Center(child: Text('Error2: ${foodSnapshot.error}'));
-                      } else if (!foodSnapshot.hasData || foodSnapshot.data!.isEmpty) {
+                        return Center(
+                            child: Text('Error2: ${foodSnapshot.error}'));
+                      } else if (!foodSnapshot.hasData ||
+                          foodSnapshot.data!.isEmpty) {
                         return Center(child: Text('No food items found'));
                       } else {
-                        Map<String, List<MenuItem>> categorizedFoodItems = foodSnapshot.data!;
+                        Map<String, List<MenuItem>> categorizedFoodItems =
+                            foodSnapshot.data!;
                         return SingleChildScrollView(
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Column(
                               children: [
-                                buildCategorySection('Breakfast', categorizedFoodItems['breakfast']!),
-                                buildCategorySection('Lunch', categorizedFoodItems['lunch']!),
-                                buildCategorySection('Snacks', categorizedFoodItems['snack']!),
-                                buildCategorySection('Dinner', categorizedFoodItems['dinner']!),
+                                buildCategorySection('Breakfast',
+                                    categorizedFoodItems['breakfast']!),
+                                buildCategorySection(
+                                    'Lunch', categorizedFoodItems['lunch']!),
+                                buildCategorySection(
+                                    'Snacks', categorizedFoodItems['snack']!),
+                                buildCategorySection(
+                                    'Dinner', categorizedFoodItems['dinner']!),
                                 SizedBox(height: 16),
                               ],
                             ),
@@ -228,6 +275,10 @@ class _FS_S_DescState extends State<FS_S_Desc> {
   }
 
   Widget buildCategorySection(String title, List<MenuItem> items) {
+    if (items.isEmpty) {
+      return SizedBox.shrink(); // Do not display anything if the list is empty
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -281,80 +332,76 @@ class MenuItemWidget extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: item.selected
-              ? Colors.lightBlueAccent.withOpacity(0.5)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(8),
+          color:
+              item.selected ? Color(0xFF0D5EF9).withOpacity(0.2) : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: item.selected ? Color(0xFF0D5EF9) : Colors.grey.shade300,
+            width: 2,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.5),
-              spreadRadius: 1,
+              color: Colors.grey.withOpacity(0.1),
               blurRadius: 5,
-              offset: Offset(0, 3),
+              spreadRadius: 2,
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Stack(
-              children: [
-                Container(
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[400],
-                    borderRadius: BorderRadius.circular(8),
-                    image: DecorationImage(
-                      image: NetworkImage(item.image),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+            Expanded(
+              child: Center(
+                child: Image.network(
+                  item.image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.broken_image,
+                      size: 50,
+                      color: Colors.grey,
+                    );
+                  },
                 ),
-                if (item.selected)
-                  Positioned(
-                    top: 5,
-                    right: 5,
-                    child: Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                    ),
-                  ),
-              ],
+              ),
             ),
-            SizedBox(height: 7),
+            SizedBox(height: 8),
             Text(
               item.name,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: 5),
+
+            SizedBox(height: 4),
             Row(
               children: [
+
                 Text(
-                  item.isVeg ? 'Vegetarian' : 'Non-Vegetarian',
+                  '₹ ${item.price} ',
                   style: TextStyle(
-                    color: item.isVeg ? Colors.green : Colors.red,
-                    fontSize: 14,
+                    fontSize: 20,
+                    color: Colors.grey.shade600,
                   ),
                 ),
                 SizedBox(width: 10),
+                Icon(
+                  item.isVeg ? Icons.verified : Icons.verified,
+                  color: item.isVeg ? Colors.green : Colors.red,
+                  size: 20,
+                ),
+                SizedBox(width: 4),
                 Text(
-                  '₹${item.price}',
+                  item.isVeg ? 'Veg' : 'Non-Veg',
                   style: TextStyle(
-                    color: Color(0xFF0D5EF9),
-                    fontSize: 15,
+                    fontSize: 20,
+                    color: Colors.grey.shade600,
                   ),
                 ),
               ],
-            ),
-
-            Align(
-              alignment: Alignment.centerRight,
-              child: item.selected
-                  ? Icon(Icons.check_circle, color: Colors.green)
-                  : Icon(Icons.radio_button_unchecked, color: Colors.grey),
             ),
           ],
         ),
@@ -362,3 +409,4 @@ class MenuItemWidget extends StatelessWidget {
     );
   }
 }
+

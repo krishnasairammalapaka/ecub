@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
-import 'FS_S_Desc.dart';
 
 class MenuItem {
   final String Time;
@@ -126,7 +125,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
   late String packID;
   late String packName;
   late String subscriptionType;
-  late List<dynamic> foodlist;
 
   late Map<String, dynamic> breakfast;
   late Map<String, dynamic> lunch;
@@ -157,7 +155,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
           setState(() {
             packID = packData['packID'];
             subscriptionType = packDoc['subscription_type'];
-            foodlist = packData['selectedFoodIds'];
 
             // Convert Firestore Timestamp to DateTime
             Timestamp fromTimestamp = packData['fromDate'];
@@ -414,7 +411,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                         'snackIsOn': snack['isOn'],
                         'dinnerIsOn': dinner['isOn'],
                         'totalPrice': price,
-                        'selectedFoodIds': foodlist // Ensure foodlist is properly defined
                       };
 
                       // Update Firestore
