@@ -122,7 +122,7 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
   DateTime fromDate = DateTime.now();
   DateTime endingDate = DateTime.now().add(Duration(days: 7));
   int price = 0;
-  late String packID;
+  String packID = "";
   late String packName;
   late String subscriptionType;
 
@@ -326,6 +326,7 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                 });
               }),
               SizedBox(height: 20),
+
               _TodaysMenu(packId: packID, FoodTime: 'breakfast' ),
               SizedBox(height: 10,),
               AlarmSetting(
