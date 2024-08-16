@@ -334,6 +334,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
         'status': 'Pending',
         'itemName': productDetails.productTitle,
         'itemPrice': productDetails.productPrice * item.ItemCount,
+        'vendor': productDetails.productOwnership,
       });
     }
 
