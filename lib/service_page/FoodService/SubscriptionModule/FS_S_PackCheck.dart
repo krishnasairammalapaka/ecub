@@ -66,6 +66,7 @@ class __TodaysMenuState extends State<_TodaysMenu> {
       }
 
     } catch (e) {
+
       print('Error fetching menu items: $e');
     }
     return menuItems;
@@ -80,8 +81,8 @@ class __TodaysMenuState extends State<_TodaysMenu> {
           return CircularProgressIndicator();
         } else if (snapshot.hasError) {
           return Text('Error fetching menu');
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Text('No menu available');
+        // } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        //
         } else {
           List<MenuItem> menuItems = snapshot.data!;
           return Column(
@@ -309,10 +310,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-
-
-
-
               _buildDateSetting('From Date', fromDate, (date) {
                 setState(() {
                   fromDate = date;
@@ -326,7 +323,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                 });
               }),
               SizedBox(height: 20),
-
               _TodaysMenu(packId: packID, FoodTime: 'breakfast' ),
               SizedBox(height: 10,),
               AlarmSetting(
@@ -362,6 +358,7 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
 
               _TodaysMenu(packId: packID, FoodTime: 'dinner' ),
               SizedBox(height: 10,),
+
               AlarmSetting(
                 title: 'Dinner',
                 initialTime: TimeOfDay(hour: 19, minute: 0),
@@ -514,6 +511,7 @@ class _AlarmSettingState extends State<AlarmSetting> {
     super.initState();
     selectedTime = widget.initialTime;
     isOn = widget.initialIsOn;
+
   }
 
   Future<void> _selectTime(BuildContext context) async {

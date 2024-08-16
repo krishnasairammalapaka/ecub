@@ -71,7 +71,7 @@ void main() async {
         productId: '1',
         productTitle: 'Steak',
         productPrice: 120.00,
-        productImg: 'assets/foods/steak.png',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/steak.png',
         productDesc:
             'Delicious and juicy steak with garlic and butter, served with asparagus.',
         productOwnership: 'ks-bakers',
@@ -86,7 +86,7 @@ void main() async {
         productId: '2',
         productTitle: 'Chicken Quinoa',
         productPrice: 80.00,
-        productImg: 'assets/foods/quinoa.png',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/quinoa.png',
         productDesc:
             'Healthy and flavorful dish with grilled chicken, quinoa, and Mediterranean spices.',
         productOwnership: 'chennai-bakers',
@@ -101,7 +101,7 @@ void main() async {
         productId: '3',
         productTitle: 'French Fries',
         productPrice: 40.00,
-        productImg: 'assets/foods/frfi.jpeg',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/frfi.jpeg',
         productDesc: 'Crispy and golden french fries.',
         productOwnership: 'chennai-bakers',
         productRating: 4.1,
@@ -115,7 +115,7 @@ void main() async {
         productId: '4',
         productTitle: 'Chicken Quinoa',
         productPrice: 45.00,
-        productImg: 'assets/foods/quinoa.png',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/quinoa.png',
         productDesc:
             'Healthy and flavorful dish with grilled chicken, quinoa, and Mediterranean spices.',
         productOwnership: 'chennai-bakers',
@@ -130,7 +130,7 @@ void main() async {
         productId: '5',
         productTitle: 'Veggie Pizza',
         productPrice: 60.00,
-        productImg: 'assets/foods/pizza.jpg',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/pizza.jpg',
         productDesc:
             'Classic pizza topped with fresh vegetables, mozzarella cheese, and tomato sauce.',
         productOwnership: 'ks-bakers',
@@ -145,7 +145,7 @@ void main() async {
         productId: '6',
         productTitle: 'Pasta Carbonara',
         productPrice: 70.00,
-        productImg: 'assets/foods/pasta.jpg',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/pasta.jpg',
         productDesc:
             'Creamy pasta carbonara with bacon, parmesan cheese, and black pepper.',
         productOwnership: 'chennai-bakers',
@@ -160,7 +160,7 @@ void main() async {
         productId: '7',
         productTitle: 'Grilled Salmon',
         productPrice: 150.00,
-        productImg: 'assets/foods/Salmon.jpg',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/Salmon.jpg',
         productDesc:
             'Freshly grilled salmon fillet served with lemon butter sauce and vegetables.',
         productOwnership: 'ks-bakers',
@@ -175,7 +175,7 @@ void main() async {
         productId: '8',
         productTitle: 'Caesar Salad',
         productPrice: 50.00,
-        productImg: 'assets/foods/salad.jpg',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/salad.jpg',
         productDesc:
             'Crispy romaine lettuce, croutons, parmesan cheese, and Caesar dressing.',
         productOwnership: 'chennai-bakers',
@@ -190,7 +190,7 @@ void main() async {
         productId: '9',
         productTitle: 'Beef Burger',
         productPrice: 90.00,
-        productImg: 'assets/foods/burger.jpg',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/burger.jpg',
         productDesc:
             'Juicy beef patty with lettuce, tomato, cheese, and special sauce in a sesame bun.',
         productOwnership: 'ks-bakers',
@@ -205,7 +205,7 @@ void main() async {
         productId: '10',
         productTitle: 'Chocolate Cake',
         productPrice: 60.00,
-        productImg: 'assets/foods/cake.jpg',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/cake.jpg',
         productDesc:
             'Rich and moist chocolate cake with a creamy chocolate frosting.',
         productOwnership: 'chennai-bakers',
@@ -220,7 +220,7 @@ void main() async {
         productId: '11',
         productTitle: 'Apple Pie',
         productPrice: 55.00,
-        productImg: 'assets/foods/apple_pie.jpg',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/apple_pie.jpg',
         productDesc:
             'Classic homemade apple pie with a flaky crust and sweet apple filling.',
         productOwnership: 'home-chef-sara',
@@ -235,7 +235,7 @@ void main() async {
         productId: '12',
         productTitle: 'Lasagna',
         productPrice: 90.00,
-        productImg: 'assets/foods/lasagna.jpg',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/lasagna.jpg',
         productDesc:
             'Layered lasagna with rich meat sauce, creamy ricotta, and melted mozzarella.',
         productOwnership: 'home-chef-john',
@@ -250,7 +250,7 @@ void main() async {
         productId: '13',
         productTitle: 'Chicken Curry',
         productPrice: 70.00,
-        productImg: 'assets/foods/chicken_curry.jpg',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/chicken_curry.jpg',
         productDesc:
             'Spicy and flavorful chicken curry made with fresh spices and herbs.',
         productOwnership: 'home-chef-anita',
@@ -265,7 +265,7 @@ void main() async {
         productId: '14',
         productTitle: 'Vegetable Stir-fry',
         productPrice: 50.00,
-        productImg: 'assets/foods/veg_stirfry.jpg',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/veg_stirfry.jpg',
         productDesc:
             'Fresh and crunchy vegetable stir-fry with a tangy soy sauce.',
         productOwnership: 'home-chef-lee',
@@ -280,7 +280,7 @@ void main() async {
         productId: '15',
         productTitle: 'Banana Bread',
         productPrice: 40.00,
-        productImg: 'assets/foods/banana_bread.jpg',
+        productImg: 'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/banana_bread.jpg',
         productDesc:
             'Moist and flavorful banana bread with a hint of cinnamon.',
         productOwnership: 'home-chef-emma',

@@ -383,7 +383,7 @@ class MenuItemWidget extends StatelessWidget {
                 Text(
                   '₹ ${item.price} ',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 15,
                     color: Colors.grey.shade600,
                   ),
                 ),
@@ -391,13 +391,13 @@ class MenuItemWidget extends StatelessWidget {
                 Icon(
                   item.isVeg ? Icons.verified : Icons.verified,
                   color: item.isVeg ? Colors.green : Colors.red,
-                  size: 20,
+                  size: 15,
                 ),
                 SizedBox(width: 4),
                 Text(
                   item.isVeg ? 'Veg' : 'Non-Veg',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 15,
                     color: Colors.grey.shade600,
                   ),
                 ),

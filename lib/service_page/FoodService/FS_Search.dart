@@ -209,7 +209,7 @@ class FullSizedTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.asset(
+            Image.network(
               imageUrl,
               fit: BoxFit.cover,
             ),

@@ -199,20 +199,12 @@ class MenuItem extends StatelessWidget {
 
   MenuItem({required this.name, required this.restaurant, required this.price, required this.image, required this.id, required this.desc});
 
-  bool isNetworkImage(String url) {
-    return url.startsWith('http');
-  }
 
-  String convertToAssetImage(String imageUrl) {
-    if (imageUrl.startsWith('https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/')) {
-      return imageUrl.replaceFirst('https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/', '');
-    }
-    return imageUrl; // Return the original URL if it's not a matching network image
-  }
+
 
   @override
   Widget build(BuildContext context) {
-    final assetImage = convertToAssetImage(image);
+    final assetImage = image;
 
     return GestureDetector(
       onTap: () {
@@ -249,7 +241,7 @@ class MenuItem extends StatelessWidget {
                 color: Colors.grey[400],
                 borderRadius: BorderRadius.circular(8),
                 image: DecorationImage(
-                  image: AssetImage(assetImage),
+                  image: NetworkImage(assetImage),
                   fit: BoxFit.cover,
                 ),
               ),

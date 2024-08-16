@@ -489,7 +489,7 @@ class CheckoutItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
-        leading: Image.asset(productDetails.productImg),
+        leading: Image.network(productDetails.productImg),
         title: Text(productDetails.productTitle),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

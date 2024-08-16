@@ -330,7 +330,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       image: DecorationImage(
-                        image: AssetImage(
+                        image: NetworkImage(
                             args['image'] ?? 'assets/defaultImage.png'),
                         fit: BoxFit.cover,
                       ),
@@ -476,7 +476,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                                           borderRadius:
                                           BorderRadius.circular(10),
                                           image: DecorationImage(
-                                            image: AssetImage(
+                                            image: NetworkImage(
                                                 item.productImg),
                                             fit: BoxFit.cover,
                                           ),
@@ -645,7 +645,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                       final comment = comments[index];
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundImage: AssetImage(comment.profilePhotoUrl),
+                          backgroundImage: NetworkImage(comment.profilePhotoUrl),
                         ),
                         title: Text(comment.userName),
                         subtitle: Text(comment.commentText),

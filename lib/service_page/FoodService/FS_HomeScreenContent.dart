@@ -291,7 +291,7 @@ class CategoryCard extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image: DecorationImage(
-                image: AssetImage(image),
+                image: NetworkImage(image),
                 fit: BoxFit.cover,
               ),
             ),
@@ -341,7 +341,7 @@ class FoodTile extends StatelessWidget {
         children: [
           Expanded(
             flex: 3,
-            child: Image.asset(
+            child: Image.network(
               image,
               width: double.infinity,
               height: 70,
