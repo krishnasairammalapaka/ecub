@@ -62,10 +62,12 @@ class __TodaysMenuState extends State<_TodaysMenu> {
   Future<List<MenuItem>> fetchMenuItems() async {
     List<MenuItem> menuItems = [];
     try {
+      // Fetch selected IDs
       List<String> selectedIds = await fetchSelectedIds(
         mealType: widget.FoodTime, // breakfast, lunch, snacks, dinner
       );
 
+      // Fetch today's menu item
       DocumentSnapshot doc = await FirebaseFirestore.instance
           .collection('fs_packs')
           .doc(widget.packId)
@@ -75,15 +77,16 @@ class __TodaysMenuState extends State<_TodaysMenu> {
 
       String foodId = doc['FoodId'];
 
-      DocumentSnapshot foodDoc = await FirebaseFirestore.instance
-          .collection('fs_food_items')
-          .doc(foodId)
-          .get();
-      if (foodDoc.exists) {
-        Map<String, dynamic> foodData = foodDoc.data() as Map<String, dynamic>;
+      // Check if today's menu item is in the selected IDs list
+      if (selectedIds.contains(foodId)) {
+        DocumentSnapshot foodDoc = await FirebaseFirestore.instance
+            .collection('fs_food_items')
+            .doc(foodId)
+            .get();
 
-        // Check if the item ID is not in the selectedIds list
-        if (!selectedIds.contains(foodId)) {
+        if (foodDoc.exists) {
+          Map<String, dynamic> foodData = foodDoc.data() as Map<String, dynamic>;
+
           menuItems.add(MenuItem(
             Time: widget.FoodTime,
             id: foodId,
@@ -91,7 +94,30 @@ class __TodaysMenuState extends State<_TodaysMenu> {
             image: foodData['productImg'],
             isVeg: foodData['isVeg'],
             price: foodData['productPrice'],
-            selected: false, // Default to false
+            selected: true, // Mark as selected
+          ));
+        }
+      } else if (selectedIds.isNotEmpty) {
+        // If today's menu item is not in the selected list, pick one of the selected items to display
+        String selectedId = selectedIds[0]; // Pick the first selected item
+
+        DocumentSnapshot selectedFoodDoc = await FirebaseFirestore.instance
+            .collection('fs_food_items')
+            .doc(selectedId)
+            .get();
+
+        if (selectedFoodDoc.exists) {
+          Map<String, dynamic> selectedFoodData =
+          selectedFoodDoc.data() as Map<String, dynamic>;
+
+          menuItems.add(MenuItem(
+            Time: widget.FoodTime,
+            id: selectedId,
+            name: selectedFoodData['productTitle'],
+            image: selectedFoodData['productImg'],
+            isVeg: selectedFoodData['isVeg'],
+            price: selectedFoodData['productPrice'],
+            selected: true, // Mark as selected
           ));
         }
       }
@@ -100,6 +126,7 @@ class __TodaysMenuState extends State<_TodaysMenu> {
     }
     return menuItems;
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +272,7 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
               'count': 1,
               'days': List.generate(7, (_) => true),
               'time': TimeOfDay(hour: 16, minute: 0),
-              'isOn': true,
+              'isOn': false,
             };
             dinner = {
               'count': 1,
@@ -342,7 +369,7 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
         snack['count'] = count;
         snack['days'] = days;
         snack['time'] = time;
-        snack['isOn'] = isOn;
+        snack['isOn'] = false;
       } else if (title == 'Dinner') {
         dinner['count'] = count;
         dinner['days'] = days;
@@ -394,6 +421,8 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                   updateMeal('Breakfast', count, days, time, isOn);
                 },
               ),
+
+
               _TodaysMenu(
                 packId: packID,
                 FoodTime: 'lunch',
@@ -409,6 +438,8 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                   updateMeal('Lunch', count, days, time, isOn);
                 },
               ),
+
+
               _TodaysMenu(
                 packId: packID,
                 FoodTime: 'snacks',
@@ -424,6 +455,8 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                   updateMeal('Snack', count, days, time, isOn);
                 },
               ),
+
+
               _TodaysMenu(
                 packId: packID,
                 FoodTime: 'dinner',
@@ -439,6 +472,8 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                   updateMeal('Dinner', count, days, time, isOn);
                 },
               ),
+
+
               SizedBox(height: 20),
               SizedBox(height: 10),
               ElevatedButton(
@@ -606,7 +641,7 @@ class _AlarmSettingState extends State<AlarmSetting> {
               children: [
                 Text(widget.title, style: TextStyle(fontSize: 18)),
                 Switch(
-                  value: isOn,
+                  value: false,
                   onChanged: (value) {
                     setState(() {
                       isOn = value;
