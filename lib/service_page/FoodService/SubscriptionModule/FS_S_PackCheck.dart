@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
-
 class MenuItem {
   final String Time;
   final String id;
@@ -28,25 +27,53 @@ class _TodaysMenu extends StatefulWidget {
   final String FoodTime;
   final String packId;
 
-  _TodaysMenu({required this.packId, required this.FoodTime });
+  _TodaysMenu({
+    required this.packId,
+    required this.FoodTime,
+  });
 
   @override
   __TodaysMenuState createState() => __TodaysMenuState();
 }
 
 class __TodaysMenuState extends State<_TodaysMenu> {
+  Future<List<String>> fetchSelectedIds({
+    required String mealType,
+  }) async {
+    List<String> selectedIds = [];
+    try {
+      final userEmail = FirebaseAuth.instance.currentUser?.email;
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .collection('fs_service')
+          .doc('packs')
+          .get();
+
+      if (doc.exists) {
+        selectedIds = List<String>.from(doc['${mealType}Selected'] ?? []);
+      }
+    } catch (e) {
+      print('Error fetching selected IDs: $e');
+    }
+    return selectedIds;
+  }
+
   Future<List<MenuItem>> fetchMenuItems() async {
     List<MenuItem> menuItems = [];
     try {
+      List<String> selectedIds = await fetchSelectedIds(
+        mealType: widget.FoodTime, // breakfast, lunch, snacks, dinner
+      );
+
       DocumentSnapshot doc = await FirebaseFirestore.instance
           .collection('fs_packs')
           .doc(widget.packId)
           .collection('todayMenu')
           .doc(widget.FoodTime)
           .get();
-      print(widget.packId);
-      String foodId = doc['FoodId'];
 
+      String foodId = doc['FoodId'];
 
       DocumentSnapshot foodDoc = await FirebaseFirestore.instance
           .collection('fs_food_items')
@@ -54,19 +81,21 @@ class __TodaysMenuState extends State<_TodaysMenu> {
           .get();
       if (foodDoc.exists) {
         Map<String, dynamic> foodData = foodDoc.data() as Map<String, dynamic>;
-        menuItems.add(MenuItem(
-          Time: widget.FoodTime,
-          id: foodId,
-          name: foodData['productTitle'],
-          image: foodData['productImg'],
-          isVeg: foodData['isVeg'],
-          price: foodData['productPrice'],
-          selected: true,
-        ));
+
+        // Check if the item ID is not in the selectedIds list
+        if (!selectedIds.contains(foodId)) {
+          menuItems.add(MenuItem(
+            Time: widget.FoodTime,
+            id: foodId,
+            name: foodData['productTitle'],
+            image: foodData['productImg'],
+            isVeg: foodData['isVeg'],
+            price: foodData['productPrice'],
+            selected: false, // Default to false
+          ));
+        }
       }
-
     } catch (e) {
-
       print('Error fetching menu items: $e');
     }
     return menuItems;
@@ -81,8 +110,6 @@ class __TodaysMenuState extends State<_TodaysMenu> {
           return CircularProgressIndicator();
         } else if (snapshot.hasError) {
           return Text('Error fetching menu');
-        // } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-        //
         } else {
           List<MenuItem> menuItems = snapshot.data!;
           return Column(
@@ -102,7 +129,6 @@ class __TodaysMenuState extends State<_TodaysMenu> {
     );
   }
 }
-
 
 class DateUtil {
   static const DATE_FORMAT = 'dd/MM/yyyy';
@@ -138,9 +164,41 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
     fetchPackInfo();
   }
 
+  Future<List<String>> fetchSelectedIds({
+    required String userId,
+    required String
+        mealType, // Can be 'breakfast', 'lunch', 'dinner', or 'snacks'
+  }) async {
+    try {
+      // Reference to the user's document in the `fs_service` collection
+      final userEmail = FirebaseAuth.instance.currentUser?.email;
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .collection('fs_service')
+          .doc('packs') // Replace with the actual pack document ID
+          .get();
+
+      if (!userDoc.exists) {
+        throw Exception('Document not found.');
+      }
+
+      // Retrieve the selected IDs based on the meal type
+      Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+      List<String> selectedIds =
+          List<String>.from(data['${mealType}Selected'] ?? []);
+
+      return selectedIds;
+    } catch (e) {
+      print('Error fetching selected IDs: $e');
+      return [];
+    }
+  }
+
   Future<void> fetchPackInfo() async {
     try {
-      final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+      final args =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
 
       final userEmail = FirebaseAuth.instance.currentUser?.email;
       if (userEmail != null) {
@@ -204,8 +262,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
       print('Error fetching pack info: $e');
     }
   }
-
-
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate,
       Function(DateTime) onDateSelected) async {
@@ -323,8 +379,13 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                 });
               }),
               SizedBox(height: 20),
-              _TodaysMenu(packId: packID, FoodTime: 'breakfast' ),
-              SizedBox(height: 10,),
+              _TodaysMenu(
+                packId: packID,
+                FoodTime: 'breakfast',
+              ),
+              SizedBox(
+                height: 10,
+              ),
               AlarmSetting(
                 title: 'Breakfast',
                 initialTime: TimeOfDay(hour: 7, minute: 0),
@@ -333,9 +394,13 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                   updateMeal('Breakfast', count, days, time, isOn);
                 },
               ),
-
-              _TodaysMenu(packId: packID, FoodTime: 'lunch' ),
-              SizedBox(height: 10,),
+              _TodaysMenu(
+                packId: packID,
+                FoodTime: 'lunch',
+              ),
+              SizedBox(
+                height: 10,
+              ),
               AlarmSetting(
                 title: 'Lunch',
                 initialTime: TimeOfDay(hour: 12, minute: 0),
@@ -344,9 +409,13 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                   updateMeal('Lunch', count, days, time, isOn);
                 },
               ),
-
-              _TodaysMenu(packId: packID, FoodTime: 'snacks' ),
-              SizedBox(height: 10,),
+              _TodaysMenu(
+                packId: packID,
+                FoodTime: 'snacks',
+              ),
+              SizedBox(
+                height: 10,
+              ),
               AlarmSetting(
                 title: 'Snack',
                 initialTime: TimeOfDay(hour: 16, minute: 0),
@@ -355,10 +424,13 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                   updateMeal('Snack', count, days, time, isOn);
                 },
               ),
-
-              _TodaysMenu(packId: packID, FoodTime: 'dinner' ),
-              SizedBox(height: 10,),
-
+              _TodaysMenu(
+                packId: packID,
+                FoodTime: 'dinner',
+              ),
+              SizedBox(
+                height: 10,
+              ),
               AlarmSetting(
                 title: 'Dinner',
                 initialTime: TimeOfDay(hour: 19, minute: 0),
@@ -368,7 +440,6 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                 },
               ),
               SizedBox(height: 20),
-
               SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
@@ -382,11 +453,12 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                           .collection('users')
                           .doc(userEmail)
                           .collection('fs_service')
-                          .doc('packs'); // Use the correct document ID or create a unique one if needed
+                          .doc(
+                              'packs'); // Use the correct document ID or create a unique one if needed
 
                       // Define the data you want to update in Firestore
                       final data = {
-                        'active':"cart",
+                        'active': "cart",
                         'packID': packID,
                         'packName': packName,
                         'subscription_type': subscriptionType,
@@ -423,10 +495,7 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                       await CartcollectionRef.update(data);
 
                       // Navigate to the next screen
-                      Navigator.pushNamed(
-                          context,
-                          '/fs_home'
-                      );
+                      Navigator.pushNamed(context, '/fs_home');
                     } else {
                       print('User is not logged in.');
                     }
@@ -443,15 +512,12 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                   textStyle: TextStyle(fontSize: 18),
                 ),
               )
-
             ],
           ),
         ),
       ),
     );
   }
-
-
 
   Widget _buildDateSetting(
       String label, DateTime date, Function(DateTime) onDateSelected) {
@@ -511,7 +577,6 @@ class _AlarmSettingState extends State<AlarmSetting> {
     super.initState();
     selectedTime = widget.initialTime;
     isOn = widget.initialIsOn;
-
   }
 
   Future<void> _selectTime(BuildContext context) async {
@@ -564,16 +629,18 @@ class _AlarmSettingState extends State<AlarmSetting> {
                     icon: Icon(Icons.remove),
                     onPressed: mealCount > 1
                         ? () {
-                      setState(() {
-                        mealCount--;
-                        widget.onChanged(
-                            mealCount, selectedDays, selectedTime, isOn);
-                      });
-                    }
+                            setState(() {
+                              mealCount--;
+                              widget.onChanged(
+                                  mealCount, selectedDays, selectedTime, isOn);
+                            });
+                          }
                         : null,
                   ),
-                  Text('$mealCount',
-                    style: TextStyle(fontSize: 16),),
+                  Text(
+                    '$mealCount',
+                    style: TextStyle(fontSize: 16),
+                  ),
                   IconButton(
                     icon: Icon(Icons.add),
                     onPressed: () {
@@ -627,7 +694,6 @@ class _AlarmSettingState extends State<AlarmSetting> {
   }
 }
 
-
 class MenuItemWidget extends StatelessWidget {
   final MenuItem item;
   final VoidCallback onSelect;
@@ -639,7 +705,6 @@ class MenuItemWidget extends StatelessWidget {
     return GestureDetector(
       onTap: onSelect,
       child: Container(
-
         padding: EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: item.selected
@@ -717,7 +782,6 @@ class MenuItemWidget extends StatelessWidget {
                 ),
               ],
             ),
-
             Align(
               alignment: Alignment.centerRight,
               child: item.selected
