@@ -24,6 +24,7 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
   DateTime endingDate = DateTime.now().add(Duration(days: 7));
   int price = 0;
   late String packID;
+  late String packOwner;
   late String packName;
   late String subscriptionType;
 
@@ -126,6 +127,7 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
     if (packDoc.exists) {
       final packData = packDoc.data()!;
       int packPrice;
+      packOwner = packData['pack_owner'];
       packName = packData['pack_name'];
 
       if (subscriptionType == 'Weekly') {
@@ -278,6 +280,7 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                           .doc('packs');
 
                       final data = {
+                        'pack_owner': packOwner,
                         'active': "cart",
                         'packID': packID,
                         'packName': packName,
