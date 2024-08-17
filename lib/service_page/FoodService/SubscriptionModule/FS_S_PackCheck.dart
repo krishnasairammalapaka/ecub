@@ -10,7 +10,7 @@ class MenuItem {
   final String image;
   final bool isVeg;
   final int price;
-  late final bool selected;
+  bool selected;
 
   MenuItem({
     required this.Time,
@@ -144,13 +144,18 @@ class __TodaysMenuState extends State<_TodaysMenu> {
               return MenuItemWidget(
                 item: item,
                 onSelect: () {
-                  setState(() {
-                    item.selected = !item.selected;
-                  });
+                  Navigator.pushNamed(
+                    context,
+                    '/fs_s_packchange',
+                    arguments: {
+                      'id':widget.packId
+                    },
+                  );
                 },
               );
             }).toList(),
           );
+
         }
       },
     );
@@ -369,7 +374,7 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
         snack['count'] = count;
         snack['days'] = days;
         snack['time'] = time;
-        snack['isOn'] = false;
+        snack['isOn'] = isOn;
       } else if (title == 'Dinner') {
         dinner['count'] = count;
         dinner['days'] = days;
@@ -641,7 +646,7 @@ class _AlarmSettingState extends State<AlarmSetting> {
               children: [
                 Text(widget.title, style: TextStyle(fontSize: 18)),
                 Switch(
-                  value: false,
+                  value: isOn,
                   onChanged: (value) {
                     setState(() {
                       isOn = value;

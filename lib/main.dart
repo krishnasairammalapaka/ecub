@@ -10,6 +10,7 @@ import 'package:ecub_s1_v2/service_page/FoodService/FS_CategoryScreen.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/SubscriptionModule/FS_S_Checkout.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/SubscriptionModule/FS_S_Desc.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/SubscriptionModule/FS_S_Home.dart';
+import 'package:ecub_s1_v2/service_page/FoodService/SubscriptionModule/FS_S_PackChange.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/SubscriptionModule/FS_S_PackCheck.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_cart.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_home.dart';
@@ -423,6 +424,7 @@ class MyApp extends StatelessWidget {
         '/fs_s_desc': (context) => FS_S_Desc(),
         '/fs_s_checkout': (context) => FS_S_Checkout(),
         '/fs_s_packcheck': (context) => FS_S_PackCheck(),
+        '/fs_s_packchange': (context) => FS_S_PackChange(),
       
       },
     );
