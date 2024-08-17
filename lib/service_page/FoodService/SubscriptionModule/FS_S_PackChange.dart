@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -97,7 +98,7 @@ class _FS_S_PackChangeState extends State<FS_S_PackChange> {
               foodAvailTime: category,
               // use the category directly
               isVeg: foodData['isVeg'],
-              selected: shouldPreSelect(foodData['id']),
+              selected: await shouldPreSelect(foodData['id']),
             );
 
             categorizedFoodItems[category]?.add(menuItem);
@@ -108,9 +109,8 @@ class _FS_S_PackChangeState extends State<FS_S_PackChange> {
     return categorizedFoodItems;
   }
 
-  void _onCheckoutPressed(String packID) {
+  Future<void> _onCheckoutPressed(String packID) async {
     final Map<String, dynamic> args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-
 
     // Separate selected food items by category
     List<MenuItem> selectedFoodItems = selectedItemsNotifier.value.where((item) => item.selected).toList();
@@ -135,18 +135,83 @@ class _FS_S_PackChangeState extends State<FS_S_PackChange> {
         .map((item) => item.id)
         .toList();
 
-    if (selectedFoodItems.isEmpty) {
-      print('No food items selected');
-    } else {
-      // Debugging: Print selected food IDs
-      print('Breakfast: $breakfastSelected');
-      print('Lunch: $lunchSelected');
-      print('Snacks: $snacksSelected');
-      print('Dinner: $dinnerSelected');
+    final userEmail = FirebaseAuth.instance.currentUser?.email;
+
+    if (userEmail == null) {
+      throw Exception('User is not authenticated');
     }
 
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userEmail)
+        .collection('fs_service')
+        .doc('packs')
+        .get();
 
+    // Retrieve each list of food IDs from Firestore
+    List<dynamic> breakfastIds = snapshot.data()?['breakfastSelected'] as List<dynamic>? ?? [];
+    List<dynamic> lunchIds = snapshot.data()?['lunchSelected'] as List<dynamic>? ?? [];
+    List<dynamic> snacksIds = snapshot.data()?['snacksSelected'] as List<dynamic>? ?? [];
+    List<dynamic> dinnerIds = snapshot.data()?['dinnerSelected'] as List<dynamic>? ?? [];
+
+    // Append the newly selected IDs to the existing IDs
+    breakfastIds.addAll(breakfastSelected);
+    lunchIds.addAll(lunchSelected);
+    snacksIds.addAll(snacksSelected);
+    dinnerIds.addAll(dinnerSelected);
+
+    // Debugging: Print the updated food IDs
+    print('Updated Breakfast IDs: $breakfastIds');
+    print('Updated Lunch IDs: $lunchIds');
+    print('Updated Snacks IDs: $snacksIds');
+    print('Updated Dinner IDs: $dinnerIds');
+
+    // Debugging: Print the updated food IDs
+    print('Updated Breakfast IDs: $breakfastSelected');
+    print('Updated Lunch IDs: $lunchSelected');
+    print('Updated Snacks IDs: $snacksSelected');
+    print('Updated Dinner IDs: $dinnerSelected');
+
+
+    final firestore = FirebaseFirestore.instance;
+    final collectionRef = firestore
+        .collection('users')
+        .doc(userEmail)
+        .collection('fs_service')
+        .doc('packs');
+
+    final cartCollectionRef = firestore
+        .collection('fs_cart')
+        .doc(userEmail)
+        .collection('packs')
+        .doc('info');
+
+    // Update Firestore with the appended lists
+    await collectionRef.update({
+      'breakfastSelected': breakfastSelected,
+      'lunchSelected': lunchSelected,
+      'snacksSelected': snacksSelected,
+      'dinnerSelected': dinnerSelected,
+    });
+
+    // await cartCollectionRef.update({
+    //   'breakfastSelected': breakfastIds,
+    //   'lunchSelected': lunchIds,
+    //   'snacksSelected': snacksIds,
+    //   'dinnerSelected': dinnerIds,
+    // });
+
+    await cartCollectionRef.update({
+      'breakfastSelected': breakfastSelected,
+      'lunchSelected': lunchSelected,
+      'snacksSelected': snacksSelected,
+      'dinnerSelected': dinnerSelected,
+    });
+
+    Navigator.pushNamed(context, '/fs_profile');
   }
+
+
 
 
 
@@ -258,10 +323,56 @@ class _FS_S_PackChangeState extends State<FS_S_PackChange> {
     );
   }
 
-  bool shouldPreSelect(String foodId) {
-    List<String> preSelectedFoodIds = ['foodId1', 'foodId2', 'foodId3'];
-    return preSelectedFoodIds.contains(foodId);
+
+  Future<List<dynamic>> fetchFoodIds() async {
+    try {
+      final userEmail = FirebaseAuth.instance.currentUser?.email;
+
+      if (userEmail == null) {
+        throw Exception('User is not authenticated');
+      }
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .collection('fs_service')
+          .doc('packs')
+          .get();
+
+      // Retrieve each list of food IDs and combine them
+      List<dynamic> breakfastIds = snapshot.data()?['breakfastSelected'] as List<dynamic>? ?? [];
+      List<dynamic> lunchIds = snapshot.data()?['lunchSelected'] as List<dynamic>? ?? [];
+      List<dynamic> snacksIds = snapshot.data()?['snacksSelected'] as List<dynamic>? ?? [];
+      List<dynamic> dinnerIds = snapshot.data()?['dinnerSelected'] as List<dynamic>? ?? [];
+
+      // Combine all lists into one
+      List<dynamic> allFoodIds = [
+        ...breakfastIds,
+        ...lunchIds,
+        ...snacksIds,
+        ...dinnerIds,
+      ];
+
+
+      return allFoodIds;
+    } catch (e) {
+      // Handle errors (e.g., network issues)
+      print('Error fetching food IDs: $e');
+      return [];
+    }
   }
+
+
+  Future<bool> shouldPreSelect(String foodId) async {
+    try {
+      List<dynamic> allFoodIds = await fetchFoodIds();
+      return allFoodIds.contains(foodId);
+    } catch (e) {
+      print('Error checking food ID selection: $e');
+      return false;
+    }
+  }
+
 
   Widget buildCategorySection(String title, List<MenuItem> items) {
     if (items.isEmpty) {
