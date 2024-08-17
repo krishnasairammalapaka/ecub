@@ -85,7 +85,8 @@ class __TodaysMenuState extends State<_TodaysMenu> {
             .get();
 
         if (foodDoc.exists) {
-          Map<String, dynamic> foodData = foodDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> foodData =
+              foodDoc.data() as Map<String, dynamic>;
 
           menuItems.add(MenuItem(
             Time: widget.FoodTime,
@@ -108,7 +109,7 @@ class __TodaysMenuState extends State<_TodaysMenu> {
 
         if (selectedFoodDoc.exists) {
           Map<String, dynamic> selectedFoodData =
-          selectedFoodDoc.data() as Map<String, dynamic>;
+              selectedFoodDoc.data() as Map<String, dynamic>;
 
           menuItems.add(MenuItem(
             Time: widget.FoodTime,
@@ -126,7 +127,6 @@ class __TodaysMenuState extends State<_TodaysMenu> {
     }
     return menuItems;
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -147,16 +147,12 @@ class __TodaysMenuState extends State<_TodaysMenu> {
                   Navigator.pushNamed(
                     context,
                     '/fs_s_packchange',
-                    arguments: {
-                      'id':widget.packId
-
-                    },
+                    arguments: {'id': widget.packId},
                   );
                 },
               );
             }).toList(),
           );
-
         }
       },
     );
@@ -185,6 +181,11 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
   String packID = "";
   late String packName;
   late String subscriptionType;
+
+  bool bOn = false;
+  bool lOn = false;
+  bool sOn = false;
+  bool dOn = false;
 
   late Map<String, dynamic> breakfast;
   late Map<String, dynamic> lunch;
@@ -226,6 +227,98 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
       print('Error fetching selected IDs: $e');
       return [];
     }
+  }
+
+  Future<bool> _getBreakfastIsOn() async {
+    final userEmail = FirebaseAuth.instance.currentUser?.email;
+
+    if (userEmail != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .collection('fs_service')
+          .doc('packs')
+          .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+
+        if (userData != null) {
+          return userData['breakfastIsOn'] ?? false;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  Future<bool> _getLunchIsOn() async {
+    final userEmail = FirebaseAuth.instance.currentUser?.email;
+
+    if (userEmail != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .collection('fs_service')
+          .doc('packs')
+          .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+
+        if (userData != null) {
+          return userData['lunchIsOn'] ?? false;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  Future<bool> _getSnackIsOn() async {
+    final userEmail = FirebaseAuth.instance.currentUser?.email;
+
+    if (userEmail != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .collection('fs_service')
+          .doc('packs')
+          .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+
+        if (userData != null) {
+          return userData['snackIsOn'] ?? false;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  Future<bool> _getDinnerIsOn() async {
+    final userEmail = FirebaseAuth.instance.currentUser?.email;
+
+    if (userEmail != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userEmail)
+          .collection('fs_service')
+          .doc('packs')
+          .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+
+        if (userData != null) {
+          return userData['dinnerIsOn'] ?? false;
+        }
+      }
+    }
+
+    return false;
   }
 
   Future<void> fetchPackInfo() async {
@@ -419,16 +512,25 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
               SizedBox(
                 height: 10,
               ),
-              AlarmSetting(
-                title: 'Breakfast',
-                initialTime: TimeOfDay(hour: 7, minute: 0),
-                initialIsOn: true,
-                onChanged: (count, days, time, isOn) {
-                  updateMeal('Breakfast', count, days, time, isOn);
+              FutureBuilder(
+                future: _getBreakfastIsOn(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return Text('Error fetching breakfastIsOn');
+                  } else {
+                    return AlarmSetting(
+                      title: 'Breakfast',
+                      initialTime: TimeOfDay(hour: 7, minute: 0),
+                      initialIsOn: snapshot.data!,
+                      onChanged: (count, days, time, isOn) {
+                        updateMeal('Breakfast', count, days, time, isOn);
+                      },
+                    );
+                  }
                 },
               ),
-
-
               _TodaysMenu(
                 packId: packID,
                 FoodTime: 'lunch',
@@ -436,16 +538,25 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
               SizedBox(
                 height: 10,
               ),
-              AlarmSetting(
-                title: 'Lunch',
-                initialTime: TimeOfDay(hour: 12, minute: 0),
-                initialIsOn: true,
-                onChanged: (count, days, time, isOn) {
-                  updateMeal('Lunch', count, days, time, isOn);
+              FutureBuilder(
+                future: _getLunchIsOn(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return Text('Error fetching lunchIsOn');
+                  } else {
+                    return AlarmSetting(
+                      title: 'Lunch',
+                      initialTime: TimeOfDay(hour: 12, minute: 0),
+                      initialIsOn: snapshot.data!,
+                      onChanged: (count, days, time, isOn) {
+                        updateMeal('Lunch', count, days, time, isOn);
+                      },
+                    );
+                  }
                 },
               ),
-
-
               _TodaysMenu(
                 packId: packID,
                 FoodTime: 'snacks',
@@ -453,16 +564,25 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
               SizedBox(
                 height: 10,
               ),
-              AlarmSetting(
-                title: 'Snack',
-                initialTime: TimeOfDay(hour: 16, minute: 0),
-                initialIsOn: true,
-                onChanged: (count, days, time, isOn) {
-                  updateMeal('Snack', count, days, time, isOn);
+              FutureBuilder(
+                future: _getSnackIsOn(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return Text('Error fetching snackIsOn');
+                  } else {
+                    return AlarmSetting(
+                      title: 'Snack',
+                      initialTime: TimeOfDay(hour: 16, minute: 0),
+                      initialIsOn: snapshot.data!,
+                      onChanged: (count, days, time, isOn) {
+                        updateMeal('Snack', count, days, time, isOn);
+                      },
+                    );
+                  }
                 },
               ),
-
-
               _TodaysMenu(
                 packId: packID,
                 FoodTime: 'dinner',
@@ -470,16 +590,25 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
               SizedBox(
                 height: 10,
               ),
-              AlarmSetting(
-                title: 'Dinner',
-                initialTime: TimeOfDay(hour: 19, minute: 0),
-                initialIsOn: true,
-                onChanged: (count, days, time, isOn) {
-                  updateMeal('Dinner', count, days, time, isOn);
+              FutureBuilder(
+                future: _getDinnerIsOn(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return Text('Error fetching dinnerIsOn');
+                  } else {
+                    return AlarmSetting(
+                      title: 'Dinner',
+                      initialTime: TimeOfDay(hour: 19, minute: 0),
+                      initialIsOn: snapshot.data!,
+                      onChanged: (count, days, time, isOn) {
+                        updateMeal('Dinner', count, days, time, isOn);
+                      },
+                    );
+                  }
                 },
               ),
-
-
               SizedBox(height: 20),
               SizedBox(height: 10),
               ElevatedButton(
