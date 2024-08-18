@@ -30,7 +30,7 @@ class BottomNavBar extends StatelessWidget {
             color: Colors.black,
             mainAxisAlignment: MainAxisAlignment.center,
             onTabChange: (value) => onTabChange!(value),
-            tabs: const [
+            tabs: [
               GButton(
                 icon: Icons.home,
                 text: 'Home',
@@ -40,21 +40,19 @@ class BottomNavBar extends StatelessWidget {
               GButton(
                 icon: Icons.person,
                 text: 'Profile',
-                iconColor:Colors.black,
+                iconColor: Colors.black,
                 textColor: Colors.blue,
               ),
               GButton(
-                icon: Icons.shopping_cart,
-                text: 'Cart',
-                iconColor: Colors.black,
-                textColor: Colors.blue
-              ),
+                  icon: Icons.shopping_cart,
+                  text: 'Cart',
+                  iconColor: Colors.black,
+                  textColor: Colors.blue),
               GButton(
-                icon: Icons.shopping_bag,
-                text: 'Orders',
-                iconColor: Colors.black,
-                textColor: Colors.blue
-              ),
+                  icon: Icons.shopping_bag,
+                  text: 'Orders',
+                  iconColor: Colors.black,
+                  textColor: Colors.blue),
             ],
           ),
         ),

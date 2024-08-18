@@ -1,5 +1,6 @@
 import 'package:badges/badges.dart' as badges;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -244,23 +245,55 @@ class _MeItemsState extends State<MeItems> {
                       items[index].name,
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    subtitle: Text(items[index].address),
+                    subtitle: FutureBuilder<String>(
+                      future: Translate.translateText(items[index].address),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return CircularProgressIndicator();
+                        } else if (snapshot.hasData) {
+                          return Text(snapshot.data!);
+                        } else {
+                          // Return a default Text widget if there's no data
+                          return Text(items[index].address);
+                        }
+                      },
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize
                           .min, // To minimize the row's size to its children size
                       children: [
                         Container(
-                          padding: EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColorLight,
-                            borderRadius: BorderRadius.circular(5.0),
-                          ),
-                          child: Text(
-                            '${items[index].rating} ⭐',
-                            style: TextStyle(
-                                color: Theme.of(context).primaryColorDark),
-                          ),
-                        ),
+                            padding: EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColorLight,
+                              borderRadius: BorderRadius.circular(5.0),
+                            ),
+                            child: FutureBuilder<String>(
+                              future: Translate.translateText(
+                                  '${items[index].rating} ⭐'),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return CircularProgressIndicator();
+                                } else if (snapshot.hasData) {
+                                  return Text(
+                                    snapshot.data!,
+                                    style: TextStyle(
+                                        color:
+                                            Theme.of(context).primaryColorDark),
+                                  );
+                                } else {
+                                  // Return a default Text widget if there's no data
+                                  return Text(
+                                    '${items[index].rating} ⭐',
+                                    style: TextStyle(
+                                        color:
+                                            Theme.of(context).primaryColorDark),
+                                  );
+                                }
+                              },
+                            )),
                         IconButton(
                           icon: Icon(Icons.add_shopping_cart,
                               color: Colors.green),

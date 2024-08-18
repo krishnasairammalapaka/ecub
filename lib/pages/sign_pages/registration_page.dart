@@ -10,9 +10,12 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  final TextEditingController nameController = TextEditingController();
+  final TextEditingController firstNameController = TextEditingController();
+  final TextEditingController lastNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
+  final TextEditingController ageController =
+      TextEditingController(); // New controller for age
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
@@ -56,6 +59,10 @@ class _SignUpPageState extends State<SignUpPage> {
 
   Future<void> _registerUser(BuildContext context) async {
     if (_formKey.currentState?.validate() ?? false) {
+      if (passwordController.text != confirmPasswordController.text) {
+        _showErrorDialog(context, 'Passwords do not match.');
+        return;
+      }
       try {
         UserCredential userCredential =
             await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -68,9 +75,11 @@ class _SignUpPageState extends State<SignUpPage> {
 
           FirebaseFirestore firestore = FirebaseFirestore.instance;
           firestore.collection('users').doc(email).set({
-            'name': nameController.text,
+            'firstname': firstNameController.text,
+            'lastname': lastNameController.text,
             'phonenumber': mobileController.text,
             'email': email,
+            'age': ageController.text, // Add age field here
           });
 
           if (!mounted) return;
@@ -86,8 +95,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     child: Text('OK'),
                     onPressed: () {
                       Navigator.of(context).pop();
-                      Navigator.of(context)
-                          .pop(); // Close the registration page
+                      Navigator.of(context).pop();
                     },
                   ),
                 ],
@@ -151,18 +159,40 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 SizedBox(height: 40),
                 Text(
-                  'Name',
+                  'First Name',
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.black,
                     fontFamily: 'Roboto',
                   ),
                 ),
-                SizedBox(height: 8),
                 TextFormField(
-                  controller: nameController,
+                  controller: firstNameController,
                   decoration: InputDecoration(
-                    hintText: 'John Joe K',
+                    hintText: 'John Joe',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  ),
+                  style: TextStyle(fontFamily: 'Roboto'),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Last Name',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.black,
+                    fontFamily: 'Roboto',
+                  ),
+                ),
+                TextFormField(
+                  controller: lastNameController,
+                  decoration: InputDecoration(
+                    hintText: 'Johnson',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.0),
                     ),
@@ -182,7 +212,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     fontFamily: 'Roboto',
                   ),
                 ),
-                SizedBox(height: 8),
                 TextFormField(
                   controller: emailController,
                   decoration: InputDecoration(
@@ -214,32 +243,14 @@ class _SignUpPageState extends State<SignUpPage> {
                     fontFamily: 'Roboto',
                   ),
                 ),
-                SizedBox(height: 8),
                 Row(
                   children: [
-                    Container(
-                      width: 60,
-                      child: TextFormField(
-                        initialValue: '+91',
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding:
-                              EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                        ),
-                        enabled: false,
-                        style: TextStyle(fontFamily: 'Roboto'),
-                      ),
-                    ),
                     SizedBox(width: 8),
                     Expanded(
                       child: TextFormField(
                         controller: mobileController,
                         decoration: InputDecoration(
-                          hintText: 'XXXXXXXXXX',
+                          hintText: '123456789',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12.0),
                           ),
@@ -263,6 +274,30 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 SizedBox(height: 16),
                 Text(
+                  'Age',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.black,
+                    fontFamily: 'Roboto',
+                  ),
+                ),
+                TextFormField(
+                  controller: ageController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter your age',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  ),
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(fontFamily: 'Roboto'),
+                ),
+                SizedBox(height: 16),
+                Text(
                   'Password',
                   style: TextStyle(
                     fontSize: 18,
@@ -270,7 +305,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     fontFamily: 'Roboto',
                   ),
                 ),
-                SizedBox(height: 8),
                 TextFormField(
                   controller: passwordController,
                   decoration: InputDecoration(
@@ -295,7 +329,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     fontFamily: 'Roboto',
                   ),
                 ),
-                SizedBox(height: 8),
                 TextFormField(
                   controller: confirmPasswordController,
                   decoration: InputDecoration(

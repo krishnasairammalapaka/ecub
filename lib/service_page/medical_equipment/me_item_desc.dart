@@ -2,17 +2,19 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/RentCalculator.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:badges/badges.dart' as badges;
 
-class MeItemDesc extends StatelessWidget {
+class MeItemDesc extends StatefulWidget {
   final String storeName;
   final String categoryName;
   final String itemName;
   final String imageUrl;
   final String price;
   final String storeAddress;
+  final String rent;
 
   MeItemDesc({
     required this.storeName,
@@ -21,51 +23,99 @@ class MeItemDesc extends StatelessWidget {
     required this.imageUrl,
     required this.price,
     required this.storeAddress,
+    required this.rent,
   });
 
-  Future<void> addItemToCart(BuildContext context, String name, String storeName, String address,
-        String rating, String imageUrl) async {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null && user.email != null) {
-        DocumentReference itemRef = FirebaseFirestore.instance
-            .collection('me_cart')
-            .doc(user.email)
-            .collection('items')
-            .doc("${name}_$storeName");
-  
-        DocumentSnapshot itemSnapshot = await itemRef.get();
-        if (itemSnapshot.exists) {
-          int currentQuantity = itemSnapshot['quantity'];
-          await itemRef.update({'quantity': currentQuantity + 1});
-        } else {
-          await itemRef.set({
-            'name': name,
-            'storeName': storeName,
-            'address': address,
-            'rating': rating,
-            'imageUrl': imageUrl,
-            'quantity': 1,
-          });
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(itemSnapshot.exists
-                ? 'Item quantity updated'
-                : 'Item added to cart'),
-            action: SnackBarAction(
-              label: 'OK',
-              onPressed: () {
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              },
-            ),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+  @override
+  State<MeItemDesc> createState() => _MeItemDescState();
+}
 
-    Stream<int> fetchCartItemCount() {
+class _MeItemDescState extends State<MeItemDesc> {
+  @override
+  void initState() {
+    super.initState();
+    fetchDescription();
+  }
+
+  String product_details = 'Loading';
+
+  String product_features = 'Loading';
+
+  String product_specifications = 'Loading';
+
+  void fetchDescription() async {
+    try {
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('me_item_desc')
+          .doc(widget.itemName) // Replace with your document ID
+          .get();
+
+      setState(() {
+        product_details = doc['Product Details'] ?? 'No description available';
+        product_features = doc['Features'] ?? 'No features available';
+        product_specifications =
+            doc['Specifications'] ?? 'No specifications available';
+      });
+    } catch (e) {
+      print(e);
+      setState(() {
+        product_details = 'Failed to load description';
+        product_features = 'Failed to load features';
+        product_specifications = 'Failed to load specifications';
+      });
+    }
+  }
+
+  Future<void> addItemToCart(
+      BuildContext context,
+      String name,
+      String storeName,
+      String address,
+      String rating,
+      String imageUrl,
+      String price) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null && user.email != null) {
+      DocumentReference itemRef = FirebaseFirestore.instance
+          .collection('me_cart')
+          .doc(user.email)
+          .collection('items')
+          .doc("${name}_$storeName");
+
+      DocumentSnapshot itemSnapshot = await itemRef.get();
+      if (itemSnapshot.exists) {
+        int currentQuantity = itemSnapshot['quantity'];
+        await itemRef.update({'quantity': currentQuantity + 1});
+      } else {
+        await itemRef.set({
+          'name': name,
+          'storeName': storeName,
+          'address': address,
+          'rating': rating,
+          'imageUrl': imageUrl,
+          'quantity': 1,
+          'price': price,
+        });
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(itemSnapshot.exists
+              ? 'Item quantity updated'
+              : 'Item added to cart'),
+          action: SnackBarAction(
+            label: 'OK',
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            },
+          ),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Stream<int> fetchCartItemCount() {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null && user.email != null) {
       // Return a stream of document snapshots from Firestore
@@ -81,7 +131,7 @@ class MeItemDesc extends StatelessWidget {
       return Stream.value(0);
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,7 +167,18 @@ class MeItemDesc extends StatelessWidget {
                 },
               )),
         ],
-        title: Text(itemName),
+        title: FutureBuilder<String>(
+          future: Translate.translateText(widget.itemName),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return CircularProgressIndicator();
+            } else if (snapshot.hasData) {
+              return Text(snapshot.data!);
+            } else {
+              return Text(widget.itemName);
+            }
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -126,39 +187,55 @@ class MeItemDesc extends StatelessWidget {
             Center(
               child: Column(
                 children: [
-                  Text(
-                    itemName,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'by $storeName',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
+                  FutureBuilder<String>(
+                    future: Translate.translateText(widget.itemName),
+                    builder: (context, snapshot) {
+                      return snapshot.hasData
+                          ? Text(snapshot.data!,
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ))
+                          : Text(widget.itemName,
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ));
+                    },
                   ),
                   SizedBox(height: 16),
                   Image.network(
-                    imageUrl,
+                    widget.imageUrl,
                     height: 200,
                   ),
                   SizedBox(height: 16),
                   Text(
-                    '₹$price',
+                    '₹${widget.price}',
                     style: TextStyle(
                       fontSize: 24,
                       color: Colors.blue,
                     ),
                   ),
-                  Text(
-                    'Breath up to 95% pure oxygen',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
+                  FutureBuilder<String>(
+                    future:
+                        Translate.translateText('Breath up to 95% pure oxygen'),
+                    builder: (context, snapshot) {
+                      return snapshot.hasData
+                          ? Text(
+                              snapshot.data!,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            )
+                          : Text(
+                              'Breath up to 95% pure oxygen',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            );
+                    },
                   ),
                   SizedBox(height: 16),
                   Row(
@@ -167,13 +244,28 @@ class MeItemDesc extends StatelessWidget {
                       ElevatedButton(
                         onPressed: () {
                           // Add to cart logic here
-                          addItemToCart(context, itemName, storeName, 'address', 'rating', imageUrl);
+                          addItemToCart(
+                              context,
+                              widget.itemName,
+                              widget.storeName,
+                              'address',
+                              'rating',
+                              widget.imageUrl,
+                              widget.price);
                         },
                         child: Row(
                           children: [
                             Icon(Icons.shopping_cart),
                             SizedBox(width: 8),
-                            Text('Add to cart'),
+                            FutureBuilder<String>(
+                              future: Translate.translateText("Add to Cart"),
+                              builder: (context, snapshot) {
+                                return snapshot.hasData
+                                    ? Text(snapshot.data!,
+                                        overflow: TextOverflow.ellipsis)
+                                    : Text("Add to Cart");
+                              },
+                            ),
                           ],
                         ),
                         style: ElevatedButton.styleFrom(
@@ -181,94 +273,165 @@ class MeItemDesc extends StatelessWidget {
                           backgroundColor: Colors.red, // Text color
                         ),
                       ),
-                      OutlinedButton(
-                        onPressed: () {
-                          Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => RentCalculator(
-                                    shopName: storeName,
-                                    productName: itemName,
-                                    price: price,
-                                    image_url: imageUrl,
-                                    shopAddress: storeAddress,
-                                  ),
+                      if (widget.rent == "Yes")
+                        OutlinedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RentCalculator(
+                                  shopName: widget.storeName,
+                                  productName: widget.itemName,
+                                  price: widget.price,
+                                  image_url: widget.imageUrl,
+                                  shopAddress: widget.storeAddress,
                                 ),
-                              );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.green, // Border color
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.green, // Border color
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.calendar_today),
+                              SizedBox(width: 8),
+                              FutureBuilder<String>(
+                                future: Translate.translateText("Rental"),
+                                builder: (context, snapshot) {
+                                  return snapshot.hasData
+                                      ? Text(snapshot.data!)
+                                      : Text("Rental");
+                                },
+                              )
+                            ],
+                          ),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.calendar_today),
-                            SizedBox(width: 8),
-                            Text('Rental'),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ],
               ),
             ),
             SizedBox(height: 16),
-            Text(
-              'Product Details',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+            FutureBuilder<String>(
+              future: Translate.translateText("Product Details"),
+              builder: (context, snapshot) {
+                return snapshot.hasData
+                    ? Text(
+                        snapshot.data!,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : Text(
+                        'Product Details',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+              },
             ),
             SizedBox(height: 8),
-            Text(
-              'The Oxygen Concentrator is a portable and compact device that provides a continuous flow of oxygen to patients in need. It is ideal for home use, travel, and clinical settings.',
-              style: TextStyle(fontSize: 16),
+            FutureBuilder<String>(
+              future: Translate.translateText(product_details),
+              builder: (context, snapshot) {
+                return snapshot.hasData
+                    ? Text(
+                        snapshot.data!,
+                        style: TextStyle(fontSize: 16),
+                      )
+                    : Text(
+                        product_details,
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      );
+              },
             ),
             SizedBox(height: 16),
-            Text(
-              'Features:',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            FutureBuilder<String>(
+              future: Translate.translateText("Features"),
+              builder: (context, snapshot) {
+                return snapshot.hasData
+                    ? Text(
+                        snapshot.data!,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : Text(
+                        'Features',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+              },
             ),
             SizedBox(height: 8),
-            Text(
-              '* Compact and lightweight design\n'
-              '* Continuous flow of oxygen up to 5 LPM\n'
-              '* Adjustable oxygen concentration (30-90%)\n'
-              '* Low power consumption\n'
-              '* Quiet operation\n'
-              '* Easy to use and maintain',
-              style: TextStyle(fontSize: 16),
+            FutureBuilder<String>(
+              future: Translate.translateText(product_features),
+              builder: (context, snapshot) {
+                return snapshot.hasData
+                    ? Text(
+                        snapshot.data!,
+                        softWrap: true,
+                        style: TextStyle(fontSize: 16),
+                      )
+                    : Text(
+                        product_features,
+                        softWrap: true,
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      );
+              },
             ),
             SizedBox(height: 16),
-            Text(
-              'Specifications:',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            FutureBuilder<String>(
+              future: Translate.translateText("Specifications"),
+              builder: (context, snapshot) {
+                return snapshot.hasData
+                    ? Text(
+                        snapshot.data!,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : Text(
+                        'Specifications',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+              },
             ),
             SizedBox(height: 8),
-            Text(
-              'Dimensions: 12 x 10 x 8 inches\n'
-              'Weight: 15 lbs\n'
-              'Power: 120V, 60Hz\n'
-              'Oxygen output: 1-5 LPM\n'
-              'Concentration: 30-95%',
-              style: TextStyle(fontSize: 16),
+            FutureBuilder<String>(
+              future: Translate.translateText(product_specifications),
+              builder: (context, snapshot) {
+                return snapshot.hasData
+                    ? Text(
+                        snapshot.data!,
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      )
+                    : Text(
+                        product_specifications,
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      );
+              },
             ),
             SizedBox(height: 16),
-            Text(
-              'Brand Name',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
             SizedBox(height: 8),
             Row(
               children: [
@@ -380,7 +543,16 @@ class MeItemDesc extends StatelessWidget {
                 onPressed: () {
                   Navigator.pushNamed(context, '/me_cart');
                 },
-                child: Text('GO TO CART'),
+                child: FutureBuilder<String>(
+                  future: Translate.translateText("Go To Cart"),
+                  builder: (context, snapshot) {
+                    return snapshot.hasData
+                        ? Text(snapshot.data!)
+                        : Text(
+                            'Go To Cart',
+                          );
+                  },
+                ),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
                   backgroundColor: Colors.blue, // Text color

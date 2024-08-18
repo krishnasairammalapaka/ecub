@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -14,7 +15,8 @@ class _FS_S_HomeState extends State<FS_S_Home>
   TabController? _tabController;
 
   final firestoreInstance = FirebaseFirestore.instance;
-  CollectionReference packsCollection = FirebaseFirestore.instance.collection('fs_packs');
+  CollectionReference packsCollection =
+      FirebaseFirestore.instance.collection('fs_packs');
 
   @override
   void initState() {
@@ -36,7 +38,14 @@ class _FS_S_HomeState extends State<FS_S_Home>
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Subscriptions'),
+          title: FutureBuilder<String>(
+            future: Translate.translateText("Subscriptions"),
+            builder: (context, snapshot) {
+              return snapshot.hasData
+                  ? Text(snapshot.data!)
+                  : Text("Subscriptions");
+            },
+          ),
           centerTitle: true, // Center aligns the title
           actions: [
             IconButton(
@@ -140,7 +149,8 @@ class _FS_S_HomeState extends State<FS_S_Home>
     );
   }
 
-  Widget _buildMealItem(String id, String PackName, String image, double rating, int wprice, int mprice) {
+  Widget _buildMealItem(String id, String PackName, String image, double rating,
+      int wprice, int mprice) {
     return GestureDetector(
       onTap: () {
         print(id);
@@ -149,7 +159,6 @@ class _FS_S_HomeState extends State<FS_S_Home>
         });
       },
       child: Container(
-
         margin: EdgeInsets.symmetric(vertical: 8.0),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey[300] ?? Colors.grey),
@@ -172,15 +181,32 @@ class _FS_S_HomeState extends State<FS_S_Home>
                 ),
               ),
               SizedBox(height: 8),
-              Text(
-                PackName,
-                style: TextStyle(fontWeight: FontWeight.bold),
+              FutureBuilder<String>(
+                future: Translate.translateText(PackName),
+                builder: (context, snapshot) {
+                  return snapshot.hasData
+                      ? Text(snapshot.data!,
+                          style: TextStyle(fontWeight: FontWeight.bold))
+                      : Text(PackName,
+                          style: TextStyle(fontWeight: FontWeight.bold));
+                },
               ),
               SizedBox(height: 4),
               Row(
                 children: [
                   Chip(
-                    label: Text('BESTSELLER'),
+                    label: FutureBuilder<String>(
+                      future: Translate.translateText("BESTSELLER"),
+                      builder: (context, snapshot) {
+                        return snapshot.hasData
+                            ? Text(snapshot.data!,
+                                style:
+                                    TextStyle(overflow: TextOverflow.ellipsis))
+                            : Text("BESTSELLER",
+                                style:
+                                    TextStyle(overflow: TextOverflow.ellipsis));
+                      },
+                    ),
                     backgroundColor: Colors.orange,
                   ),
                   Spacer(),
@@ -203,11 +229,13 @@ class _FS_S_HomeState extends State<FS_S_Home>
               Row(
                 children: [
                   Expanded(
-                    child: _buildPriceTag('Weekly Subscription', '₹ $wprice', Colors.blue),
+                    child: _buildPriceTag(
+                        'Weekly Subscription', '₹ $wprice', Colors.blue),
                   ),
                   SizedBox(width: 8),
                   Expanded(
-                    child: _buildPriceTag('Monthly Subscription', '₹ $mprice', Colors.green),
+                    child: _buildPriceTag(
+                        'Monthly Subscription', '₹ $mprice', Colors.green),
                   ),
                 ],
               ),
@@ -222,9 +250,11 @@ class _FS_S_HomeState extends State<FS_S_Home>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.bold),
+        FutureBuilder<String>(
+          future: Translate.translateText(title),
+          builder: (context, snapshot) {
+            return snapshot.hasData ? Text(snapshot.data!) : Text(title);
+          },
         ),
         Container(
           margin: EdgeInsets.only(top: 4.0),

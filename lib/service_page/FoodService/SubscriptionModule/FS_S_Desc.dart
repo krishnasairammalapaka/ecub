@@ -1,3 +1,4 @@
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -109,11 +110,13 @@ class _FS_S_DescState extends State<FS_S_Desc> {
   }
 
   void _onCheckoutPressed(String packID) {
-    final Map<String, dynamic> args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final Map<String, dynamic> args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     var userMail = args['userMail'];
 
     // Separate selected food items by category
-    List<MenuItem> selectedFoodItems = selectedItemsNotifier.value.where((item) => item.selected).toList();
+    List<MenuItem> selectedFoodItems =
+        selectedItemsNotifier.value.where((item) => item.selected).toList();
 
     List<String> breakfastSelected = selectedFoodItems
         .where((item) => item.foodAvailTime == 'breakfast')
@@ -159,19 +162,17 @@ class _FS_S_DescState extends State<FS_S_Desc> {
     );
   }
 
-
-
   void _onSelectItem(MenuItem item) {
     item.selected = !item.selected;
     if (item.selected) {
-      selectedItemsNotifier.value = List.from(selectedItemsNotifier.value)..add(item);
+      selectedItemsNotifier.value = List.from(selectedItemsNotifier.value)
+        ..add(item);
     } else {
-      selectedItemsNotifier.value = List.from(selectedItemsNotifier.value)..removeWhere((i) => i.id == item.id);
+      selectedItemsNotifier.value = List.from(selectedItemsNotifier.value)
+        ..removeWhere((i) => i.id == item.id);
     }
     selectedItemsNotifier.notifyListeners();
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -181,7 +182,21 @@ class _FS_S_DescState extends State<FS_S_Desc> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Food Pack'),
+        title: FutureBuilder<String>(
+          future: Translate.translateText("Food Pack"),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Transform.scale(
+                scale: 0.4,
+                child: CircularProgressIndicator(),
+              );
+            } else {
+              return snapshot.hasData
+                  ? Text(snapshot.data!)
+                  : Text("Food Pack");
+            }
+          },
+        ),
         backgroundColor: Color(0xFF0D5EF9),
         foregroundColor: Colors.white,
       ),
@@ -196,7 +211,22 @@ class _FS_S_DescState extends State<FS_S_Desc> {
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error1: ${snapshot.error}'));
                 } else if (!snapshot.hasData || !snapshot.data!.exists) {
-                  return Center(child: Text('No data found'));
+                  return Center(
+                      child: FutureBuilder<String>(
+                    future: Translate.translateText("No data found"),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Transform.scale(
+                          scale: 0.4,
+                          child: CircularProgressIndicator(),
+                        );
+                      } else {
+                        return snapshot.hasData
+                            ? Text(snapshot.data!)
+                            : Text("No Data Found");
+                      }
+                    },
+                  ));
                 } else {
                   return FutureBuilder<Map<String, List<MenuItem>>>(
                     future: fetchFoodItems(packID),
@@ -209,7 +239,23 @@ class _FS_S_DescState extends State<FS_S_Desc> {
                             child: Text('Error2: ${foodSnapshot.error}'));
                       } else if (!foodSnapshot.hasData ||
                           foodSnapshot.data!.isEmpty) {
-                        return Center(child: Text('No food items found'));
+                        return Center(
+                            child: FutureBuilder<String>(
+                          future: Translate.translateText("No items found"),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return Transform.scale(
+                                scale: 0.4,
+                                child: CircularProgressIndicator(),
+                              );
+                            } else {
+                              return snapshot.hasData
+                                  ? Text(snapshot.data!)
+                                  : Text("No items Found");
+                            }
+                          },
+                        ));
                       } else {
                         Map<String, List<MenuItem>> categorizedFoodItems =
                             foodSnapshot.data!;
@@ -255,12 +301,26 @@ class _FS_S_DescState extends State<FS_S_Desc> {
           ),
           ElevatedButton(
             onPressed: () => _onCheckoutPressed(packID),
-            child: Text('Checkout'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFF0D5EF9),
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               textStyle: TextStyle(fontSize: 20),
+            ),
+            child: FutureBuilder<String>(
+              future: Translate.translateText("Checkout"),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Transform.scale(
+                    scale: 0.4,
+                    child: CircularProgressIndicator(),
+                  );
+                } else {
+                  return snapshot.hasData
+                      ? Text(snapshot.data!)
+                      : Text("CheckOut");
+                }
+              },
             ),
           ),
           SizedBox(height: 15),
@@ -282,12 +342,32 @@ class _FS_S_DescState extends State<FS_S_Desc> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+        FutureBuilder<String>(
+          future: Translate.translateText(title),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Transform.scale(
+                scale: 0.4,
+                child: CircularProgressIndicator(),
+              );
+            } else if (snapshot.hasData) {
+              return Text(
+                snapshot.data!,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            } else {
+              return Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            }
+          },
         ),
         SizedBox(height: 10),
         ValueListenableBuilder<List<MenuItem>>(
@@ -327,6 +407,7 @@ class MenuItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final veg = item.isVeg ? 'Veg' : 'Non-Veg';
     return GestureDetector(
       onTap: onSelect,
       child: Container(
@@ -366,20 +447,36 @@ class MenuItemWidget extends StatelessWidget {
               ),
             ),
             SizedBox(height: 8),
-            Text(
-              item.name,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            FutureBuilder<String>(
+              future: Translate.translateText(item.name),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Transform.scale(
+                    scale: 0.4,
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (snapshot.hasData) {
+                  return Text(
+                    snapshot.data!,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        overflow: TextOverflow.ellipsis),
+                  );
+                } else {
+                  return Text(
+                    item.name,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        overflow: TextOverflow.ellipsis),
+                  );
+                }
+              },
             ),
-
             SizedBox(height: 4),
             Row(
               children: [
-
                 Text(
                   '₹ ${item.price} ',
                   style: TextStyle(
@@ -394,12 +491,34 @@ class MenuItemWidget extends StatelessWidget {
                   size: 15,
                 ),
                 SizedBox(width: 4),
-                Text(
-                  item.isVeg ? 'Veg' : 'Non-Veg',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.grey.shade600,
-                  ),
+                FutureBuilder<String>(
+                  future: Translate.translateText(veg),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Transform.scale(
+                        scale: 0.4,
+                        child: CircularProgressIndicator(),
+                      );
+                    } else if (snapshot.hasData) {
+                      return Text(
+                        snapshot.data!,
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: item.isVeg ? Colors.green : Colors.red,
+                            overflow: TextOverflow.ellipsis),
+                      );
+                    } else {
+                      return Text(
+                        veg,
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: item.isVeg ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.bold,
+                            overflow: TextOverflow.ellipsis),
+                      );
+                    }
+                  },
                 ),
               ],
             ),
@@ -409,4 +528,3 @@ class MenuItemWidget extends StatelessWidget {
     );
   }
 }
-

@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecub_s1_v2/pages/sign_pages/google_sign_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive/hive.dart';
 import '../sign_pages/registration_page.dart';
 
@@ -26,6 +27,7 @@ class LoginPage extends StatelessWidget {
       try {
         var box = await Hive.openBox('user_data');
         if (userData['firstname'] != null) {
+          await box.clear();
           await box.put('email', userData['email']);
           await box.put('phonenumber', userData['phonenumber']);
           await box.put('age', userData['age']);
@@ -152,7 +154,21 @@ class LoginPage extends StatelessWidget {
                             'Continue with Google',
                             style: TextStyle(fontSize: 16),
                           ),
-                          onPressed: () {},
+                          onPressed: () async {
+                            User? user = await AuthService().signInWithGoogle();
+                            if (user != null) {
+                              // Navigate to the desired screen
+                              Navigator.pushReplacementNamed(context, '/home');
+                            } else {
+                              // Handle sign-in failure (optional)
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text('Google sign-in failed')),
+                              );
+                            }
+                            // print(user);
+                            getUserdata();
+                          },
                         ),
                       ),
                       SizedBox(height: 16),
@@ -207,8 +223,8 @@ class LoginPage extends StatelessWidget {
                           ),
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding:
-                              EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 16),
                         ),
                       ),
                       SizedBox(height: 16),
@@ -229,8 +245,8 @@ class LoginPage extends StatelessWidget {
                           ),
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding:
-                              EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 16),
                         ),
                         obscureText: true,
                       ),
@@ -250,8 +266,8 @@ class LoginPage extends StatelessWidget {
                           ),
                           onPressed: () {
                             if (!_validateEmail(emailController.text)) {
-                              _showErrorDialog(
-                                  context, 'Please enter a valid email address.');
+                              _showErrorDialog(context,
+                                  'Please enter a valid email address.');
                               return;
                             }
                             _loginWithEmailPassword(context);
@@ -281,7 +297,8 @@ class LoginPage extends StatelessWidget {
                           children: [
                             Text(
                               "Don’t have an account?",
-                              style: TextStyle(fontSize: 16, color: Colors.black),
+                              style:
+                                  TextStyle(fontSize: 16, color: Colors.black),
                             ),
                             TextButton(
                               onPressed: () {

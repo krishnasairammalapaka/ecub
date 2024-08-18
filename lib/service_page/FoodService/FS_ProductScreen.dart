@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/models/Favourites_DB.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -10,11 +11,11 @@ class CartDB {
 
   Future<void> addToCart(String userId, String itemId, double itemCount) async {
     bool itemExists = _cartBox.values.any(
-            (cartItem) => cartItem.UserId == userId && cartItem.ItemId == itemId);
+        (cartItem) => cartItem.UserId == userId && cartItem.ItemId == itemId);
 
     if (itemExists) {
       Cart_Db existingItem = _cartBox.values.firstWhere(
-            (cartItem) => cartItem.UserId == userId && cartItem.ItemId == itemId,
+        (cartItem) => cartItem.UserId == userId && cartItem.ItemId == itemId,
       );
       existingItem =
           existingItem.copyWith(ItemCount: existingItem.ItemCount + itemCount);
@@ -32,7 +33,7 @@ class CartDB {
 
   Future<List<Cart_Db>> getCartItems(String userId) async {
     List<Cart_Db> userCartItems =
-    _cartBox.values.where((cartItem) => cartItem.UserId == userId).toList();
+        _cartBox.values.where((cartItem) => cartItem.UserId == userId).toList();
     return userCartItems;
   }
 
@@ -42,7 +43,7 @@ class CartDB {
 
   Future<void> clearCart(String userId) async {
     List<Cart_Db> userCartItems =
-    _cartBox.values.where((cartItem) => cartItem.UserId == userId).toList();
+        _cartBox.values.where((cartItem) => cartItem.UserId == userId).toList();
     for (var item in userCartItems) {
       await _cartBox.delete(item.key);
     }
@@ -90,7 +91,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   void _checkIfProductInCart() {
     final existingItems = _cartBox.values.toList();
     final existingItemIndex =
-    existingItems.indexWhere((item) => item.ItemId == productId);
+        existingItems.indexWhere((item) => item.ItemId == productId);
 
     if (existingItemIndex != -1) {
       setState(() {
@@ -102,7 +103,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   void _checkIfProductFavorite() {
     final existingItems = _favouritesBox.values.toList();
     final existingItemIndex =
-    existingItems.indexWhere((item) => item.ItemId == productId);
+        existingItems.indexWhere((item) => item.ItemId == productId);
 
     if (existingItemIndex != -1) {
       setState(() {
@@ -113,14 +114,15 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
 
   void addToCart() async {
     final foodItem =
-    FDbox?.values.firstWhere((food) => food.productId == productId);
+        FDbox?.values.firstWhere((food) => food.productId == productId);
     final String? itemOwnership = foodItem?.productOwnership;
 
     final existingItems = _cartBox.values.toList();
 
     if (existingItems.isNotEmpty) {
-      final firstItemOwnership = FDbox?.values.firstWhere(
-              (food) => food.productId == existingItems.first.ItemId).productOwnership;
+      final firstItemOwnership = FDbox?.values
+          .firstWhere((food) => food.productId == existingItems.first.ItemId)
+          .productOwnership;
       if (firstItemOwnership != itemOwnership) {
         showOwnershipConflictDialog();
         return;
@@ -135,8 +137,13 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
     );
     await _cartBox.add(newItem);
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Added to cart')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: FutureBuilder<String>(
+      future: Translate.translateText("Added to cart"),
+      builder: (context, snapshot) {
+        return snapshot.hasData ? Text(snapshot.data!) : Text("Added to cart");
+      },
+    )));
     setState(() {
       isProductInCart = true;
     });
@@ -147,15 +154,37 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Ownership Conflict'),
-          content: Text(
-              'The products in your cart are from a different hotel. Do you want to reset the cart and add this product?'),
+          title: FutureBuilder<String>(
+            future: Translate.translateText("Ownership conflit"),
+            builder: (context, snapshot) {
+              return snapshot.hasData
+                  ? Text(snapshot.data!)
+                  : Text("Ownership conflit");
+            },
+          ),
+          content: FutureBuilder<String>(
+            future: Translate.translateText(
+                "The products in your Cart are from a diiferent hotel.Do you want to reset the cart"),
+            builder: (context, snapshot) {
+              return snapshot.hasData
+                  ? Text(snapshot.data!)
+                  : Text(
+                      "The products in your Cart are from a diiferent hotel.Do you want to reset the cart");
+            },
+          ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
               },
-              child: Text('Cancel'),
+              child: FutureBuilder<String>(
+                future: Translate.translateText("Cancel"),
+                builder: (context, snapshot) {
+                  return snapshot.hasData
+                      ? Text(snapshot.data!)
+                      : Text("Cancel");
+                },
+              ),
             ),
             TextButton(
               onPressed: () async {
@@ -165,7 +194,14 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                 setState(() {});
                 addToCart(); // Add the new item to the cart
               },
-              child: Text('Reset Cart'),
+              child: FutureBuilder<String>(
+                future: Translate.translateText("Reset cart"),
+                builder: (context, snapshot) {
+                  return snapshot.hasData
+                      ? Text(snapshot.data!)
+                      : Text("Reset cart");
+                },
+              ),
             ),
           ],
         );
@@ -264,14 +300,23 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   @override
   Widget build(BuildContext context) {
     final Map<String, dynamic> args =
-    ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     productId = args['id'];
     pricePerItem = args['price'];
     ShopUsername = args['shop'];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(args['title'] ?? 'Product Details'),
+        title: FutureBuilder<String>(
+          future: Translate.translateText(args['title']),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Text(snapshot.data!);
+            } else {
+              return Text(args['title']);
+            }
+          },
+        ),
         actions: [
           ValueListenableBuilder(
             valueListenable: _cartBox.listenable(),
@@ -340,12 +385,27 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        args['title'] ?? 'Product Title',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      FutureBuilder<String>(
+                        future: Translate.translateText(args['title']),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            return Text(
+                              snapshot.data ?? 'Product Title',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          } else {
+                            return Text(
+                              args['title'] ?? 'Product Title',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          }
+                        },
                       ),
                       IconButton(
                         icon: Icon(
@@ -371,12 +431,28 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                     ],
                   ),
                   SizedBox(height: 16),
-                  Text(
-                    args['description'] ?? 'Product description goes here.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                    ),
+                  FutureBuilder<String>(
+                    future: Translate.translateText(args['description']),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        return Text(
+                          snapshot.data ?? 'Product description goes here.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            height: 1.5,
+                          ),
+                        );
+                      } else {
+                        return Text(
+                          args['description'] ??
+                              'Product description goes here.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            height: 1.5,
+                          ),
+                        );
+                      }
+                    },
                   ),
                   SizedBox(height: 20),
 
@@ -393,18 +469,34 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                         SizedBox(width: 10),
                         GestureDetector(
                           onTap: () {
-                            Navigator.pushNamed(context, '/fs_hotel', arguments: {
-                              'id': '1',
-                              'username':ShopUsername,
-                              'name': ShopUsername,
-                            });
+                            Navigator.pushNamed(context, '/fs_hotel',
+                                arguments: {
+                                  'id': '1',
+                                  'username': ShopUsername,
+                                  'name': ShopUsername,
+                                });
                           },
-                          child: Text(
-                            ShopUsername,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          child: FutureBuilder<String>(
+                            future: Translate.translateText(ShopUsername),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                return Text(
+                                  snapshot.data!,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                );
+                              } else {
+                                return Text(
+                                  ShopUsername,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                );
+                              }
+                            },
                           ),
                         ),
                       ],
@@ -414,12 +506,27 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                   Row(
                     children: [
                       SizedBox(width: 10),
-                      Text(
-                        'You might also like',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      FutureBuilder<String>(
+                        future: Translate.translateText("You Might also like"),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            return Text(
+                              snapshot.data!,
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  overflow: TextOverflow.ellipsis),
+                            );
+                          } else {
+                            return Text(
+                              'You might also like',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          }
+                        },
                       ),
                     ],
                   ),
@@ -429,91 +536,131 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                     child: FDbox == null
                         ? Center(child: CircularProgressIndicator())
                         : ValueListenableBuilder(
-                      valueListenable: FDbox!.listenable(),
-                      builder: (context, Box<Food_db> items, _) {
-                        if (items.isEmpty) {
-                          return Center(child: Text('No items found.'));
-                        } else {
-                          List<Food_db> sortedItems =
-                          items.values.toList();
-                          sortedItems.sort((a, b) =>
-                              b.productRating.compareTo(a.productRating));
+                            valueListenable: FDbox!.listenable(),
+                            builder: (context, Box<Food_db> items, _) {
+                              if (items.isEmpty) {
+                                return Center(
+                                    child: FutureBuilder<String>(
+                                  future:
+                                      Translate.translateText("No Items Found"),
+                                  builder: (context, snapshot) {
+                                    return snapshot.hasData
+                                        ? Text(snapshot.data!)
+                                        : Text("No Items Found");
+                                  },
+                                ));
+                              } else {
+                                List<Food_db> sortedItems =
+                                    items.values.toList();
+                                sortedItems.sort((a, b) =>
+                                    b.productRating.compareTo(a.productRating));
 
-                          List<Food_db> popularItems = sortedItems
-                              .where((item) => item.productRating < 4.4)
-                              .toList();
+                                List<Food_db> popularItems = sortedItems
+                                    .where((item) => item.productRating < 4.4)
+                                    .toList();
 
+                                popularItems.shuffle();
 
-                          popularItems.shuffle();
-
-                          return ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: popularItems.length,
-                            itemBuilder: (context, index) {
-                              var item = popularItems[index];
-                              return GestureDetector(
-                                onTap: () {
-                                  Navigator.pushNamed(context, '/fs_product',
-                                      arguments: {
-                                        'id': item.productId,
-                                        'title': item.productTitle,
-                                        'price': item.productPrice.toInt(),
-                                        'image': item.productImg,
-                                        'description': item.productDesc,
-                                        'shop': item.productOwnership,
-                                      });
-                                },
-                                child: Container(
-                                  width: 150,
-                                  margin: EdgeInsets.symmetric(horizontal: 5),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        height: 120,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                          BorderRadius.circular(10),
-                                          image: DecorationImage(
-                                            image: NetworkImage(
-                                                item.productImg),
-                                            fit: BoxFit.cover,
-                                          ),
+                                return ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: popularItems.length,
+                                  itemBuilder: (context, index) {
+                                    var item = popularItems[index];
+                                    return GestureDetector(
+                                      onTap: () {
+                                        Navigator.pushNamed(
+                                            context, '/fs_product',
+                                            arguments: {
+                                              'id': item.productId,
+                                              'title': item.productTitle,
+                                              'price':
+                                                  item.productPrice.toInt(),
+                                              'image': item.productImg,
+                                              'description': item.productDesc,
+                                              'shop': item.productOwnership,
+                                            });
+                                      },
+                                      child: Container(
+                                        width: 150,
+                                        margin:
+                                            EdgeInsets.symmetric(horizontal: 5),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Container(
+                                              height: 120,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                image: DecorationImage(
+                                                  image: NetworkImage(
+                                                      item.productImg),
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(height: 8),
+                                            FutureBuilder<String>(
+                                              future: Translate.translateText(
+                                                  item.productTitle),
+                                              builder: (context, snapshot) {
+                                                if (snapshot.hasData) {
+                                                  return Text(
+                                                    snapshot.data!,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  );
+                                                } else {
+                                                  return Text(
+                                                    item.productTitle,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  );
+                                                }
+                                              },
+                                            ),
+                                            Text(
+                                              '₹ ${item.productPrice}',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: Color(0xFF0D5EF9),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        item.productTitle,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        '₹ ${item.productPrice}',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Color(0xFF0D5EF9),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
+                                    );
+                                  },
+                                );
+                              }
                             },
-                          );
-                        }
-                      },
-                    ),
+                          ),
                   ),
 
                   SizedBox(height: 20),
                   Row(
                     children: [
-                      Text('Sort by: '),
+                      FutureBuilder<String>(
+                        future: Translate.translateText("Sort by: "),
+                        builder: (context, snapshot) {
+                          return snapshot.hasData
+                              ? Text(snapshot.data!)
+                              : Text("Sort by: ");
+                        },
+                      ),
                       DropdownButton<String>(
                         value: sortOrder,
                         onChanged: (String? newValue) {
@@ -526,23 +673,38 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                             .map<DropdownMenuItem<String>>((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
-                            child: Text(value),
+                            child: FutureBuilder<String>(
+                              future: Translate.translateText(value),
+                              builder: (context, snapshot) {
+                                return snapshot.hasData
+                                    ? Text(snapshot.data!)
+                                    : Text(value);
+                              },
+                            ),
                           );
                         }).toList(),
                       ),
                     ],
                   ),
 
-                  Text(
-                    'Comments',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  FutureBuilder(
+                    future: Translate.translateText("Comments"),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        return Text(snapshot.data!,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ));
+                      } else {
+                        return Text('Comments',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ));
+                      }
+                    },
                   ),
-
-
-
 
                   Row(
                     children: [
@@ -572,7 +734,20 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('$totalRatings Ratings and $totalReviews Reviews'),
+                          FutureBuilder<String>(
+                            future: Translate.translateText(
+                                '$totalRatings Ratings and $totalReviews Reviews'),
+                            builder: (context, snapshot) {
+                              return snapshot.hasData
+                                  ? Text(snapshot.data!,
+                                      style: TextStyle(
+                                          overflow: TextOverflow.ellipsis))
+                                  : Text(
+                                      "$totalRatings Ratings and $totalReviews Reviews",
+                                      style: TextStyle(
+                                          overflow: TextOverflow.ellipsis));
+                            },
+                          ),
                           SizedBox(height: 8),
                           Row(
                             children: [
@@ -583,7 +758,8 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                                 child: LinearProgressIndicator(
                                   value: 0.67,
                                   backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.blue),
                                 ),
                               ),
                             ],
@@ -597,7 +773,8 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                                 child: LinearProgressIndicator(
                                   value: 0.20,
                                   backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.blue),
                                 ),
                               ),
                             ],
@@ -611,7 +788,8 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                                 child: LinearProgressIndicator(
                                   value: 0.07,
                                   backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.blue),
                                 ),
                               ),
                             ],
@@ -625,7 +803,8 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                                 child: LinearProgressIndicator(
                                   value: 0.02,
                                   backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.blue),
                                 ),
                               ),
                             ],
@@ -636,7 +815,6 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                   ),
                   SizedBox(height: 20),
 
-
                   ListView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
@@ -645,7 +823,8 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                       final comment = comments[index];
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundImage: NetworkImage(comment.profilePhotoUrl),
+                          backgroundImage:
+                              NetworkImage(comment.profilePhotoUrl),
                         ),
                         title: Text(comment.userName),
                         subtitle: Text(comment.commentText),
@@ -695,26 +874,21 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                     },
                     child: Icon(Icons.add),
                   ),
-
-
                   ElevatedButton(
                     onPressed: isProductInCart
                         ? null
                         : () {
-                      if (checkOwnership(productId)) {
-                        addToCart();
-                      } else {
-                        showOwnershipConflictDialog();
-                      }
-                    },
+                            if (checkOwnership(productId)) {
+                              addToCart();
+                            } else {
+                              showOwnershipConflictDialog();
+                            }
+                          },
                     child: Text(
-                      isProductInCart
-                          ? 'Already Added'
-                          : 'Add to Cart',
+                      isProductInCart ? 'Already Added' : 'Add to Cart',
                       style: TextStyle(fontSize: 18),
                     ),
                   ),
-
                 ],
               ),
             ),
@@ -725,19 +899,21 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   }
 
   bool checkOwnership(String productId) {
-    final foodItem = FDbox?.values.firstWhere((food) => food.productId == productId);
+    final foodItem =
+        FDbox?.values.firstWhere((food) => food.productId == productId);
     final String? itemOwnership = foodItem?.productOwnership;
 
     final existingItems = _cartBox.values.toList();
     if (existingItems.isNotEmpty) {
-      final firstItemOwnership = FDbox?.values.firstWhere((food) => food.productId == existingItems.first.ItemId).productOwnership;
+      final firstItemOwnership = FDbox?.values
+          .firstWhere((food) => food.productId == existingItems.first.ItemId)
+          .productOwnership;
       if (firstItemOwnership != itemOwnership) {
         return false;
       }
     }
     return true;
   }
-
 
   int getTotalCartItemsCount() {
     final cartItems = _cartBox.values.toList();
@@ -749,7 +925,6 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
 
     return totalCount;
   }
-
 }
 
 class Comment {
@@ -767,4 +942,3 @@ class Comment {
     required this.timestamp,
   });
 }
-

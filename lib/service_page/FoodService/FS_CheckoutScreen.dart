@@ -1,3 +1,4 @@
+import 'package:ecub_s1_v2/components/pay_home_food.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:ecub_s1_v2/models/Cart_Db.dart';
@@ -54,16 +55,21 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
   Future<void> _openBoxes() async {
     _cartBox = await Hive.openBox<Cart_Db>('cartItems');
     FDbox = await Hive.openBox<Food_db>('foodDbBox');
-    _checkoutHistoryBox = await Hive.openBox<CheckoutHistory_DB>('checkoutHistory');
+    _checkoutHistoryBox =
+        await Hive.openBox<CheckoutHistory_DB>('checkoutHistory');
     setState(() {});
   }
 
   Future<void> _fetchUserDetails() async {
     try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
       if (userDoc.exists) {
         // Get document data as a Map
-        Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
+        Map<String, dynamic>? userData =
+            userDoc.data() as Map<String, dynamic>?;
 
         setState(() {
           userName = userData?['firstname'] ?? 'No name';
@@ -89,7 +95,6 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
       print('Error fetching user details: $e');
     }
   }
-
 
   void _showEditAddressDialog() {
     showDialog(
@@ -174,7 +179,6 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     );
   }
 
-
   Future<void> _checkSubscription() async {
     DocumentSnapshot subscriptionDoc = await FirebaseFirestore.instance
         .collection('fs_cart')
@@ -205,7 +209,8 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     totalAmount = 0;
     if (_cartBox != null && FDbox != null) {
       for (var item in _cartBox!.values) {
-        var product = FDbox!.values.firstWhere((element) => element.productId == item.ItemId);
+        var product = FDbox!.values
+            .firstWhere((element) => element.productId == item.ItemId);
         totalAmount += item.ItemCount * product.productPrice;
       }
     }
@@ -215,7 +220,6 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     setState(() {}); // Update the UI with the new total amount
     print(totalAmount);
     print(packPPrice);
-
   }
 
   void _showEditUserDetailsDialog() {
@@ -275,8 +279,6 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     );
   }
 
-
-
   void _showOrderConfirmationDialog() {
     showDialog(
       context: context,
@@ -294,7 +296,13 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
             TextButton(
               onPressed: () {
                 _confirmOrder();
-                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => PayHomeFood(
+                            amount: totalAmount,
+                          )),
+                );
               },
               child: Text('Confirm'),
             ),
@@ -306,11 +314,11 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
 
   Future<void> _confirmOrder() async {
     // Send confirmation SMS using TwilioFlutter
-    await twilioFlutter.sendSMS(
-      toNumber: userPhoneNumber,
-      messageBody:
-      'Your order has been placed successfully. Total amount: ₹ $totalAmount',
-    );
+    // await twilioFlutter.sendSMS(
+    //   toNumber: userPhoneNumber,
+    //   messageBody:
+    //       'Your order has been placed successfully. Total amount: ₹ $totalAmount',
+    // );
 
     // Transfer cart data to checkout history
     for (var item in _cartBox!.values) {
@@ -342,10 +350,15 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     await _cartBox!.clear();
     setState(() {});
 
-    await FirebaseFirestore.instance.collection('fs_cart').doc(userId).collection('packs').doc('info').update({'active':'True'});
+    await FirebaseFirestore.instance
+        .collection('fs_cart')
+        .doc(userId)
+        .collection('packs')
+        .doc('info')
+        .update({'active': 'True'});
 
     // Navigate to the profile page
-    Navigator.pushNamed(context, '/fs_home');
+    // Navigator.pushNamed(context, '/fs_home');
   }
 
   @override
@@ -369,33 +382,33 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
               child: _cartBox == null || FDbox == null || !FDbox!.isOpen
                   ? Center(child: CircularProgressIndicator())
                   : ValueListenableBuilder(
-                valueListenable: _cartBox!.listenable(),
-                builder: (context, Box<Cart_Db> items, _) {
-                  if (items.isEmpty) {
-                    return Center(child: Text('No items in the cart.'));
-                  } else {
-                    return ListView.builder(
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        var item = items.getAt(index);
-                        if (item == null) {
-                          return Center(child: Text('Item not found.'));
+                      valueListenable: _cartBox!.listenable(),
+                      builder: (context, Box<Cart_Db> items, _) {
+                        if (items.isEmpty) {
+                          return Center(child: Text('No items in the cart.'));
+                        } else {
+                          return ListView.builder(
+                            itemCount: items.length,
+                            itemBuilder: (context, index) {
+                              var item = items.getAt(index);
+                              if (item == null) {
+                                return Center(child: Text('Item not found.'));
+                              }
+
+                              var productId = item.ItemId;
+
+                              var productDetails = FDbox!.values.firstWhere(
+                                  (element) => element.productId == productId);
+
+                              return CheckoutItemCard(
+                                productDetails: productDetails,
+                                itemCount: item.ItemCount.toInt(),
+                              );
+                            },
+                          );
                         }
-
-                        var productId = item.ItemId;
-
-                        var productDetails = FDbox!.values.firstWhere(
-                                (element) => element.productId == productId);
-
-                        return CheckoutItemCard(
-                          productDetails: productDetails,
-                          itemCount: item.ItemCount.toInt(),
-                        );
                       },
-                    );
-                  }
-                },
-              ),
+                    ),
             ),
             SizedBox(height: 16),
             if (hasSubscription && subscriptionPack != null) ...[
@@ -429,7 +442,8 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
             ListTile(
               title: Text(userAddress),
               subtitle: userLocation != null
-                  ? Text('Lat: ${userLocation!.latitude}, Lon: ${userLocation!.longitude}')
+                  ? Text(
+                      'Lat: ${userLocation!.latitude}, Lon: ${userLocation!.longitude}')
                   : null,
               trailing: IconButton(
                 icon: Icon(Icons.edit),

@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:ecub_s1_v2/translation.dart';
 
 class BottomNavBar extends StatelessWidget {
   final void Function(int)? onTabChange;
-  const BottomNavBar({super.key, required this.onTabChange,});
+  const BottomNavBar({
+    super.key,
+    required this.onTabChange,
+  });
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.blueGrey[100], // Replace with your desired background color
+        color:
+            Colors.blueGrey[100], // Replace with your desired background color
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),

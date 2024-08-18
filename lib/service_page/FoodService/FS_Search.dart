@@ -1,3 +1,4 @@
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
@@ -57,26 +58,65 @@ class _FS_SearchState extends State<FS_Search> {
           automaticallyImplyLeading: false,
           bottom: TabBar(
             tabs: [
-              Tab(text: 'Food Items'),
-              Tab(text: 'Restaurants'),
+              FutureBuilder<String>(
+                future: Translate.translateText("Food Items"),
+                builder: (context, snapshot) {
+                  return snapshot.hasData
+                      ? Tab(text: snapshot.data!)
+                      : Tab(text: "Food items");
+                },
+              ),
+              FutureBuilder<String>(
+                future: Translate.translateText("Restaurants"),
+                builder: (context, snapshot) {
+                  return snapshot.hasData
+                      ? Tab(text: snapshot.data!)
+                      : Tab(text: "Restaurants");
+                },
+              ),
             ],
           ),
           title: Container(
             color: Colors.white,
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search Food Items or Restaurants',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: EdgeInsets.all(8),
-              ),
-              onChanged: (value) {
-                _search(value);
+            child: FutureBuilder<String>(
+              future:
+                  Translate.translateText("Search Food Items or Restaurants"),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: snapshot.data!,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: EdgeInsets.all(8),
+                    ),
+                    onChanged: (value) {
+                      _search(value);
+                    },
+                  );
+                } else {
+                  return TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search Food Items or Restaurants',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: EdgeInsets.all(8),
+                    ),
+                    onChanged: (value) {
+                      _search(value);
+                    },
+                  );
+                }
               },
             ),
           ),
@@ -90,12 +130,23 @@ class _FS_SearchState extends State<FS_Search> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (foodResults.isNotEmpty) ...[
-                      Text(
-                        "Food Items",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      FutureBuilder<String>(
+                        future: Translate.translateText("Food Items"),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            return Text(snapshot.data!,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ));
+                          } else {
+                            return Text("Food Items",
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ));
+                          }
+                        },
                       ),
                       ListView.builder(
                         shrinkWrap: true,
@@ -115,13 +166,38 @@ class _FS_SearchState extends State<FS_Search> {
                                     'shop': item.productOwnership,
                                   });
                             },
-                            child: FullSizedTile(
-                              title: item.productTitle,
-                              description: item.productDesc,
-                              imageUrl: item.productImg,
-                              category: item.productMainCategory,
-                              location: item.productOwnership,
-                              rating: item.productRating,
+                            child: FutureBuilder<List<String?>>(
+                              future: Future.wait([
+                                Translate.translateText(item.productTitle),
+                                Translate.translateText(item.productDesc),
+                                Translate.translateText(
+                                    item.productMainCategory),
+                                Translate.translateText(item.productOwnership),
+                                Translate.translateText(item.productRating
+                                    .toString()), // Assuming rating is numeric
+                              ]),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Center(
+                                      child: CircularProgressIndicator());
+                                } else {
+                                  return FullSizedTile(
+                                    title:
+                                        snapshot.data![0] ?? item.productTitle,
+                                    description:
+                                        snapshot.data![1] ?? item.productDesc,
+                                    imageUrl: item.productImg,
+                                    category: snapshot.data![2] ??
+                                        item.productMainCategory,
+                                    location: snapshot.data![3] ??
+                                        item.productOwnership,
+                                    rating: double.tryParse(snapshot.data![4] ??
+                                            item.productRating.toString()) ??
+                                        item.productRating,
+                                  );
+                                }
+                              },
                             ),
                           );
                         },

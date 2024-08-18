@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_item_desc.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_item_details.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -127,7 +128,16 @@ class _MeItems2State extends State<MeItems2> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.categoryName),
+        title: FutureBuilder<String>(
+          future: Translate.translateText(widget.categoryName),
+          builder: (context, snapshot) {
+            return snapshot.hasData
+                ? Text(
+                    snapshot.data!,
+                  )
+                : Text(widget.categoryName);
+          },
+        ),
         actions: [
           Padding(
               padding: const EdgeInsets.only(right: 25.0),
@@ -190,7 +200,8 @@ class _MeItems2State extends State<MeItems2> {
                 //   ),
                 // );
                 // show store_list
-                await store_list(context, widget.categoryName, itemKeys[index],Imagelt[index]);
+                await store_list(context, widget.categoryName, itemKeys[index],
+                    Imagelt[index]);
               },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -218,13 +229,27 @@ class _MeItems2State extends State<MeItems2> {
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      itemKeys[index], // Item name
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black54,
-                      ),
+                    child: FutureBuilder<String>(
+                      future: Translate.translateText(itemKeys[index]),
+                      builder: (context, snapshot) {
+                        return snapshot.hasData
+                            ? Text(
+                                snapshot.data!, // Item name
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black54,
+                                ),
+                              )
+                            : Text(
+                                itemKeys[index], // Item name
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black54,
+                                ),
+                              );
+                      },
                     ),
                   ),
                 ],
@@ -237,8 +262,8 @@ class _MeItems2State extends State<MeItems2> {
   }
 
   String _currentSortOption = 'Prize';
-  Future<dynamic> store_list(
-      BuildContext context, String categoryName, String itemName, String itemImage) {
+  Future<dynamic> store_list(BuildContext context, String categoryName,
+      String itemName, String itemImage) {
     return showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -250,6 +275,8 @@ class _MeItems2State extends State<MeItems2> {
                 setState(() {
                   _currentSortOption = newValue!;
                 });
+                Navigator.pop(context);
+                store_list(context, categoryName, itemName, itemImage);
               },
               items: <String>['Rating', 'Name', 'Prize']
                   .map<DropdownMenuItem<String>>((String value) {
@@ -326,20 +353,43 @@ class _MeItems2State extends State<MeItems2> {
                                       imageUrl: itemImage,
                                       price: stores[index].prize.toString(),
                                       storeAddress: stores[index].address,
-                                      // rent: stores[index].rent,
+                                      rent: stores[index].rent,
                                     ),
                                   ),
                                 );
                               },
                               child: ListTile(
                                 leading: Icon(Icons.store, color: Colors.red),
-                                title: Text(
-                                  stores[index].name,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                title: FutureBuilder<String>(
+                                  future: Translate.translateText(
+                                      stores[index].name),
+                                  builder: (context, snapshot) {
+                                    return snapshot.hasData
+                                        ? Text(
+                                            snapshot.data!,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                        : Text(
+                                            stores[index].name,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          );
+                                  },
                                 ),
-                                subtitle: Text(stores[index].address),
+                                subtitle: FutureBuilder<String>(
+                                  future: Translate.translateText(
+                                      stores[index].address),
+                                  builder: (context, snapshot) {
+                                    return snapshot.hasData
+                                        ? Text(
+                                            snapshot.data!,
+                                          )
+                                        : Text(stores[index].address);
+                                  },
+                                ),
                                 trailing: Container(
                                   padding: EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 4),
@@ -356,7 +406,7 @@ class _MeItems2State extends State<MeItems2> {
                                         ),
                                       ),
                                       Text(
-                                        "Prize: ₹${stores[index].prize}",
+                                        "Price: ₹${stores[index].prize}",
                                         style: TextStyle(
                                           color: Colors.white,
                                         ),

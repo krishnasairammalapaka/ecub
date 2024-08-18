@@ -1,3 +1,4 @@
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:ecub_s1_v2/models/Hotels_Db.dart';
@@ -15,7 +16,6 @@ class FS_CategoryScreen extends StatelessWidget {
         elevation: 0,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
         ),
       ),
       body: Padding(
@@ -32,7 +32,8 @@ class FS_CategoryScreen extends StatelessWidget {
                     return Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || (snapshot.data as List).isEmpty) {
+                  } else if (!snapshot.hasData ||
+                      (snapshot.data as List).isEmpty) {
                     return Center(child: Text('No hotels found.'));
                   } else {
                     final hotels = snapshot.data as List<Hotels_Db>;
@@ -43,9 +44,12 @@ class FS_CategoryScreen extends StatelessWidget {
                         return RestaurantCard(
                           name: hotel.hotelName,
                           location: hotel.hotelAddress,
-                          rating: 4.5, // Assuming rating is constant, replace with actual data if available
-                          deliveryTime: hotel.hotelPhoneNo, // Assuming delivery time is constant, replace with actual data if available
-                          imageUrl: 'assets/hotel.png', // Replace with actual image URL if available
+                          rating:
+                              4.5, // Assuming rating is constant, replace with actual data if available
+                          deliveryTime: hotel
+                              .hotelPhoneNo, // Assuming delivery time is constant, replace with actual data if available
+                          imageUrl:
+                              'assets/hotel.png', // Replace with actual image URL if available
                           Username: hotel.hotelUsername,
                         );
                       },
@@ -89,18 +93,44 @@ class RestaurantCard extends StatelessWidget {
       onTap: () {
         Navigator.pushNamed(context, '/fs_hotel', arguments: {
           'id': 1,
-          'username':Username,
+          'username': Username,
           'name': name,
         });
       },
       child: Card(
         child: ListTile(
           leading: Image.asset('assets/hotel_prof.png', width: 50, height: 50),
-          title: Text(name),
+          title: FutureBuilder<String>(
+            future: Translate.translateText(name),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Transform.scale(
+                  scale: 0.4,
+                  child: CircularProgressIndicator(),
+                );
+              } else {
+                return snapshot.hasData ? Text(snapshot.data!) : Text(name);
+              }
+            },
+          ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(location),
+              FutureBuilder<String>(
+                future: Translate.translateText(location),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Transform.scale(
+                      scale: 0.4,
+                      child: CircularProgressIndicator(),
+                    );
+                  } else {
+                    return snapshot.hasData
+                        ? Text(snapshot.data!)
+                        : Text(location);
+                  }
+                },
+              ),
               Row(
                 children: [
                   Icon(Icons.star, color: Colors.yellow[700]),
@@ -120,5 +150,3 @@ class RestaurantCard extends StatelessWidget {
     );
   }
 }
-
-

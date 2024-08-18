@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:ecub_s1_v2/components/pay_home_food.dart';
 import 'package:ecub_s1_v2/components/pay_home_med.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:slide_to_act/slide_to_act.dart';
@@ -17,10 +18,11 @@ final User? user = FirebaseAuth.instance.currentUser;
 
 class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
+  double totalPrice = 0.0;
   @override
   void initState() {
     super.initState();
+    calculateTotalPrice();
     _tabController = TabController(length: 2, vsync: this);
   }
 
@@ -30,16 +32,59 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
+  void calculateTotalPrice() async {
+    double total = 0.0;
+    QuerySnapshot cartItems = await FirebaseFirestore.instance
+        .collection('me_cart')
+        .doc(user?.email)
+        .collection('items')
+        .get();
+
+    print(total);
+    cartItems.docs.forEach((doc) {
+      total += double.parse(doc.get('price')) * doc['quantity'];
+      // total += doc['price'] * doc['quantity'];
+    });
+
+    setState(() {
+      totalPrice = total;
+    });
+    print(totalPrice);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cart'),
+        title: FutureBuilder<String>(
+          future: Translate.translateText("Cart"),
+          builder: (context, snapshot) {
+            return snapshot.hasData
+                ? Text(
+                    snapshot.data!,
+                  )
+                : Text("Cart");
+          },
+        ),
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(text: 'Buy'), // nav bar intialization
-            Tab(text: 'Rent'),
+            FutureBuilder<String>(
+              future: Translate.translateText("Buy"),
+              builder: (context, snapshot) {
+                return snapshot.hasData
+                    ? Tab(text: snapshot.data!)
+                    : Tab(text: 'Buy');
+              },
+            ), // nav bar intialization
+            FutureBuilder<String>(
+              future: Translate.translateText("Rent"),
+              builder: (context, snapshot) {
+                return snapshot.hasData
+                    ? Tab(text: snapshot.data!)
+                    : Tab(text: 'Rent');
+              },
+            ),
           ],
         ),
         actions: [
@@ -106,31 +151,69 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                 }
 
                 if (snapshot.data?.docs.isEmpty ?? true) {
-                  return const Center(child: Text("Your cart is empty"));
+                  return Center(
+                    child: FutureBuilder<String>(
+                      future: Translate.translateText("Your cart is Empty"),
+                      builder: (context, snapshot) {
+                        return snapshot.hasData
+                            ? Text(snapshot.data!)
+                            : Text("Your Cart is empty");
+                      },
+                    ),
+                  );
                 }
                 return Column(
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          labelText: "Search",
-                          suffixIcon: Icon(Icons.search),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            searchQuery = value.toLowerCase();
-                          });
+                      child: FutureBuilder<String>(
+                        future: Translate.translateText("Search"),
+                        builder: (context, snapshot) {
+                          return snapshot.hasData
+                              ? TextField(
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    labelText: snapshot.data!,
+                                    suffixIcon: Icon(Icons.search),
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      searchQuery = value.toLowerCase();
+                                    });
+                                  },
+                                )
+                              : TextField(
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    labelText: "Search",
+                                    suffixIcon: Icon(Icons.search),
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      searchQuery = value.toLowerCase();
+                                    });
+                                  },
+                                );
                         },
                       ),
                     ),
                     Expanded(
                       child: user == null
-                          ? const Center(
-                              child: Text("Please login to view your cart"))
+                          ? Center(
+                              child: FutureBuilder<String>(
+                                future: Translate.translateText(
+                                    "Please login to view the cart"),
+                                builder: (context, snapshot) {
+                                  return snapshot.hasData
+                                      ? Text(snapshot.data!)
+                                      : Text("please login to view the cart");
+                                },
+                              ),
+                            )
                           : StreamBuilder<QuerySnapshot>(
                               stream: FirebaseFirestore.instance
                                   .collection('me_cart')
@@ -145,9 +228,18 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                                 }
 
                                 if (snapshot.hasError) {
-                                  return const Center(
-                                      child:
-                                          Text("Error fetching cart items."));
+                                  return Center(
+                                    child: FutureBuilder<String>(
+                                      future: Translate.translateText(
+                                          "error while fetching the cart"),
+                                      builder: (context, snapshot) {
+                                        return snapshot.hasData
+                                            ? Text(snapshot.data!)
+                                            : Text(
+                                                "error while fetching the cart");
+                                      },
+                                    ),
+                                  );
                                 }
                                 var filteredDocs = searchQuery.isEmpty
                                     ? snapshot.data?.docs ?? []
@@ -160,8 +252,17 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                                         [];
 
                                 if (filteredDocs.isEmpty) {
-                                  return const Center(
-                                      child: Text("Your cart is empty"));
+                                  return Center(
+                                    child: FutureBuilder<String>(
+                                      future: Translate.translateText(
+                                          "Your cart is Empty"),
+                                      builder: (context, snapshot) {
+                                        return snapshot.hasData
+                                            ? Text(snapshot.data!)
+                                            : Text("Your Cart is empty");
+                                      },
+                                    ),
+                                  );
                                 }
 
                                 return ListView.builder(
@@ -183,12 +284,26 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                                               height: 50,
                                               fit: BoxFit.cover),
                                         ),
-                                        title: Text(
-                                          item['name'],
-                                          style: TextStyle(
-                                            fontWeight: FontWeight
-                                                .bold, // Makes text bold
-                                          ),
+                                        title: FutureBuilder<String>(
+                                          future: Translate.translateText(
+                                              item['name']),
+                                          builder: (context, snapshot) {
+                                            return snapshot.hasData
+                                                ? Text(
+                                                    snapshot.data!,
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight
+                                                          .bold, // Makes text bold
+                                                    ),
+                                                  )
+                                                : Text(
+                                                    item['name'],
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight
+                                                          .bold, // Makes text bold
+                                                    ),
+                                                  );
+                                          },
                                         ),
                                         subtitle: Column(
                                           crossAxisAlignment:
@@ -197,10 +312,48 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                                             Padding(
                                               padding: const EdgeInsets.only(
                                                   top: 8.0),
-                                              child: Text(
-                                                  'Store: ${item['storeName']}',
-                                                  style:
-                                                      TextStyle(fontSize: 14)),
+                                              child: FutureBuilder<String>(
+                                                future: Translate.translateText(
+                                                    ' Store: ${item['name']}'),
+                                                builder: (context, snapshot) {
+                                                  return snapshot.hasData
+                                                      ? Text(
+                                                          snapshot.data!,
+                                                          style: TextStyle(
+                                                              fontSize: 14),
+                                                        )
+                                                      : Text(
+                                                          'Store: ${item['storeName']}',
+                                                          style: TextStyle(
+                                                              fontSize: 14),
+                                                        );
+                                                },
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  top: 4.0),
+                                              child: FutureBuilder<String>(
+                                                future: Translate.translateText(
+                                                    'Price:'),
+                                                builder: (context, snapshot) {
+                                                  return snapshot.hasData
+                                                      ? Text(
+                                                          '${snapshot.data!} \₹${item['price']}',
+                                                          style: TextStyle(
+                                                              fontSize: 14,
+                                                              color:
+                                                                  Colors.green),
+                                                        )
+                                                      : Text(
+                                                          'Price: \₹${item['price'].toString()}',
+                                                          style: TextStyle(
+                                                              fontSize: 14,
+                                                              color:
+                                                                  Colors.green),
+                                                        );
+                                                },
+                                              ),
                                             ),
                                             Row(
                                               children: [
@@ -230,10 +383,19 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                                                           .doc(item.id)
                                                           .delete();
                                                     }
+                                                    calculateTotalPrice();
                                                   },
                                                 ),
-                                                Text(
-                                                    'Quantity: ${item['quantity']}'),
+                                                FutureBuilder<String>(
+                                                  future: Translate.translateText(
+                                                      'Quantity: ${item['quantity']}'),
+                                                  builder: (context, snapshot) {
+                                                    return snapshot.hasData
+                                                        ? Text(snapshot.data!)
+                                                        : Text(
+                                                            'Quantity: ${item['quantity']}');
+                                                  },
+                                                ),
                                                 IconButton(
                                                   icon: Icon(Icons.add_circle,
                                                       color: Colors
@@ -249,6 +411,7 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                                                           FieldValue.increment(
                                                               1)
                                                     });
+                                                    calculateTotalPrice();
                                                   },
                                                 ),
                                               ],
@@ -275,6 +438,27 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                               },
                             ),
                     ),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: FutureBuilder<String>(
+                        future: Translate.translateText('Total Price:'),
+                        builder: (context, snapshot) {
+                          return snapshot.hasData
+                              ? Text(
+                                  '${snapshot.data!} \₹${totalPrice.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold),
+                                )
+                              : Text(
+                                  'Total Price: \₹${totalPrice.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold),
+                                );
+                        },
+                      ),
+                    ),
                     // place_order_button(context, snapshot),
                     placeOrderButton1(context, snapshot),
                   ],
@@ -296,17 +480,54 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
             context: context,
             builder: (BuildContext dialogContext) {
               return AlertDialog(
-                title: Text('Confirm Order'),
-                content: Text('Are you sure you want to place this order?'),
+                title: FutureBuilder<String>(
+                  future: Translate.translateText("confirm order"),
+                  builder: (context, snapshot) {
+                    return snapshot.hasData
+                        ? Text(
+                            snapshot.data!,
+                          )
+                        : Text("Confirm order");
+                  },
+                ),
+                content: FutureBuilder<String>(
+                  future: Translate.translateText(
+                      "Are you sure you want to place this order?"),
+                  builder: (context, snapshot) {
+                    return snapshot.hasData
+                        ? Text(
+                            snapshot.data!,
+                          )
+                        : Text('Are you sure you want to place this order?');
+                  },
+                ),
                 actions: <Widget>[
                   TextButton(
-                    child: Text('Cancel'),
+                    child: FutureBuilder<String>(
+                      future: Translate.translateText("Cancel"),
+                      builder: (context, snapshot) {
+                        return snapshot.hasData
+                            ? Text(
+                                snapshot.data!,
+                              )
+                            : Text('Cancel');
+                      },
+                    ),
                     onPressed: () {
                       Navigator.of(dialogContext).pop(); // Close the dialog
                     },
                   ),
                   TextButton(
-                    child: Text('Confirm'),
+                    child: FutureBuilder<String>(
+                      future: Translate.translateText("Confirm"),
+                      builder: (context, snapshot) {
+                        return snapshot.hasData
+                            ? Text(
+                                snapshot.data!,
+                              )
+                            : Text('Confirm');
+                      },
+                    ),
                     onPressed: () {
                       // Place the order
                       Navigator.pop(context);
@@ -331,9 +552,13 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                         });
                       });
                       Navigator.of(dialogContext).pop();
+                      calculateTotalPrice();
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => PayHomeMed()),
+                        MaterialPageRoute(
+                            builder: (context) => PayHomeMed(
+                                  price: totalPrice,
+                                )),
                       ); // Close the dialog
                     },
                   ),
@@ -359,7 +584,16 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
             context: context,
             builder: (context) {
               return AlertDialog(
-                title: Text('Order Summary'),
+                title: FutureBuilder<String>(
+                  future: Translate.translateText("Order Summary"),
+                  builder: (context, snapshot) {
+                    return snapshot.hasData
+                        ? Text(
+                            snapshot.data!,
+                          )
+                        : Text('Order Summary');
+                  },
+                ),
                 content: Container(
                   width: double.maxFinite, // Ensures the dialog is wide enough
                   child: ListView.builder(
@@ -394,9 +628,13 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                 actions: [
                   TextButton(
                     onPressed: () {
+                      calculateTotalPrice();
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => PayHomeMed()),
+                        MaterialPageRoute(
+                            builder: (context) => PayHomeMed(
+                                  price: totalPrice,
+                                )),
                       );
                       // FirebaseFirestore.instance
                       //     .collection('me_orders')
@@ -419,7 +657,16 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                       // });
                       Navigator.pop(context);
                     },
-                    child: Text('Confirm'),
+                    child: FutureBuilder<String>(
+                      future: Translate.translateText("Confirm"),
+                      builder: (context, snapshot) {
+                        return snapshot.hasData
+                            ? Text(
+                                snapshot.data!,
+                              )
+                            : Text('Confirm');
+                      },
+                    ),
                   ),
                 ],
               );
@@ -430,7 +677,16 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
           foregroundColor: Colors.white,
           backgroundColor: Colors.lightGreen[600], // Text color
         ),
-        child: Text('Proceed to Place Order'),
+        child: FutureBuilder<String>(
+          future: Translate.translateText("Proceed to Place order"),
+          builder: (context, snapshot) {
+            return snapshot.hasData
+                ? Text(
+                    snapshot.data!,
+                  )
+                : Text('Proceed to Place order');
+          },
+        ),
       ),
     );
   }
@@ -445,7 +701,18 @@ class _RentPageState extends State<RentPage> {
   @override
   Widget build(BuildContext context) {
     return user == null
-        ? const Center(child: Text("Please login to view your cart"))
+        ? Center(
+            child: FutureBuilder<String>(
+              future: Translate.translateText("Please login to view the cart"),
+              builder: (context, snapshot) {
+                return snapshot.hasData
+                    ? Text(
+                        snapshot.data!,
+                      )
+                    : Text('Please login to view cart');
+              },
+            ),
+          )
         : StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('me_cart_rent')

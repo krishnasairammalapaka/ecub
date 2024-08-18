@@ -1,6 +1,7 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/models/Cart_Db.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -13,8 +14,6 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
   int _selectedIndex = 0;
   Box<Food_db>? FDbox;
   Box<Cart_Db>? _cartBox;
-
-
 
   Map<String, String> categoryImages = {};
 
@@ -49,7 +48,6 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
       });
 
       switch (index) {
-
         case 1:
           Navigator.pushNamed(context, '/fs_search');
           break;
@@ -73,25 +71,40 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
     return totalItems;
   }
 
-
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Good food.\nFast delivery.",
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
+              FutureBuilder<String>(
+                future: Translate.translateText("Good food\n fast delivery"),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  } else if (snapshot.hasData) {
+                    return Text(
+                      snapshot.data!,
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  } else {
+                    return Text(
+                      "Good food\n Fast delivery",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  }
+                },
               ),
               SizedBox(height: 20),
               CarouselSlider(
@@ -138,7 +151,6 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-
                   GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, '/fs_category', arguments: {
@@ -146,12 +158,16 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                         'type': "homemade"
                       });
                     },
-                    child: CategoryTile(
-                      title: "Home Made",
-                      image: "assets/home_made.png",
+                    child: FutureBuilder<String>(
+                      future: Translate.translateText("Homemade"),
+                      builder: (context, snapshot) {
+                        return CategoryTile(
+                          title: snapshot.hasData ? snapshot.data! : "Homemade",
+                          image: "assets/home_made.png",
+                        );
+                      },
                     ),
                   ),
-
                   GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, '/fs_category', arguments: {
@@ -159,12 +175,17 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                         'type': "restaurant"
                       });
                     },
-                    child: CategoryTile(
-                      title: "Restaurant",
-                      image: "assets/restuarnt_logo.png",
+                    child: FutureBuilder<String>(
+                      future: Translate.translateText("restaurant"),
+                      builder: (context, snapshot) {
+                        return CategoryTile(
+                          title:
+                              snapshot.hasData ? snapshot.data! : "restaurant",
+                          image: "assets/restuarnt_logo.png",
+                        );
+                      },
                     ),
                   ),
-
                   GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, '/fs_s_home', arguments: {
@@ -172,103 +193,155 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                         'type': "entry.key"
                       });
                     },
-                    child: CategoryTile(
-                      title: "Subscription",
-                      image: "assets/subscription_logo.png",
+                    child: FutureBuilder<String>(
+                      future: Translate.translateText("subscription"),
+                      builder: (context, snapshot) {
+                        return CategoryTile(
+                          title: snapshot.hasData
+                              ? snapshot.data!
+                              : "subscription",
+                          image: "assets/subscription_logo.png",
+                        );
+                      },
                     ),
                   ),
-
                 ],
               ),
               SizedBox(height: 30),
               categoryImages.isEmpty
                   ? Center(child: CircularProgressIndicator())
                   : SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: categoryImages.entries.map((entry) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/fs_dishes',
-                            arguments: {
-                              'title': entry.key,
-                              'type': entry.key
-                            });
-                      },
-                      child: CategoryCard(
-                        title: entry.key,
-                        image: entry.value,
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: categoryImages.entries.map((entry) {
+                          return GestureDetector(
+                            onTap: () {
+                              print(entry.key);
+                              Navigator.pushNamed(context, '/fs_dishes',
+                                  arguments: {
+                                    'title': entry.key,
+                                    'type': entry.key
+                                  });
+                            },
+                            child: FutureBuilder<String>(
+                              future: Translate.translateText(entry.key),
+                              builder: (context, snapshot) {
+                                return CategoryCard(
+                                    title: snapshot.hasData
+                                        ? snapshot.data!
+                                        : entry.key,
+                                    image: entry.value);
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+              SizedBox(height: 20),
+              FutureBuilder<String>(
+                future: Translate.translateText("Popular Now"),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  } else if (snapshot.hasData) {
+                    return Text(
+                      snapshot.data!,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
                     );
-                  }).toList(),
-                ),
-              ),
-              SizedBox(height: 20),
-              Text(
-                "Popular now",
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                  } else {
+                    return Text(
+                      "Popular now",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  }
+                },
               ),
               SizedBox(height: 20),
               FDbox == null
                   ? Center(child: CircularProgressIndicator())
                   : ValueListenableBuilder(
-                valueListenable: FDbox!.listenable(),
-                builder: (context, Box<Food_db> items, _) {
-                  if (items.isEmpty) {
-                    return Center(child: Text('No items found.'));
-                  } else {
-                    List<Food_db> sortedItems = items.values.toList();
-                    sortedItems.sort((a, b) =>
-                        b.productRating.compareTo(a.productRating));
-
-                    return GridView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: sortedItems.length,
-                      gridDelegate:
-                      SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 2 / 3,
-                      ),
-                      itemBuilder: (context, index) {
-                        var item = sortedItems[index];
-                        if (item.productRating > 4.4) {
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/fs_product',
-                                  arguments: {
-                                    'id': item.productId,
-                                    'title': item.productTitle,
-                                    'price': item.productPrice.toInt(),
-                                    'image': item.productImg,
-                                    'description': item.productDesc,
-                                    'shop': item.productOwnership,
-                                  });
+                      valueListenable: FDbox!.listenable(),
+                      builder: (context, Box<Food_db> items, _) {
+                        if (items.isEmpty) {
+                          return Center(
+                              child: FutureBuilder<String>(
+                            future: Translate.translateText('No items found.'),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return CircularProgressIndicator();
+                              } else if (snapshot.hasData) {
+                                return Center(child: Text(snapshot.data!));
+                              } else {
+                                return Center(
+                                    child: Text(
+                                        'No items found.')); // Fall back to original text if translation fails
+                              }
                             },
-                            child: FoodTile(
-                              title: item.productTitle,
-                              price: item.productPrice.toInt(),
-                              image: item.productImg,
-                              rating: item.productRating,
+                          ));
+                        } else {
+                          List<Food_db> sortedItems = items.values.toList();
+                          sortedItems.sort((a, b) =>
+                              b.productRating.compareTo(a.productRating));
+
+                          return GridView.builder(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: sortedItems.length,
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 2 / 3,
                             ),
+                            itemBuilder: (context, index) {
+                              var item = sortedItems[index];
+                              if (item.productRating > 4.4) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.pushNamed(context, '/fs_product',
+                                        arguments: {
+                                          'id': item.productId,
+                                          'title': item.productTitle,
+                                          'price': item.productPrice.toInt(),
+                                          'image': item.productImg,
+                                          'description': item.productDesc,
+                                          'shop': item.productOwnership,
+                                        });
+                                  },
+                                  child: FutureBuilder<String>(
+                                    future: Translate.translateText(
+                                        item.productTitle),
+                                    builder: (context, snapshot) {
+                                      return FoodTile(
+                                        title: snapshot.hasData
+                                            ? snapshot.data!
+                                            : item.productTitle,
+                                        price: item.productPrice.toInt(),
+                                        image: item.productImg,
+                                        rating: item.productRating,
+                                      );
+                                    },
+                                  ),
+                                );
+                              }
+                              return null;
+                            },
                           );
                         }
-                        return null;
                       },
-                    );
-                  }
-                },
-              ),
+                    ),
             ],
           ),
         ),
       ),
-
     );
   }
 }
@@ -317,9 +390,9 @@ class FoodTile extends StatelessWidget {
 
   FoodTile(
       {required this.title,
-        required this.price,
-        required this.image,
-        required this.rating});
+      required this.price,
+      required this.image,
+      required this.rating});
 
   @override
   Widget build(BuildContext context) {
@@ -436,9 +509,9 @@ class CategoryTile extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14.0,
-                fontWeight: FontWeight.bold,
-              ),
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.bold,
+                  overflow: TextOverflow.ellipsis),
             ),
           ],
         ),

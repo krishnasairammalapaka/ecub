@@ -2,12 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_item_details.dart';
 // import 'package:ecub_s1_v2/service_page/medical_equipment/me_items.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_items2.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:badges/badges.dart' as badges;
 import 'package:hive_flutter/adapters.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:ecub_s1_v2/translation.dart';
 
 class Category {
   final String name;
@@ -30,6 +32,7 @@ class _MeHomePageState extends State<MeHomePage> {
   List<String> Imagelt2 = [];
   List<String> productNames = [];
   List<String> categoryNames = [];
+  List<String> desc = [];
 
   @override
   void initState() {
@@ -87,6 +90,7 @@ class _MeHomePageState extends State<MeHomePage> {
       Map<String, dynamic> items = doc.data()['items'] ?? {};
       items.forEach((key, value) {
         tempKeys.add(key);
+        print(value);
         images.add(value);
       });
       // }
@@ -191,7 +195,14 @@ class _MeHomePageState extends State<MeHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Medical Equipment '),
+        title: FutureBuilder<String>(
+          future: Translate.translateText('Medical Equipment '),
+          builder: (context, snapshot) {
+            return snapshot.hasData
+                ? Text(snapshot.data!)
+                : Text('Medical Equipment ');
+          },
+        ),
         actions: [
           Padding(
               padding: const EdgeInsets.only(right: 25.0),
@@ -230,14 +241,28 @@ class _MeHomePageState extends State<MeHomePage> {
             padding: const EdgeInsets.all(8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
-              children: const [
-                Text(
-                      "Quality Instruments.\nTrusted Care.",
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+              children: [
+                FutureBuilder<String>(
+                  future: Translate.translateText(
+                      "Quality Instruments.\nTrusted Care."),
+                  builder: (context, snapshot) {
+                    return snapshot.hasData
+                        ? Text(
+                            snapshot.data!,
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : Text(
+                            "Quality Instruments.\nTrusted Care.",
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                  },
+                ),
               ],
             ),
           ),
@@ -254,24 +279,47 @@ class _MeHomePageState extends State<MeHomePage> {
           ),
           // const SizedBox(height: 20),
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'Available categories',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-          ),
+              padding: const EdgeInsets.all(8.0),
+              child: FutureBuilder<String>(
+                future: Translate.translateText("Available categories"),
+                builder: (context, snapshot) {
+                  return snapshot.hasData
+                      ? Text(
+                          snapshot.data!,
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        )
+                      : Text(
+                          'Available categories',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        );
+                },
+              )),
           future_grid_layout(),
           const SizedBox(height: 10),
-          Text(
-            'Recommended products',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          FutureBuilder<String>(
+            future: Translate.translateText("Recommended Produts"),
+            builder: (context, snapshot) {
+              return snapshot.hasData
+                  ? Text(
+                      snapshot.data!,
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    )
+                  : Text(
+                      'Recommended Produts',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    );
+            },
           ),
           //gridview builder
           const SizedBox(height: 10),
           Expanded(
             child: GridView.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3, 
+                crossAxisCount: 3,
                 crossAxisSpacing: 5,
                 mainAxisSpacing: 10,
               ),
@@ -311,8 +359,23 @@ class _MeHomePageState extends State<MeHomePage> {
                           Padding(
                             // Add padding around the text
                             padding: EdgeInsets.all(8.0),
-                            child: Text(productNames[index],
-                                textAlign: TextAlign.center), // Category name
+                            child: FutureBuilder<String>(
+                              future:
+                                  Translate.translateText(productNames[index]),
+                              builder: (context, snapshot) {
+                                return snapshot.hasData
+                                    ? Text(
+                                        snapshot.data!,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      )
+                                    : Text(productNames[index],
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis);
+                              },
+                            ),
                           ),
                         ],
                       ),
@@ -377,10 +440,23 @@ class _MeHomePageState extends State<MeHomePage> {
                               fit: BoxFit.cover,
                             ),
                           ),
-                          Text(
-                            category.name,
-                            style: TextStyle(
-                                fontSize: 16.0, fontWeight: FontWeight.bold),
+                          FutureBuilder<String>(
+                            future: Translate.translateText(category.name),
+                            builder: (context, snapshot) {
+                              return snapshot.hasData
+                                  ? Text(
+                                      snapshot.data!,
+                                      style: TextStyle(
+                                          fontSize: 16.0,
+                                          fontWeight: FontWeight.bold),
+                                    )
+                                  : Text(
+                                      category.name,
+                                      style: TextStyle(
+                                          fontSize: 16.0,
+                                          fontWeight: FontWeight.bold),
+                                    );
+                            },
                           ),
                         ],
                       ),
@@ -472,8 +548,16 @@ class _MeHomePageState extends State<MeHomePage> {
                       Padding(
                         // Add padding around the text
                         padding: EdgeInsets.all(8.0),
-                        child: Text(category.name,
-                            textAlign: TextAlign.center), // Category name
+                        child: FutureBuilder<String>(
+                          future: Translate.translateText(category.name),
+                          builder: (context, snapshot) {
+                            return snapshot.hasData
+                                ? Text(snapshot.data!,
+                                    textAlign: TextAlign.center)
+                                : Text(category.name,
+                                    textAlign: TextAlign.center);
+                          },
+                        ), // Category name
                       ),
                     ],
                   ),

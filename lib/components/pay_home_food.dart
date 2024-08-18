@@ -1,9 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class PayHomeFood extends StatefulWidget {
+  final double amount;
+
+  PayHomeFood({required this.amount});
+
   @override
   _PayHomeFoodState createState() => _PayHomeFoodState();
 }
@@ -26,39 +31,6 @@ class _PayHomeFoodState extends State<PayHomeFood> {
     super.dispose();
   }
 
-  Map<String, Map<String, dynamic>> generateOrderSummary(
-      List<DocumentSnapshot> docs, QuerySnapshot? snapshot) {
-    if (docs.isEmpty || snapshot == null) return {};
-
-    var summary = <String, Map<String, dynamic>>{};
-    for (var doc in docs) {
-      var name = doc['name'];
-      var store = doc['storeName'];
-      var quantity = doc['quantity'];
-      // Update each document as a separate entry in the summary map
-      summary[doc.id] = {
-        'name': name,
-        'storeName': store,
-        'quantity': quantity,
-      };
-    }
-    return summary;
-  }
-
-  clearCart() {
-    User? user = FirebaseAuth.instance.currentUser;
-    FirebaseFirestore.instance
-        .collection('me_cart')
-        .doc(user?.email)
-        .collection('items')
-        .get()
-        .then((snapshot) {
-      for (DocumentSnapshot ds in snapshot.docs) {
-        ds.reference.delete();
-      }
-    });
-  }
-
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
     // Do something when payment succeeds
     print("Payment Success: ${response.paymentId}");
@@ -71,10 +43,9 @@ class _PayHomeFoodState extends State<PayHomeFood> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/home', (Route<dynamic> route) => false);
+                Navigator.pushNamed(context, '/fs_home');
               },
               child: Text('OK'),
             ),
@@ -128,46 +99,14 @@ class _PayHomeFoodState extends State<PayHomeFood> {
     );
   }
 
-  // Future<void> openCheckout() async {
-  //     User? user = FirebaseAuth.instance.currentUser;
-  //     DocumentSnapshot userData = await FirebaseFirestore.instance
-  //         .collection('users')
-  //         .doc(user!.email)
-  //         .get();
-
-  //     String name = userData['firstname'] + " " + userData['lastname'];
-  //     String phonenumber=userData['phonenumber'];
-
-  //     var options = {
-  //       'key': 'rzp_test_ILKXehI3hPXJdo',
-  //       'amount': 50000,
-  //       'name': name,
-  //       'prefill': {'contact': phonenumber, 'email': user.email},
-  //       'external': {
-  //         'wallets': ['paytm']
-  //       }
-  //     };
-
-  //     try {
-  //       _razorpay.open(options);
-  //     } catch (e) {
-  //       print(e.toString());
-  //     }
-  //   }
-
-  getUserdetails() {
-    User? user = FirebaseAuth.instance.currentUser;
-    DocumentSnapshot userData = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user!.email)
-        .get() as DocumentSnapshot;
-    return userData;
-  }
-
   void openCheckout() {
+    double cost = widget.amount;
+    if (widget.amount < 1) {
+      cost = 500;
+    }
     var options = {
       'key': 'rzp_test_ILKXehI3hPXJdo',
-      'amount': 50000, // Amount in paise
+      'amount': cost * 100, // Amount in paise
       'name': 'ECUB',
       'description': '',
       'external': {

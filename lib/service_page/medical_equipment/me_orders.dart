@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -62,9 +63,45 @@ class MeOrders extends StatelessWidget {
                         Column(
                           children: items[index].map((item) {
                             return ListTile(
-                              title: Text(item.name),
-                              subtitle: Text('Store: ${item.store}'),
-                              trailing: Text('Quantity: ${item.quantity}'),
+                              title: FutureBuilder<String>(
+                                future: Translate.translateText(item.name),
+                                builder: (context, snapshot) {
+                                  return snapshot.hasData
+                                      ? Text(
+                                          snapshot.data!,
+                                        )
+                                      : Text(
+                                          item.name,
+                                        );
+                                },
+                              ),
+                              subtitle: FutureBuilder<String>(
+                                future: Translate.translateText(
+                                    'Store: ${item.store}'),
+                                builder: (context, snapshot) {
+                                  return snapshot.hasData
+                                      ? Text(
+                                          snapshot.data!,
+                                          overflow: TextOverflow.ellipsis,
+                                        )
+                                      : Text(
+                                          item.store,
+                                        );
+                                },
+                              ),
+                              trailing: FutureBuilder<String>(
+                                future: Translate.translateText(
+                                    'Quantity: ${item.quantity}'),
+                                builder: (context, snapshot) {
+                                  return snapshot.hasData
+                                      ? Text(
+                                          snapshot.data!,
+                                        )
+                                      : Text(
+                                          'Quantity: ${item.quantity}',
+                                        );
+                                },
+                              ),
                               //add store name
                             );
                           }).toList(),

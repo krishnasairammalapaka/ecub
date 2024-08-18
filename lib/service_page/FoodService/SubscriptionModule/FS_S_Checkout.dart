@@ -1,4 +1,4 @@
-
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -36,7 +36,8 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     packID = args['packID'];
     subscriptionType = args['subscription_type'];
 
@@ -103,8 +104,6 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
 
     _calculatePrice();
   }
-
-
 
   Future<void> _selectDate(BuildContext context, DateTime initialDate,
       Function(DateTime) onDateSelected) async {
@@ -261,10 +260,23 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                   },
                 ),
               SizedBox(height: 20),
-              Text(
-                'Total Price: ₹$price',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              FutureBuilder<String>(
+                future: Translate.translateText('Total Price: ₹'),
+                builder: (context, snapshot) {
+                  return snapshot.hasData
+                      ? Text(
+                          snapshot.data! + '$price',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        )
+                      : Text(
+                          'Total Price: ₹$price',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        );
+                },
               ),
+
               SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
@@ -287,27 +299,42 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                         'subscription_type': subscriptionType,
                         'fromDate': fromDate,
                         'endingDate': endingDate,
-                        'breakfastCount': breakfast.isNotEmpty ? breakfast['count'] : null,
+                        'breakfastCount':
+                            breakfast.isNotEmpty ? breakfast['count'] : null,
                         'lunchCount': lunch.isNotEmpty ? lunch['count'] : null,
                         'snackCount': snack.isNotEmpty ? snack['count'] : null,
-                        'dinnerCount': dinner.isNotEmpty ? dinner['count'] : null,
-                        'breakfastDays': breakfast.isNotEmpty ? breakfast['days'] : null,
+                        'dinnerCount':
+                            dinner.isNotEmpty ? dinner['count'] : null,
+                        'breakfastDays':
+                            breakfast.isNotEmpty ? breakfast['days'] : null,
                         'lunchDays': lunch.isNotEmpty ? lunch['days'] : null,
                         'snackDays': snack.isNotEmpty ? snack['days'] : null,
                         'dinnerDays': dinner.isNotEmpty ? dinner['days'] : null,
-                        'breakfastTime': breakfast.isNotEmpty ? breakfast['time'].format(context) : null,
-                        'lunchTime': lunch.isNotEmpty ? lunch['time'].format(context) : null,
-                        'snackTime': snack.isNotEmpty ? snack['time'].format(context) : null,
-                        'dinnerTime': dinner.isNotEmpty ? dinner['time'].format(context) : null,
-                        'breakfastIsOn': breakfast.isNotEmpty ? breakfast['isOn'] : null,
+                        'breakfastTime': breakfast.isNotEmpty
+                            ? breakfast['time'].format(context)
+                            : null,
+                        'lunchTime': lunch.isNotEmpty
+                            ? lunch['time'].format(context)
+                            : null,
+                        'snackTime': snack.isNotEmpty
+                            ? snack['time'].format(context)
+                            : null,
+                        'dinnerTime': dinner.isNotEmpty
+                            ? dinner['time'].format(context)
+                            : null,
+                        'breakfastIsOn':
+                            breakfast.isNotEmpty ? breakfast['isOn'] : null,
                         'lunchIsOn': lunch.isNotEmpty ? lunch['isOn'] : null,
                         'snackIsOn': snack.isNotEmpty ? snack['isOn'] : null,
                         'dinnerIsOn': dinner.isNotEmpty ? dinner['isOn'] : null,
                         'totalPrice': price,
-                        'breakfastSelected': breakfast.isNotEmpty ? breakfast['items'] : [],
+                        'breakfastSelected':
+                            breakfast.isNotEmpty ? breakfast['items'] : [],
                         'lunchSelected': lunch.isNotEmpty ? lunch['items'] : [],
-                        'snacksSelected': snack.isNotEmpty ? snack['items'] : [],
-                        'dinnerSelected': dinner.isNotEmpty ? dinner['items'] : [],
+                        'snacksSelected':
+                            snack.isNotEmpty ? snack['items'] : [],
+                        'dinnerSelected':
+                            dinner.isNotEmpty ? dinner['items'] : [],
                       };
 
                       await collectionRef.set(data);
@@ -319,6 +346,11 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                           .doc('info');
 
                       await cartCollectionRef.set(data);
+
+                      final UserRef = firestore
+                          .collection('users')
+                          .doc(userEmail);
+                      await UserRef.update({'isPackSubs': true,});
 
                       Navigator.pushNamed(context, '/fs_cart');
                     } else {
@@ -343,15 +375,24 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
     );
   }
 
-
   Widget _buildDateSetting(
       String label, DateTime date, Function(DateTime) onDateSelected) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        FutureBuilder<String>(
+          future: Translate.translateText(label),
+          builder: (context, snapshot) {
+            return snapshot.hasData
+                ? Text(
+                    snapshot.data!,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  )
+                : Text(
+                    label,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  );
+          },
         ),
         SizedBox(height: 8),
         Row(
@@ -429,7 +470,26 @@ class _AlarmSettingState extends State<AlarmSetting> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(widget.title, style: TextStyle(fontSize: 18)),
+                FutureBuilder<String>(
+                  future: Translate.translateText(widget.title),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    } else {
+                      return snapshot.hasData
+                          ? Text(
+                              snapshot.data!,
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  overflow: TextOverflow.ellipsis),
+                            )
+                          : Text(widget.title,
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  overflow: TextOverflow.ellipsis));
+                    }
+                  },
+                ),
                 Switch(
                   value: isOn,
                   onChanged: (value) {
@@ -446,24 +506,43 @@ class _AlarmSettingState extends State<AlarmSetting> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Meals per Day: ',
-                    style: TextStyle(fontSize: 16),
+                  FutureBuilder<String>(
+                    future: Translate.translateText("Meals Per Day"),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return CircularProgressIndicator();
+                      } else {
+                        return snapshot.hasData
+                            ? Text(
+                                snapshot.data!,
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    overflow: TextOverflow.ellipsis),
+                              )
+                            : Text(
+                                "Meals per Day",
+                                style: TextStyle(fontSize: 16),
+                                overflow: TextOverflow.ellipsis,
+                              );
+                      }
+                    },
                   ),
                   IconButton(
                     icon: Icon(Icons.remove),
                     onPressed: mealCount > 1
                         ? () {
-                      setState(() {
-                        mealCount--;
-                        widget.onChanged(
-                            mealCount, selectedDays, selectedTime, isOn);
-                      });
-                    }
+                            setState(() {
+                              mealCount--;
+                              widget.onChanged(
+                                  mealCount, selectedDays, selectedTime, isOn);
+                            });
+                          }
                         : null,
                   ),
-                  Text('$mealCount',
-                    style: TextStyle(fontSize: 16),),
+                  Text(
+                    '$mealCount',
+                    style: TextStyle(fontSize: 16),
+                  ),
                   IconButton(
                     icon: Icon(Icons.add),
                     onPressed: () {
@@ -479,9 +558,28 @@ class _AlarmSettingState extends State<AlarmSetting> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Time: ${selectedTime.format(context)}',
-                    style: TextStyle(fontSize: 16),
+                  FutureBuilder<String>(
+                    future: Translate.translateText(
+                        'Time: ${selectedTime.format(context)}'),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return CircularProgressIndicator();
+                      } else {
+                        return snapshot.hasData
+                            ? Text(
+                                snapshot.data!,
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    overflow: TextOverflow.ellipsis),
+                              )
+                            : Text(
+                                'Time: ${selectedTime.format(context)}',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    overflow: TextOverflow.ellipsis),
+                              );
+                      }
+                    },
                   ),
                   IconButton(
                     icon: Icon(Icons.access_time),
@@ -493,10 +591,32 @@ class _AlarmSettingState extends State<AlarmSetting> {
                 spacing: 8.0,
                 children: List.generate(7, (index) {
                   return ChoiceChip(
-                    label: Text(
-                      DateFormat('E').format(
+                    label: FutureBuilder<String>(
+                      future: Translate.translateText(DateFormat('E').format(
                         DateTime.now().add(Duration(days: index)),
-                      ),
+                      )),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return CircularProgressIndicator();
+                        } else {
+                          return snapshot.hasData
+                              ? Text(
+                                  snapshot.data!,
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      overflow: TextOverflow.ellipsis),
+                                )
+                              : Text(
+                                  DateFormat('E').format(
+                                    DateTime.now().add(
+                                      Duration(days: index),
+                                    ),
+                                  ),
+                                  style: TextStyle(
+                                      overflow: TextOverflow.ellipsis));
+                        }
+                      },
                     ),
                     selected: selectedDays[index],
                     onSelected: (selected) {

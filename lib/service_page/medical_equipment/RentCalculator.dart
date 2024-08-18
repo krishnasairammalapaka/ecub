@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -77,7 +78,6 @@ class _RentCalculatorState extends State<RentCalculator> {
             label: 'OK',
             onPressed: () {
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
             },
           ),
           duration: const Duration(seconds: 2),
@@ -160,33 +160,76 @@ class _RentCalculatorState extends State<RentCalculator> {
             ),
             SizedBox(height: 20),
             Center(
-              child: Text(
-                'Shop Name: ${widget.shopName}',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
+              child: FutureBuilder<String>(
+                future:
+                    Translate.translateText('Shop Name: ${widget.shopName}'),
+                builder: (context, snapshot) {
+                  return snapshot.hasData
+                      ? Text(
+                          snapshot.data!,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        )
+                      : Text(
+                          'Shop Name: ${widget.shopName}',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        );
+                },
               ),
             ),
             SizedBox(height: 10),
             Center(
-              child: Text(
-                'Product Name: ${widget.productName}',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.black,
-                ),
+              child: FutureBuilder<String>(
+                future: Translate.translateText(
+                    'Product Name: ${widget.productName}'),
+                builder: (context, snapshot) {
+                  return snapshot.hasData
+                      ? Text(
+                          snapshot.data!,
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.black,
+                          ),
+                        )
+                      : Text(
+                          'Product Name: ${widget.productName}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.black,
+                          ),
+                        );
+                },
               ),
             ),
             SizedBox(height: 10),
             Center(
-              child: Text(
-                'Address: ${widget.shopAddress}',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+              child: FutureBuilder<String>(
+                future:
+                    Translate.translateText('Address: ${widget.shopAddress}'),
+                builder: (context, snapshot) {
+                  return snapshot.hasData
+                      ? Text(
+                          snapshot.data!,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black,
+                          ),
+                        )
+                      : Text(
+                          'Address: ${widget.shopAddress}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black,
+                          ),
+                        );
+                },
               ),
             ),
             SizedBox(height: 20),
@@ -202,7 +245,14 @@ class _RentCalculatorState extends State<RentCalculator> {
                     });
                   },
                 ),
-                Text('Weekly Rent'),
+                FutureBuilder<String>(
+                  future: Translate.translateText('Weekly Rent'),
+                  builder: (context, snapshot) {
+                    return snapshot.hasData
+                        ? Text(snapshot.data!)
+                        : Text('Weekly Rent');
+                  },
+                ),
                 SizedBox(width: 20),
                 Checkbox(
                   value: !_isWeekly,
@@ -213,48 +263,108 @@ class _RentCalculatorState extends State<RentCalculator> {
                     });
                   },
                 ),
-                Text('Monthly Rent'),
+                FutureBuilder<String>(
+                  future: Translate.translateText('Monthy Rent'),
+                  builder: (context, snapshot) {
+                    return snapshot.hasData
+                        ? Text(
+                            snapshot.data!,
+                          )
+                        : Text('Monthly Rent');
+                  },
+                ),
               ],
             ),
             SizedBox(height: 20),
             if (_isWeekly)
-              TextField(
-                decoration: InputDecoration(
-                  // on tap outside
-                  hintText: 'Enter number of weeks',
-                  border: OutlineInputBorder(),
-                  
-                  labelText: 'Number of Weeks',
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  setState(() {
-                    _numberOfWeeks = int.tryParse(value) ?? 0;
-                    _calculateDeadline();
-                  });
+              FutureBuilder<String>(
+                future: Translate.translateText('Number Of Weeks'),
+                builder: (context, snapshot) {
+                  return snapshot.hasData
+                      ? TextField(
+                          decoration: InputDecoration(
+                            // on tap outside
+                            hintText: 'Enter number of weeks',
+                            border: OutlineInputBorder(),
+
+                            labelText: snapshot.data!,
+                          ),
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            setState(() {
+                              _numberOfWeeks = int.tryParse(value) ?? 0;
+                              _calculateDeadline();
+                            });
+                          },
+                        )
+                      : TextField(
+                          decoration: InputDecoration(
+                            // on tap outside
+                            hintText: 'Enter number of weeks',
+                            border: OutlineInputBorder(),
+
+                            labelText: 'Number of Weeks',
+                          ),
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            setState(() {
+                              _numberOfWeeks = int.tryParse(value) ?? 0;
+                              _calculateDeadline();
+                            });
+                          },
+                        );
                 },
               )
             else
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Enter number of months',
-                  border: OutlineInputBorder(),
-                  labelText: 'Number of Months',
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  setState(() {
-                    _numberOfMonths = int.tryParse(value) ?? 0;
-                    _calculateDeadline();
-                  });
+              FutureBuilder<String>(
+                future: Translate.translateText('Number Of months'),
+                builder: (context, snapshot) {
+                  return snapshot.hasData
+                      ? TextField(
+                          decoration: InputDecoration(
+                            // on tap outside
+                            hintText: 'Enter number of months',
+                            border: OutlineInputBorder(),
+
+                            labelText: snapshot.data!,
+                          ),
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            setState(() {
+                              _numberOfWeeks = int.tryParse(value) ?? 0;
+                              _calculateDeadline();
+                            });
+                          },
+                        )
+                      : TextField(
+                          decoration: InputDecoration(
+                            // on tap outside
+                            hintText: 'Enter number of months',
+                            border: OutlineInputBorder(),
+
+                            labelText: 'Number of Months',
+                          ),
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            setState(() {
+                              _numberOfWeeks = int.tryParse(value) ?? 0;
+                              _calculateDeadline();
+                            });
+                          },
+                        );
                 },
               ),
             SizedBox(height: 20),
             Row(
               children: [
-                Text(
-                  'Select Starting Date:',
-                  style: TextStyle(fontSize: 16),
+                FutureBuilder<String>(
+                  future: Translate.translateText("Select Starting Date"),
+                  builder: (context, snapshot) {
+                    return snapshot.hasData
+                        ? Text(snapshot.data!, style: TextStyle(fontSize: 16))
+                        : Text("Select Starting Date",
+                            style: TextStyle(fontSize: 16));
+                  },
                 ),
                 SizedBox(width: 10),
                 IconButton(
@@ -281,9 +391,19 @@ class _RentCalculatorState extends State<RentCalculator> {
                     ),
                   ),
                 ),
-                child: Text(
-                  'Calculate Total Rent',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                child: FutureBuilder<String>(
+                  future: Translate.translateText("Calculate Total Rent"),
+                  builder: (context, snapshot) {
+                    return snapshot.hasData
+                        ? Text(
+                            snapshot.data!,
+                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          )
+                        : Text(
+                            "Calculate Total Rent",
+                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          );
+                  },
                 ),
               ),
             ),
@@ -292,20 +412,55 @@ class _RentCalculatorState extends State<RentCalculator> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Total Rent: ₹ $_totalRent',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  FutureBuilder<String>(
+                    future:
+                        Translate.translateText('Total Rent: ₹ $_totalRent'),
+                    builder: (context, snapshot) {
+                      return snapshot.hasData
+                          ? Text(
+                              snapshot.data!,
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            )
+                          : Text(
+                              'Total Rent: ₹ $_totalRent',
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            );
+                    },
                   ),
                   SizedBox(height: 10),
                   if (_selectedDeliveryDate != null)
-                    Text(
-                      'Delivery Date: ${DateFormat.yMMMd().format(_selectedDeliveryDate!)}',
-                      style: TextStyle(fontSize: 18),
+                    FutureBuilder<String>(
+                      future: Translate.translateText(
+                          'Delivery Date: ${DateFormat.yMMMd().format(_selectedDeliveryDate!)}'),
+                      builder: (context, snapshot) {
+                        return snapshot.hasData
+                            ? Text(
+                                snapshot.data!,
+                                style: TextStyle(fontSize: 18),
+                              )
+                            : Text(
+                                'Delivery Date: ${DateFormat.yMMMd().format(_selectedDeliveryDate!)}',
+                                style: TextStyle(fontSize: 18),
+                              );
+                      },
                     ),
                   if (_deadlineDate != null)
-                    Text(
-                      'Deadline: $deadlineText',
-                      style: TextStyle(fontSize: 18),
+                    FutureBuilder<String>(
+                      future:
+                          Translate.translateText('DeadLine: $deadlineText'),
+                      builder: (context, snapshot) {
+                        return snapshot.hasData
+                            ? Text(
+                                snapshot.data!,
+                                style: TextStyle(fontSize: 18),
+                              )
+                            : Text(
+                                'DeadLine: $deadlineText',
+                                style: TextStyle(fontSize: 18),
+                              );
+                      },
                     ),
                   SizedBox(height: 20),
                   Center(
@@ -331,9 +486,21 @@ class _RentCalculatorState extends State<RentCalculator> {
                           ),
                         ),
                       ),
-                      child: Text(
-                        'Proceed to Checkout',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      child: FutureBuilder<String>(
+                        future: Translate.translateText('Proceed To Checkout'),
+                        builder: (context, snapshot) {
+                          return snapshot.hasData
+                              ? Text(
+                                  snapshot.data!,
+                                  style: TextStyle(
+                                      fontSize: 18, color: Colors.white),
+                                )
+                              : Text(
+                                  'Proceed To Checkout',
+                                  style: TextStyle(
+                                      fontSize: 18, color: Colors.white),
+                                );
+                        },
                       ),
                     ),
                   ),

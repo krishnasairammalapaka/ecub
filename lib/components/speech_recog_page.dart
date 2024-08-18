@@ -52,6 +52,34 @@ class _SpeechRecognitionScreenState extends State<SpeechRecognitionScreen> {
             } else if (lowerCaseText.contains("home")) {
               Navigator.pushNamedAndRemoveUntil(
                   context, "/home2", (r) => false);
+            } else if (lowerCaseText.contains("biryani")) {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => FS_HomeScreen()),
+              );
+              Navigator.pushNamed(context, '/fs_dishes',
+                  arguments: {'title': 'biryani', 'type': 'biryani'});
+            } else if (lowerCaseText.contains("pizza")) {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => FS_HomeScreen()),
+              );
+              Navigator.pushNamed(context, '/fs_dishes',
+                  arguments: {'title': 'pizza', 'type': 'pizza'});
+            } else if (lowerCaseText.contains("burger")) {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => FS_HomeScreen()),
+              );
+              Navigator.pushNamed(context, '/fs_dishes',
+                  arguments: {'title': 'burger', 'type': 'burger'});
+            } else if (lowerCaseText.contains("salad")) {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => FS_HomeScreen()),
+              );
+              Navigator.pushNamed(context, '/fs_dishes',
+                  arguments: {'title': 'salad', 'type': 'salad'});
             } else if (lowerCaseText.contains("food") ||
                 lowerCaseText.contains("biryani") ||
                 lowerCaseText.contains("pizza")) {
@@ -141,18 +169,64 @@ class _SpeechRecognitionScreenState extends State<SpeechRecognitionScreen> {
                                 MaterialPageRoute(
                                     builder: (context) => MeHomePage()),
                               );
-                            } else if (lowerCaseText.contains("home")) {
-                              Navigator.pushNamedAndRemoveUntil(
-                                  context, "/home2", (r) => false);
-                            } else if (lowerCaseText.contains("food") ||
-                                lowerCaseText.contains("biryani") ||
-                                lowerCaseText.contains("pizza")) {
+                            } else if (lowerCaseText.contains("biryani")) {
                               Navigator.pop(context);
                               Navigator.of(context).push(
                                 MaterialPageRoute(
                                     builder: (context) => FS_HomeScreen()),
                               );
-                            } else if (lowerCaseText.contains("taxi") ||
+                              Navigator.pushNamed(context, '/fs_dishes',
+                                  arguments: {
+                                    'title': 'biryani',
+                                    'type': 'biryani'
+                                  });
+                            } else if (lowerCaseText.contains("pizza")) {
+                              Navigator.pop(context);
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (context) => FS_HomeScreen()),
+                              );
+                              Navigator.pushNamed(context, '/fs_dishes',
+                                  arguments: {
+                                    'title': 'pizza',
+                                    'type': 'pizza'
+                                  });
+                            } else if (lowerCaseText.contains("burger")) {
+                              Navigator.pop(context);
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (context) => FS_HomeScreen()),
+                              );
+                              Navigator.pushNamed(context, '/fs_dishes',
+                                  arguments: {
+                                    'title': 'burger',
+                                    'type': 'burger'
+                                  });
+                            } else if (lowerCaseText.contains("salad")) {
+                              Navigator.pop(context);
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (context) => FS_HomeScreen()),
+                              );
+                              Navigator.pushNamed(context, '/fs_dishes',
+                                  arguments: {
+                                    'title': 'salad',
+                                    'type': 'salad'
+                                  });
+                            } else if (lowerCaseText.contains("home")) {
+                              Navigator.pushNamedAndRemoveUntil(
+                                  context, "/home2", (r) => false);
+                            }
+                            //  else if (lowerCaseText.contains("food") ||
+                            //     lowerCaseText.contains("biryani") ||
+                            //     lowerCaseText.contains("pizza")) {
+                            //   Navigator.pop(context);
+                            //   Navigator.of(context).push(
+                            //     MaterialPageRoute(
+                            //         builder: (context) => FS_HomeScreen()),
+                            //   );
+                            // }
+                            else if (lowerCaseText.contains("taxi") ||
                                 lowerCaseText.contains("ride") ||
                                 lowerCaseText.contains("bike")) {
                               Navigator.pop(context);

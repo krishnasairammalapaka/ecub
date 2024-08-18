@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -98,7 +99,8 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
   }
 
   void _updateCartItem(String productId, int count) {
-    var cartItem = _cartBox!.values.firstWhere((item) => item.ItemId == productId);
+    var cartItem =
+        _cartBox!.values.firstWhere((item) => item.ItemId == productId);
     cartItem.ItemCount = count.toDouble();
     cartItem.save();
   }
@@ -114,8 +116,8 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
   void _calculateTotalAmount() {
     totalAmount = 0;
     itemCounts.forEach((productId, count) {
-      final product = FDbox!.values.firstWhereOrNull(
-              (element) => element.productId == productId);
+      final product = FDbox!.values
+          .firstWhereOrNull((element) => element.productId == productId);
       if (product != null) {
         totalAmount += product.productPrice * count;
       }
@@ -129,8 +131,8 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
   void _calculateTotalCalories() {
     totalCalories = 0;
     itemCounts.forEach((productId, count) {
-      final product = FDbox!.values.firstWhereOrNull(
-              (element) => element.productId == productId);
+      final product = FDbox!.values
+          .firstWhereOrNull((element) => element.productId == productId);
       if (product != null) {
         totalCalories += product.calories * count;
       }
@@ -153,7 +155,8 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
-                Navigator.pushNamedAndRemoveUntil(context, '/fs_home', (route) => false); // Redirect to home
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/fs_home', (route) => false); // Redirect to home
               },
               child: Text('OK'),
             ),
@@ -164,9 +167,9 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
       final itemsWithCount = itemCounts.entries
           .where((entry) => entry.value > 0)
           .map((entry) => {
-        'id': entry.key,
-        'count': entry.value,
-      })
+                'id': entry.key,
+                'count': entry.value,
+              })
           .toList();
 
       Navigator.pushNamed(
@@ -190,10 +193,26 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Cart Items',
-              style: TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+            FutureBuilder(
+              future: Translate.translateText("Cart Items"),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return Text(snapshot.data!,
+                      style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          overflow: TextOverflow.ellipsis));
+                } else {
+                  return Text(
+                    'Cart Items',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                    overflow: TextOverflow.ellipsis,
+                  );
+                }
+              },
             ),
             IconButton(
               icon: Icon(Icons.search, color: Colors.white),
@@ -211,67 +230,112 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
               child: _cartBox == null || FDbox == null
                   ? Center(child: CircularProgressIndicator())
                   : ValueListenableBuilder(
-                valueListenable: _cartBox!.listenable(),
-                builder: (context, Box<Cart_Db> items, _) {
-                  if (items.isEmpty && !_isSubscriptionActive) {
-                    return Center(child: Text('No items in the cart.'));
-                  } else {
-                    return ListView.builder(
-                      itemCount: items.length + (_isSubscriptionActive ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index < items.length) {
-                          var item = items.getAt(index);
-                          if (item == null) {
-                            return Center(child: Text('Item not found.'));
-                          }
-
-                          var productId = item.ItemId;
-                          var productDetails = FDbox!.values.firstWhereOrNull(
-                                (element) => element.productId == productId,
-                          );
-
-                          if (productDetails == null) {
-                            return Center(child: Text('Product not found.'));
-                          }
-
-                          itemCounts[productId] =
-                              itemCounts[productId] ?? item.ItemCount.toInt();
-
-                          return GestureDetector(
-                            onTap: () {},
-                            child: CartItemCard(
-                              productDetails: productDetails,
-                              itemCount: itemCounts[productId]!,
-                              onIncrement: () => _incrementCount(productId),
-                              onDecrement: () => _decrementCount(productId),
-                              onDelete: () => _deleteItem(productId),
-                            ),
-                          );
-                        } else if (_isSubscriptionActive) {
-                          return SubscriptionPackCard(
-                            subscriptionPack: subscriptionPack!,
-                          );
+                      valueListenable: _cartBox!.listenable(),
+                      builder: (context, Box<Cart_Db> items, _) {
+                        if (items.isEmpty && !_isSubscriptionActive) {
+                          return Center(
+                              child: FutureBuilder<String>(
+                            future: Translate.translateText("No items found"),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return CircularProgressIndicator();
+                              } else if (snapshot.hasData) {
+                                return Text(snapshot.data!);
+                              } else {
+                                return Text('No items Found');
+                              }
+                            },
+                          ));
                         } else {
-                          return Container();
+                          return ListView.builder(
+                            itemCount:
+                                items.length + (_isSubscriptionActive ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index < items.length) {
+                                var item = items.getAt(index);
+                                if (item == null) {
+                                  return Center(child: Text('Item not found.'));
+                                }
+
+                                var productId = item.ItemId;
+                                var productDetails =
+                                    FDbox!.values.firstWhereOrNull(
+                                  (element) => element.productId == productId,
+                                );
+
+                                if (productDetails == null) {
+                                  return Center(
+                                      child: FutureBuilder<String>(
+                                    future: Translate.translateText(
+                                        "no items found"),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return CircularProgressIndicator();
+                                      } else if (snapshot.hasData) {
+                                        return Text(snapshot.data!);
+                                      } else {
+                                        return Text('No items Found');
+                                      }
+                                    },
+                                  ));
+                                }
+
+                                itemCounts[productId] = itemCounts[productId] ??
+                                    item.ItemCount.toInt();
+
+                                return GestureDetector(
+                                  onTap: () {},
+                                  child: CartItemCard(
+                                    productDetails: productDetails,
+                                    itemCount: itemCounts[productId]!,
+                                    onIncrement: () =>
+                                        _incrementCount(productId),
+                                    onDecrement: () =>
+                                        _decrementCount(productId),
+                                    onDelete: () => _deleteItem(productId),
+                                  ),
+                                );
+                              } else if (_isSubscriptionActive) {
+                                return SubscriptionPackCard(
+                                  subscriptionPack: subscriptionPack!,
+                                );
+                              } else {
+                                return Container();
+                              }
+                            },
+                          );
                         }
                       },
-                    );
-                  }
-                },
-              ),
+                    ),
             ),
             if (!_isSubscriptionActive)
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  'Total Calories: $totalCalories cal',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                child: FutureBuilder<String>(
+                  future: Translate.translateText(
+                      'Total Calories: $totalCalories cal'),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return Text(
+                        snapshot.data!,
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      );
+                    } else {
+                      return Text(
+                        'Total Calories: $totalCalories cal',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      );
+                    }
+                  },
                 ),
               ),
           ],
         ),
       ),
-
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToCheckout,
         child: Icon(Icons.check),

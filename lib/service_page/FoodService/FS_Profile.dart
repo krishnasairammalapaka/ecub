@@ -1,4 +1,5 @@
 import 'package:ecub_s1_v2/models/CheckoutHistory_DB.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -27,7 +28,8 @@ class _FS_ProfileState extends State<FS_Profile> {
   Future<void> _fetchUserProfile() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null && user.email != null) {
-      DocumentSnapshot<Map<String, dynamic>> userDoc = await FirebaseFirestore.instance
+      DocumentSnapshot<Map<String, dynamic>> userDoc = await FirebaseFirestore
+          .instance
           .collection('users')
           .doc(user.email)
           .get();
@@ -39,22 +41,24 @@ class _FS_ProfileState extends State<FS_Profile> {
         });
 
         if (hasActiveSubscription) {
-          DocumentSnapshot<Map<String, dynamic>> packDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.email)
-              .collection('fs_service')
-              .doc('packs')
-              .get();
+          DocumentSnapshot<Map<String, dynamic>> packDoc =
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.email)
+                  .collection('fs_service')
+                  .doc('packs')
+                  .get();
 
           if (packDoc.exists) {
             setState(() {
               packID = packDoc.data()!['packID'];
             });
 
-            DocumentSnapshot<Map<String, dynamic>> packDetails = await FirebaseFirestore.instance
-                .collection('fs_packs')
-                .doc(packID)
-                .get();
+            DocumentSnapshot<Map<String, dynamic>> packDetails =
+                await FirebaseFirestore.instance
+                    .collection('fs_packs')
+                    .doc(packID)
+                    .get();
 
             if (packDetails.exists) {
               setState(() {
@@ -78,21 +82,21 @@ class _FS_ProfileState extends State<FS_Profile> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            HeaderSection(userProfile: userProfile),
-            Divider(),
-            if (hasActiveSubscription)
-              ActiveSubscriptionSection(
-                subscriptionName: activeSubscriptionName,
-                packID: packID,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  HeaderSection(userProfile: userProfile),
+                  Divider(),
+                  if (hasActiveSubscription)
+                    ActiveSubscriptionSection(
+                      subscriptionName: activeSubscriptionName,
+                      packID: packID,
+                    ),
+                  Divider(),
+                  PastOrdersSection(),
+                ],
               ),
-            Divider(),
-            PastOrdersSection(),
-          ],
-        ),
-      ),
+            ),
     );
   }
 }
@@ -113,21 +117,52 @@ class HeaderSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                userProfile['firstname'] ?? 'N/A',
-                style: TextStyle(
-                  fontSize: 24,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              FutureBuilder(
+                future: Translate.translateText(userProfile['firstname']),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  } else if (snapshot.hasData) {
+                    return Text(snapshot.data!,
+                        style: TextStyle(
+                          fontSize: 24,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ));
+                  } else {
+                    return Text('N/A',
+                        style: TextStyle(
+                          fontSize: 24,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ));
+                  }
+                },
               ),
               TextButton(
                 onPressed: () {},
-                child: Text(
-                  'EDIT',
-                  style: TextStyle(
-                    color: Colors.white,
-                  ),
+                child: FutureBuilder<String>(
+                  future: Translate.translateText("Edit"),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    } else if (snapshot.hasData) {
+                      return Text(
+                        snapshot.data!,
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      );
+                    } else {
+                      // Return a default Text widget if there's no data
+                      return Text(
+                        'EDIT',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      );
+                    }
+                  },
                 ),
               ),
             ],
@@ -149,7 +184,8 @@ class ActiveSubscriptionSection extends StatelessWidget {
   final String subscriptionName;
   final String packID;
 
-  ActiveSubscriptionSection({required this.subscriptionName, required this.packID});
+  ActiveSubscriptionSection(
+      {required this.subscriptionName, required this.packID});
 
   @override
   Widget build(BuildContext context) {
@@ -207,24 +243,38 @@ class SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: Theme.of(context).primaryColor,
-      ),
+    return FutureBuilder<String>(
+      future: Translate.translateText(title),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator();
+        } else if (snapshot.hasData) {
+          return Text(snapshot.data!,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
+              ));
+        } else {
+          return Text(title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
+              ));
+        }
+      },
     );
   }
 }
 
 class OrdersListView extends StatelessWidget {
-  Future<List<DocumentSnapshot<Map<String, dynamic>>>> _getCheckoutHistory() async {
+  Future<List<DocumentSnapshot<Map<String, dynamic>>>>
+      _getCheckoutHistory() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('orders')
-          .get();
+      final querySnapshot =
+          await FirebaseFirestore.instance.collection('orders').get();
       return querySnapshot.docs;
     } else {
       return [];
@@ -269,8 +319,6 @@ class OrdersListView extends StatelessWidget {
         }
       },
     );
-
-
   }
 }
 
@@ -297,22 +345,50 @@ class OrderHistoryItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            restaurant,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+          FutureBuilder<String>(
+            future: Translate.translateText(restaurant),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return CircularProgressIndicator();
+              } else if (snapshot.hasData) {
+                return Text(
+                  snapshot.data!,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              } else {
+                return Text(
+                  restaurant,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              }
+            },
           ),
           Text('₹$amount'),
-          Text(formattedDate),  // Display formatted date
+          Text(formattedDate), // Display formatted date
           SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               ElevatedButton(
                 onPressed: () {},
-                child: Text('REORDER'),
+                child: FutureBuilder<String>(
+                  future: Translate.translateText("Reorder"),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    } else if (snapshot.hasData) {
+                      return Text(snapshot.data!);
+                    } else {
+                      return Text('REORDER');
+                    }
+                  },
+                ),
               ),
               // ElevatedButton(
               //   onPressed: () {},

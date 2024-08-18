@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:flutter/material.dart';
 
 class FS_RestaurantScreen extends StatefulWidget {
@@ -46,23 +47,26 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
   }
 
   void _fetchFoodItems() async {
-    final foodItemsSnapshot = await _firestore.collection('fs_food_items1').where('productOwnership', isEqualTo: hotelUsername).get();
+    final foodItemsSnapshot = await _firestore
+        .collection('fs_food_items1')
+        .where('productOwnership', isEqualTo: hotelUsername)
+        .get();
 
     if (foodItemsSnapshot.docs.isNotEmpty) {
       setState(() {
-        foodItems = foodItemsSnapshot.docs.map((doc) => {
-          'name': doc['productTitle'],
-          'restaurant': doc['productOwnership'],
-          'price': doc['productPrice'],
-          'image': doc['productImg'],
-          'id': doc['productId'],
-          'desc': doc['productDesc']
-        }).toList();
+        foodItems = foodItemsSnapshot.docs
+            .map((doc) => {
+                  'name': doc['productTitle'],
+                  'restaurant': doc['productOwnership'],
+                  'price': doc['productPrice'],
+                  'image': doc['productImg'],
+                  'id': doc['productId'],
+                  'desc': doc['productDesc']
+                })
+            .toList();
       });
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +78,16 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
             Navigator.pop(context);
           },
         ),
-        title: Text('Restaurant View'),
+        title: FutureBuilder<String>(
+          future: Translate.translateText("Restaurant View"),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Text(snapshot.data!);
+            } else {
+              return Text('Restaurant View');
+            }
+          },
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.favorite_border, color: Color(0xFF0D5EF9)),
@@ -103,12 +116,23 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
                 ),
               ),
               SizedBox(height: 16),
-              Text(
-                hotelName,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+              FutureBuilder(
+                future: Translate.translateText(hotelName),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Text(snapshot.data!,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ));
+                  } else {
+                    return Text(hotelName,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ));
+                  }
+                },
               ),
               SizedBox(height: 8),
               Text(
@@ -118,11 +142,25 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
                 ),
               ),
               SizedBox(height: 8),
-              Text(
-                hotelAddress,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                ),
+              FutureBuilder(
+                future: Translate.translateText(hotelAddress),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Text(
+                      snapshot.data!,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                      ),
+                    );
+                  } else {
+                    return Text(
+                      hotelAddress,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                      ),
+                    );
+                  }
+                },
               ),
               SizedBox(height: 16),
               Row(
@@ -133,11 +171,25 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
                   SizedBox(width: 16),
                   Icon(Icons.delivery_dining, color: Color(0xFF0D5EF9)),
                   SizedBox(width: 4),
-                  Text('Free'),
+                  FutureBuilder<String>(
+                    future: Translate.translateText("Free"),
+                    builder: (context, snapshot) {
+                      return snapshot.hasData
+                          ? Text(snapshot.data!)
+                          : Text("Free");
+                    },
+                  ),
                   SizedBox(width: 16),
                   Icon(Icons.access_time, color: Color(0xFF0D5EF9)),
                   SizedBox(width: 4),
-                  Text('20 min'),
+                  FutureBuilder<String>(
+                    future: Translate.translateText("20 minutes"),
+                    builder: (context, snapshot) {
+                      return snapshot.hasData
+                          ? Text(snapshot.data!)
+                          : Text("20 min");
+                    },
+                  ),
                 ],
               ),
               SizedBox(height: 16),
@@ -147,14 +199,16 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
                 mainAxisSpacing: 16,
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                children: foodItems.map((item) => MenuItem(
-                  name: item['name'],
-                  restaurant: item['restaurant'],
-                  price: item['price'],
-                  image: item['image'],
-                  id: item['id'],
-                  desc: item['desc'],
-                )).toList(),
+                children: foodItems
+                    .map((item) => MenuItem(
+                          name: item['name'],
+                          restaurant: item['restaurant'],
+                          price: item['price'],
+                          image: item['image'],
+                          id: item['id'],
+                          desc: item['desc'],
+                        ))
+                    .toList(),
               ),
             ],
           ),
@@ -197,78 +251,96 @@ class MenuItem extends StatelessWidget {
   final String desc;
   final String restaurant;
 
-  MenuItem({required this.name, required this.restaurant, required this.price, required this.image, required this.id, required this.desc});
-
-
-
+  MenuItem(
+      {required this.name,
+      required this.restaurant,
+      required this.price,
+      required this.image,
+      required this.id,
+      required this.desc});
 
   @override
   Widget build(BuildContext context) {
     final assetImage = image;
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, '/fs_product',
-            arguments: {
-              'id': id,
-              'title': name,
-              'price': price.toInt(),
-              'image': assetImage,
-              'description': desc,
-              'shop': restaurant,
-            });
-      },
-      child: Container(
-        padding: EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.5),
-              spreadRadius: 2,
-              blurRadius: 5,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 80,
+    return FutureBuilder<List<String?>>(
+      future: Future.wait([
+        Translate.translateText(name),
+        Translate.translateText(desc),
+        Translate.translateText(restaurant),
+      ]),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error loading translations'));
+        } else {
+          return GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, '/fs_product', arguments: {
+                'id': id,
+                'title': snapshot.data![0] ?? name,
+                'price': price.toInt(),
+                'image': assetImage,
+                'description': snapshot.data![1] ?? desc,
+                'shop': snapshot.data![2] ?? restaurant,
+              });
+            },
+            child: Container(
+              padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.grey[400],
-                borderRadius: BorderRadius.circular(8),
-                image: DecorationImage(
-                  image: NetworkImage(assetImage),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            SizedBox(height: 12),
-            Text(
-              name,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 10,),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('₹$price',
-                  style: TextStyle(
-                      color: Color(0xFF0D5EF9),
-                      fontSize: 15
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.5),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: Offset(0, 3),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(8),
+                      image: DecorationImage(
+                        image: AssetImage(assetImage),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    snapshot.data![0] ?? name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      overflow: TextOverflow.ellipsis,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '₹$price',
+                        style: TextStyle(
+                          color: Color(0xFF0D5EF9),
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
+          );
+        }
+      },
     );
   }
 }

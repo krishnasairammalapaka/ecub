@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:ecub_s1_v2/translation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:ecub_s1_v2/models/Favourites_DB.dart';
@@ -50,7 +51,6 @@ class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -59,49 +59,142 @@ class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> with RouteAware {
               child: _favouritesBox == null || FDbox == null
                   ? Center(child: CircularProgressIndicator())
                   : ValueListenableBuilder(
-                valueListenable: _favouritesBox!.listenable(),
-                builder: (context, Box<Favourites_DB> items, _) {
-                  if (items.isEmpty) {
-                    return Center(child: Text('No favorite items.'));
-                  } else {
-                    return ListView.builder(
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        var item = items.getAt(index);
-                        if (item == null) {
-                          return Center(child: Text('Item not found.'));
+                      valueListenable: _favouritesBox!.listenable(),
+                      builder: (context, Box<Favourites_DB> items, _) {
+                        if (items.isEmpty) {
+                          return Center(
+                              child: FutureBuilder<String>(
+                            future:
+                                Translate.translateText('No favorite items.'),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return CircularProgressIndicator();
+                              } else {
+                                return snapshot.hasData
+                                    ? Text(snapshot.data!)
+                                    : Text('No favorite items.');
+                              }
+                            },
+                          ));
+                        } else {
+                          return ListView.builder(
+                            itemCount: items.length,
+                            itemBuilder: (context, index) {
+                              var item = items.getAt(index);
+                              if (item == null) {
+                                return Center(
+                                    child: FutureBuilder<String>(
+                                  future: Translate.translateText(
+                                      'No Items Found.'),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return CircularProgressIndicator();
+                                    } else {
+                                      return snapshot.hasData
+                                          ? Text(snapshot.data!)
+                                          : Text('No Items Found.');
+                                    }
+                                  },
+                                ));
+                              }
+
+                              var productId = item.ItemId;
+                              var productDetails = FDbox!.values
+                                  .firstWhereOrNull((element) =>
+                                      element.productId == productId);
+
+                              if (productDetails == null) {
+                                return Center(
+                                    child: FutureBuilder<String>(
+                                  future: Translate.translateText(
+                                      'Products Not found.'),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return CircularProgressIndicator();
+                                    } else {
+                                      return snapshot.hasData
+                                          ? Text(snapshot.data!)
+                                          : Text('products Not Found.');
+                                    }
+                                  },
+                                ));
+                              }
+
+                              return GestureDetector(
+                                onTap: () {},
+                                child: FutureBuilder<List<String?>>(
+                                  future: Future.wait([
+                                    Translate.translateText(
+                                        productDetails.productTitle),
+                                    Translate.translateText(
+                                        productDetails.productOwnership),
+                                    Translate.translateText(productDetails
+                                        .productRating
+                                        .toString()), // Assuming rating is numeric
+                                    Translate.translateText(productDetails
+                                        .productPrepTime), // If this needs translation
+                                  ]),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return Transform.scale(
+                                        scale:
+                                            0.5, // Adjust the scale factor as needed
+                                        child: CircularProgressIndicator(),
+                                      ); // Show loading indicator while translating
+                                    } else if (snapshot.hasData &&
+                                        snapshot.data!.every(
+                                            (element) => element != null)) {
+                                      return RestaurantCard(
+                                        name: snapshot.data![
+                                            0]!, // Translated product title
+                                        location: snapshot.data![
+                                            1]!, // Translated product ownership
+                                        rating: double.tryParse(
+                                                snapshot.data![2]!) ??
+                                            productDetails
+                                                .productRating, // Translated rating
+                                        deliveryTime: snapshot
+                                            .data![3]!, // Translated prep time
+                                        imageUrl: productDetails.productImg,
+                                        isHomeMade:
+                                            productDetails.productType ==
+                                                'home-made',
+                                        onDelete: () =>
+                                            _deleteFavoriteItem(productId),
+                                      );
+                                    } else {
+                                      // Fallback to original details if translation fails
+                                      return RestaurantCard(
+                                        name: productDetails.productTitle,
+                                        location:
+                                            productDetails.productOwnership,
+                                        rating: productDetails.productRating,
+                                        deliveryTime:
+                                            productDetails.productPrepTime,
+                                        imageUrl: productDetails.productImg,
+                                        isHomeMade:
+                                            productDetails.productType ==
+                                                'home-made',
+                                        onDelete: () =>
+                                            _deleteFavoriteItem(productId),
+                                      );
+                                    }
+                                  },
+                                ),
+                              );
+                            },
+                          );
                         }
-
-                        var productId = item.ItemId;
-                        var productDetails = FDbox!.values.firstWhereOrNull(
-                                (element) => element.productId == productId);
-
-                        if (productDetails == null) {
-                          return Center(child: Text('Product not found.'));
-                        }
-
-                        return GestureDetector(
-                          onTap: () {},
-                          child: RestaurantCard(
-                            name: productDetails.productTitle,
-                            location: productDetails.productOwnership,
-                            rating: productDetails.productRating,
-                            deliveryTime: productDetails.productPrepTime,
-                            imageUrl: productDetails.productImg,
-                            isHomeMade: productDetails.productType == 'home-made',
-                            onDelete: () => _deleteFavoriteItem(productId),
-                          ),
-                        );
                       },
-                    );
-                  }
-                },
-              ),
+                    ),
             ),
           ],
         ),
       ),
-
     );
   }
 }

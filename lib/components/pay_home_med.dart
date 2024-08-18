@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class PayHomeMed extends StatefulWidget {
+  final double price;
+
+  const PayHomeMed({required this.price, super.key});
   @override
   _PayHomeMedState createState() => _PayHomeMedState();
 }
@@ -71,8 +74,9 @@ class _PayHomeMedState extends State<PayHomeMed> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/home', (Route<dynamic> route) => false);
+                Navigator.pushNamed(context, '/me');
               },
               child: Text('OK'),
             ),
@@ -165,7 +169,7 @@ class _PayHomeMedState extends State<PayHomeMed> {
   void openCheckout() {
     var options = {
       'key': 'rzp_test_ILKXehI3hPXJdo',
-      'amount': 50000, // Amount in paise
+      'amount': widget.price*100, // Amount in paise
       'name': 'ECUB',
       'description': '',
       'external': {
