@@ -237,37 +237,25 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
     });
   }
 
-  void _loadComments() async {
-    // Fetch comments from Firestore.
-    User? user = FirebaseAuth.instance.currentUser;
+  Future<void> _loadComments() async {
+    final foodId = "";
+    final user = FirebaseAuth.instance.currentUser;
+    final userMail = user?.email;
 
-    if (user != null) {
-      DocumentSnapshot snapshot = (await FirebaseFirestore.instance
-          .collection('fs_comments')
-          .doc(productId)
-          .collection(user.email!)
-          .get()) as DocumentSnapshot<Object?>;
+    final commentsRef = FirebaseFirestore.instance
+        .collection('fs_comments')
+        .doc(foodId)
+        .collection(userMail!)
+        .doc('comments');
 
-      if (snapshot.exists) {
-        final data = snapshot.data() as Map<String, dynamic>;
+    final commentsSnapshot = await commentsRef.get();
 
-        final commentsList = data['comments']?.map<Comment>((commentData) {
-          return Comment(
-            profilePhotoUrl: commentData['profilePhotoUrl'],
-            userName: commentData['userName'],
-            commentText: commentData['commentText'],
-            rating: commentData['rating'],
-            timestamp: (commentData['timestamp'] as Timestamp).toDate(),
-          );
-        }).toList() ?? [];
-
-        setState(() {
-          comments = commentsList;
-          _sortComments();
-        });
-      }
+    if (commentsSnapshot.exists) {
+      final commentsList = commentsSnapshot.data()?['comments'] as List<dynamic>;
+      setState(() {
+        comments = commentsList.map((comment) => Comment.fromMap(comment)).toList();
+      });
     }
-
   }
 
   void _loadRatingStatistics() async {
@@ -661,197 +649,43 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                   ),
 
                   SizedBox(height: 20),
-                  Row(
-                    children: [
-                      FutureBuilder<String>(
-                        future: Translate.translateText("Sort by: "),
-                        builder: (context, snapshot) {
-                          return snapshot.hasData
-                              ? Text(snapshot.data!)
-                              : Text("Sort by: ");
-                        },
-                      ),
-                      DropdownButton<String>(
-                        value: sortOrder,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            sortOrder = newValue!;
-                            _sortComments();
-                          });
-                        },
-                        items: <String>['newest', 'oldest']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: FutureBuilder<String>(
-                              future: Translate.translateText(value),
-                              builder: (context, snapshot) {
-                                return snapshot.hasData
-                                    ? Text(snapshot.data!)
-                                    : Text(value);
-                              },
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
+                  // Row(
+                  //   children: [
+                  //     FutureBuilder<String>(
+                  //       future: Translate.translateText("Sort by: "),
+                  //       builder: (context, snapshot) {
+                  //         return snapshot.hasData
+                  //             ? Text(snapshot.data!)
+                  //             : Text("Sort by: ");
+                  //       },
+                  //     ),
+                  //     DropdownButton<String>(
+                  //       value: sortOrder,
+                  //       onChanged: (String? newValue) {
+                  //         setState(() {
+                  //           sortOrder = newValue!;
+                  //           _sortComments();
+                  //         });
+                  //       },
+                  //       items: <String>['newest', 'oldest']
+                  //           .map<DropdownMenuItem<String>>((String value) {
+                  //         return DropdownMenuItem<String>(
+                  //           value: value,
+                  //           child: FutureBuilder<String>(
+                  //             future: Translate.translateText(value),
+                  //             builder: (context, snapshot) {
+                  //               return snapshot.hasData
+                  //                   ? Text(snapshot.data!)
+                  //                   : Text(value);
+                  //             },
+                  //           ),
+                  //         );
+                  //       }).toList(),
+                  //     ),
+                  //   ],
+                  // ),
 
-                  FutureBuilder(
-                    future: Translate.translateText("Comments"),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        return Text(snapshot.data!,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ));
-                      } else {
-                        return Text('Comments',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ));
-                      }
-                    },
-                  ),
 
-                  Row(
-                    children: [
-                      Column(
-                        children: [
-                          Text(
-                            averageRating.toStringAsFixed(1),
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Row(
-                            children: List.generate(5, (index) {
-                              return Icon(
-                                index < averageRating
-                                    ? Icons.star
-                                    : Icons.star_border,
-                                color: Colors.yellow,
-                              );
-                            }),
-                          ),
-                        ],
-                      ),
-                      SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          FutureBuilder<String>(
-                            future: Translate.translateText(
-                                '$totalRatings Ratings and $totalReviews Reviews'),
-                            builder: (context, snapshot) {
-                              return snapshot.hasData
-                                  ? Text(snapshot.data!,
-                                      style: TextStyle(
-                                          overflow: TextOverflow.ellipsis))
-                                  : Text(
-                                      "$totalRatings Ratings and $totalReviews Reviews",
-                                      style: TextStyle(
-                                          overflow: TextOverflow.ellipsis));
-                            },
-                          ),
-                          SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Text('67%'),
-                              SizedBox(width: 4),
-                              Container(
-                                width: 150,
-                                child: LinearProgressIndicator(
-                                  value: 0.67,
-                                  backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.blue),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text('20%'),
-                              SizedBox(width: 4),
-                              Container(
-                                width: 150,
-                                child: LinearProgressIndicator(
-                                  value: 0.20,
-                                  backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.blue),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text('7%'),
-                              SizedBox(width: 4),
-                              Container(
-                                width: 150,
-                                child: LinearProgressIndicator(
-                                  value: 0.07,
-                                  backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.blue),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text('2%'),
-                              SizedBox(width: 4),
-                              Container(
-                                width: 150,
-                                child: LinearProgressIndicator(
-                                  value: 0.02,
-                                  backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.blue),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: comments.length,
-                    itemBuilder: (context, index) {
-                      final comment = comments[index];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage:
-                              NetworkImage(comment.profilePhotoUrl),
-                        ),
-                        title: Text(comment.userName),
-                        subtitle: Text(comment.commentText),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(5, (starIndex) {
-                            return Icon(
-                              starIndex < comment.rating
-                                  ? Icons.star
-                                  : Icons.star_border,
-                              color: Colors.amber,
-                            );
-                          }),
-                        ),
-                      );
-                    },
-                  ),
                   // Rest of your UI...
                 ],
               ),
@@ -937,6 +771,134 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   }
 }
 
+
+class CommentsAndRatingsWidget extends StatelessWidget {
+  final double averageRating;
+  final int totalRatings;
+  final int totalReviews;
+  final List<Comment> comments;
+
+  CommentsAndRatingsWidget({
+    required this.averageRating,
+    required this.totalRatings,
+    required this.totalReviews,
+    required this.comments,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FutureBuilder(
+          future: Translate.translateText("Comments"),
+          builder: (context, snapshot) {
+            return Text(
+              snapshot.hasData ? snapshot.data! : 'Comments',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            );
+          },
+        ),
+        SizedBox(height: 20),
+        Row(
+          children: [
+            Column(
+              children: [
+                Text(
+                  averageRating.toStringAsFixed(1),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Row(
+                  children: List.generate(5, (index) {
+                    return Icon(
+                      index < averageRating ? Icons.star : Icons.star_border,
+                      color: Colors.yellow,
+                    );
+                  }),
+                ),
+              ],
+            ),
+            SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FutureBuilder<String>(
+                  future: Translate.translateText(
+                      '$totalRatings Ratings and $totalReviews Reviews'),
+                  builder: (context, snapshot) {
+                    return Text(
+                      snapshot.hasData
+                          ? snapshot.data!
+                          : "$totalRatings Ratings and $totalReviews Reviews",
+                      style: TextStyle(overflow: TextOverflow.ellipsis),
+                    );
+                  },
+                ),
+                SizedBox(height: 8),
+                _buildProgressBar('67%', 0.67),
+                _buildProgressBar('20%', 0.20),
+                _buildProgressBar('7%', 0.07),
+                _buildProgressBar('2%', 0.02),
+              ],
+            ),
+          ],
+        ),
+        SizedBox(height: 20),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: comments.length,
+          itemBuilder: (context, index) {
+            final comment = comments[index];
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundImage: NetworkImage(comment.profilePhotoUrl),
+              ),
+              title: Text(comment.userName),
+              subtitle: Text(comment.commentText),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(5, (starIndex) {
+                  return Icon(
+                    starIndex < comment.rating
+                        ? Icons.star
+                        : Icons.star_border,
+                    color: Colors.amber,
+                  );
+                }),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgressBar(String label, double value) {
+    return Row(
+      children: [
+        Text(label),
+        SizedBox(width: 4),
+        Container(
+          width: 150,
+          child: LinearProgressIndicator(
+            value: value,
+            backgroundColor: Colors.grey[300],
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class Comment {
   final String profilePhotoUrl;
   final String userName;
@@ -951,4 +913,14 @@ class Comment {
     required this.rating,
     required this.timestamp,
   });
+
+  factory Comment.fromMap(Map<String, dynamic> map) {
+    return Comment(
+      profilePhotoUrl: map['profilePhotoUrl'],
+      userName: map['userName'],
+      commentText: map['commentText'],
+      rating: map['rating'],
+      timestamp: map['timestamp'].toDate(),
+    );
+  }
 }

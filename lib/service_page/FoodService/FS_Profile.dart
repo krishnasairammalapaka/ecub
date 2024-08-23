@@ -318,7 +318,7 @@ class OrdersListView extends StatelessWidget {
                 amount: order['itemPrice']?.toDouble() ?? 0,
                 status: status,
                 deliveryTime: deliveryTime,
-                foodId: order['itemId '] ?? '1',
+                foodId: order['itemId'] ?? '1',
               );
             },
           );
