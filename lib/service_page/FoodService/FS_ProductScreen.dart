@@ -626,161 +626,9 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                     ],
                   ),
 
-                  FutureBuilder(
-                    future: Translate.translateText("Comments"),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        return Text(snapshot.data!,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ));
-                      } else {
-                        return Text('Comments',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ));
-                      }
-                    },
-                  ),
+                  CommentsWidget(foodId: productId),
 
-                  Row(
-                    children: [
-                      Column(
-                        children: [
-                          Text(
-                            averageRating.toStringAsFixed(1),
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Row(
-                            children: List.generate(5, (index) {
-                              return Icon(
-                                index < averageRating
-                                    ? Icons.star
-                                    : Icons.star_border,
-                                color: Colors.yellow,
-                              );
-                            }),
-                          ),
-                        ],
-                      ),
-                      SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          FutureBuilder<String>(
-                            future: Translate.translateText(
-                                '$totalRatings Ratings and $totalReviews Reviews'),
-                            builder: (context, snapshot) {
-                              return snapshot.hasData
-                                  ? Text(snapshot.data!,
-                                  style: TextStyle(
-                                      overflow: TextOverflow.ellipsis))
-                                  : Text(
-                                  "$totalRatings Ratings and $totalReviews Reviews",
-                                  style: TextStyle(
-                                      overflow: TextOverflow.ellipsis));
-                            },
-                          ),
-                          SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Text('67%'),
-                              SizedBox(width: 4),
-                              Container(
-                                width: 150,
-                                child: LinearProgressIndicator(
-                                  value: 0.67,
-                                  backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.blue),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text('20%'),
-                              SizedBox(width: 4),
-                              Container(
-                                width: 150,
-                                child: LinearProgressIndicator(
-                                  value: 0.20,
-                                  backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.blue),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text('7%'),
-                              SizedBox(width: 4),
-                              Container(
-                                width: 150,
-                                child: LinearProgressIndicator(
-                                  value: 0.07,
-                                  backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.blue),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text('2%'),
-                              SizedBox(width: 4),
-                              Container(
-                                width: 150,
-                                child: LinearProgressIndicator(
-                                  value: 0.02,
-                                  backgroundColor: Colors.grey[300],
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.blue),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
 
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: comments.length,
-                    itemBuilder: (context, index) {
-                      final comment = comments[index];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage:
-                          NetworkImage(comment.profilePhotoUrl),
-                        ),
-                        title: Text(comment.userName),
-                        subtitle: Text(comment.commentText),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(5, (starIndex) {
-                            return Icon(
-                              starIndex < comment.rating
-                                  ? Icons.star
-                                  : Icons.star_border,
-                              color: Colors.amber,
-                            );
-                          }),
-                        ),
-                      );
-                    },
-                  ),
                   // Rest of your UI...
                 ],
               ),
@@ -880,4 +728,185 @@ class Comment {
     required this.rating,
     required this.timestamp,
   });
+
+  factory Comment.fromFirestore(DocumentSnapshot doc) {
+    Map data = doc.data() as Map<String, dynamic>;
+    return Comment(
+      profilePhotoUrl: data['profilePhotoUrl'] ?? '',
+      userName: data['userName'] ?? 'Anonymous',
+      commentText: data['commentText'] ?? '',
+      rating: data['rating'] ?? 0,
+      timestamp: (data['timestamp'] as Timestamp).toDate(),
+    );
+  }
+}
+
+
+class CommentsWidget extends StatelessWidget {
+  final String foodId;
+
+  const CommentsWidget({required this.foodId});
+
+  Future<Map<String, dynamic>> _fetchCommentsData() async {
+    final foodCommentsDoc = FirebaseFirestore.instance
+        .collection('fs_comments')
+        .doc(foodId);
+
+    List<Comment> commentsList = [];
+    int totalRatings = 0;
+    int totalReviews = 0;
+
+    // Get all user-specific sub-collections under the foodId document
+    final userDocuments = await foodCommentsDoc.collection('comments').get();
+
+    // Iterate through each document to retrieve comment data
+    for (var userDocSnapshot in userDocuments.docs) {
+      Comment comment = Comment.fromFirestore(userDocSnapshot);
+      commentsList.add(comment);
+      totalRatings += comment.rating;
+      totalReviews++;
+    }
+
+    double averageRating = totalReviews > 0
+        ? totalRatings / totalReviews
+        : 0;
+
+    return {
+      'averageRating': averageRating,
+      'totalRatings': totalRatings,
+      'totalReviews': totalReviews,
+      'comments': commentsList,
+    };
+  }
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _fetchCommentsData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator();
+        } else if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        } else if (!snapshot.hasData || snapshot.data!['comments'].isEmpty) {
+          return Text('No comments available.');
+        } else {
+          final data = snapshot.data!;
+          final averageRating = data['averageRating'];
+          final totalRatings = data['totalRatings'];
+          final totalReviews = data['totalReviews'];
+          final List<Comment> commentsList = data['comments'];
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FutureBuilder(
+                future: Translate.translateText("Comments"),
+                builder: (context, snapshot) {
+                  return Text(snapshot.hasData ? snapshot.data! : 'Comments',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ));
+                },
+              ),
+              Row(
+                children: [
+                  Column(
+                    children: [
+                      Text(
+                        averageRating.toStringAsFixed(1),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Row(
+                        children: List.generate(5, (index) {
+                          return Icon(
+                            index < averageRating
+                                ? Icons.star
+                                : Icons.star_border,
+                            color: Colors.yellow,
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                  SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FutureBuilder<String>(
+                        future: Translate.translateText(
+                            '$totalRatings Ratings and $totalReviews Reviews'),
+                        builder: (context, snapshot) {
+                          return Text(snapshot.hasData
+                              ? snapshot.data!
+                              : "$totalRatings Ratings and $totalReviews Reviews",
+                              style: TextStyle(
+                                  overflow: TextOverflow.ellipsis));
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: commentsList.length,
+                itemBuilder: (context, index) {
+                  final comment = commentsList[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: NetworkImage(comment.profilePhotoUrl),
+                    ),
+                    title: Text(comment.userName),
+                    subtitle: Text(comment.commentText),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(5, (starIndex) {
+                        return Icon(
+                          starIndex < comment.rating
+                              ? Icons.star
+                              : Icons.star_border,
+                          color: Colors.amber,
+                        );
+                      }),
+                    ),
+                  );
+                },
+              ),
+            ],
+          );
+        }
+      },
+    );
+  }
+}
+
+
+
+List<Widget> _buildRatingBars(Map<String, double> ratingDistribution) {
+  return ratingDistribution.entries.map((entry) {
+    return Row(
+      children: [
+        Text('${entry.key}%'),
+        SizedBox(width: 4),
+        Container(
+          width: 150,
+          child: LinearProgressIndicator(
+            value: entry.value,
+            backgroundColor: Colors.grey[300],
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+          ),
+        ),
+      ],
+    );
+  }).toList();
 }
