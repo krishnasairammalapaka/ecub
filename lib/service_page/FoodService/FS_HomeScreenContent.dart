@@ -176,11 +176,11 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                       });
                     },
                     child: FutureBuilder<String>(
-                      future: Translate.translateText("restaurant"),
+                      future: Translate.translateText("Restaurants"),
                       builder: (context, snapshot) {
                         return CategoryTile(
                           title:
-                              snapshot.hasData ? snapshot.data! : "restaurant",
+                              snapshot.hasData ? snapshot.data! : "Restaurants",
                           image: "assets/restuarnt_logo.png",
                         );
                       },
@@ -194,12 +194,12 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                       });
                     },
                     child: FutureBuilder<String>(
-                      future: Translate.translateText("subscription"),
+                      future: Translate.translateText("Subscription"),
                       builder: (context, snapshot) {
                         return CategoryTile(
                           title: snapshot.hasData
                               ? snapshot.data!
-                              : "subscription",
+                              : "Subscription",
                           image: "assets/subscription_logo.png",
                         );
                       },

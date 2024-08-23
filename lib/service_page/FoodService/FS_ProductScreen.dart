@@ -3,6 +3,7 @@ import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/models/Favourites_DB.dart';
 import 'package:ecub_s1_v2/translation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -237,27 +238,36 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   }
 
   void _loadComments() async {
-    // Fetch comments from Firestore
-    final QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .collection('fs_comments')
-        .where('foodId', isEqualTo: int.parse(productId))
-        .get();
+    // Fetch comments from Firestore.
+    User? user = FirebaseAuth.instance.currentUser;
 
-    final commentsList = snapshot.docs.map((doc) {
-      final data = doc.data() as Map<String, dynamic>;
-      return Comment(
-        profilePhotoUrl: data['profilePhotoUrl'],
-        userName: data['userName'],
-        commentText: data['commentText'],
-        rating: data['rating'],
-        timestamp: (data['timestamp'] as Timestamp).toDate(),
-      );
-    }).toList();
+    if (user != null) {
+      DocumentSnapshot snapshot = (await FirebaseFirestore.instance
+          .collection('fs_comments')
+          .doc(productId)
+          .collection(user.email!)
+          .get()) as DocumentSnapshot<Object?>;
 
-    setState(() {
-      comments = commentsList;
-      _sortComments();
-    });
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+
+        final commentsList = data['comments']?.map<Comment>((commentData) {
+          return Comment(
+            profilePhotoUrl: commentData['profilePhotoUrl'],
+            userName: commentData['userName'],
+            commentText: commentData['commentText'],
+            rating: commentData['rating'],
+            timestamp: (commentData['timestamp'] as Timestamp).toDate(),
+          );
+        }).toList() ?? [];
+
+        setState(() {
+          comments = commentsList;
+          _sortComments();
+        });
+      }
+    }
+
   }
 
   void _loadRatingStatistics() async {
