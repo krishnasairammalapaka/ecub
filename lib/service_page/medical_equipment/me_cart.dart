@@ -119,11 +119,13 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
       var name = doc['name'];
       var store = doc['storeName'];
       var quantity = doc['quantity'];
+      var price = doc['price'] * quantity;
       // Fix: Update each document as a separate entry in the summary map
       summary[doc.id] = {
         'name': name,
         'storeName': store,
         'quantity': quantity,
+        'price': price,
       };
     }
     return summary;
@@ -314,7 +316,7 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                                                   top: 8.0),
                                               child: FutureBuilder<String>(
                                                 future: Translate.translateText(
-                                                    ' Store: ${item['name']}'),
+                                                    ' Store: ${item['storeName']}'),
                                                 builder: (context, snapshot) {
                                                   return snapshot.hasData
                                                       ? Text(
@@ -538,8 +540,24 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                           .add({
                         'order_summary':
                             generateOrderSummary(snapshot.data?.docs ?? []),
+                        'totalPrice': totalPrice,
                       }).then((_) {
                         // Clear the cart after placing the order
+                        String currentTime = DateTime.now().toIso8601String();
+                        // Create a new document in the me_store_orders collection
+                        FirebaseFirestore.instance
+                          .collection('me_store_orders')
+                          .doc(snapshot.data?.docs[0]['storeName'])
+                          .collection('orders')
+                          .doc(currentTime)
+                          .set({
+                            'order_summary': generateOrderSummary(snapshot.data?.docs ?? []),
+                            'totalPrice': totalPrice,
+                            'user': user?.email,
+                            'time': currentTime,
+                            'status':'ordered',
+                          });
+                      }).then((_) {
                         FirebaseFirestore.instance
                             .collection('me_cart')
                             .doc(user?.email)

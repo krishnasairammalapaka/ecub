@@ -3,9 +3,14 @@ import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class MeOrders extends StatelessWidget {
+class MeOrders extends StatefulWidget {
   MeOrders({super.key});
 
+  @override
+  State<MeOrders> createState() => _MeOrdersState();
+}
+
+class _MeOrdersState extends State<MeOrders> {
   final User? user = FirebaseAuth.instance.currentUser;
 
   Stream<QuerySnapshot> fetchOrders() {
@@ -47,7 +52,8 @@ class MeOrders extends StatelessWidget {
                   items.add(Item(
                       name: data[keys[i]]['name'],
                       quantity: data[keys[i]]['quantity'],
-                      store: data[keys[i]]['storeName']));
+                      store: data[keys[i]]['storeName'],
+                      price: data[keys[i]]['price']));
                 }
                 return items;
               }).toList();
@@ -89,19 +95,38 @@ class MeOrders extends StatelessWidget {
                                         );
                                 },
                               ),
-                              trailing: FutureBuilder<String>(
-                                future: Translate.translateText(
-                                    'Quantity: ${item.quantity}'),
-                                builder: (context, snapshot) {
-                                  return snapshot.hasData
-                                      ? Text(
-                                          snapshot.data!,
-                                        )
-                                      : Text(
-                                          'Quantity: ${item.quantity}',
-                                        );
-                                },
+                              trailing: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  FutureBuilder<String>(
+                                    future: Translate.translateText(
+                                        'Quantity: ${item.quantity}'),
+                                    builder: (context, snapshot) {
+                                      return snapshot.hasData
+                                          ? Text(
+                                              snapshot.data!,
+                                            )
+                                          : Text(
+                                              'Quantity: ${item.quantity}',
+                                            );
+                                    },
+                                  ),
+                                  FutureBuilder<String>(
+                                    future: Translate.translateText(
+                                        'Price: ₹${item.price}'),
+                                    builder: (context, snapshot) {
+                                      return snapshot.hasData
+                                          ? Text(
+                                              snapshot.data!,
+                                            )
+                                          : Text(
+                                              'Price: ₹${item.price}',
+                                            );
+                                    },
+                                  )
+                                ],
                               ),
+
                               //add store name
                             );
                           }).toList(),
@@ -124,9 +149,11 @@ class Item {
   final String name;
   final int quantity;
   final String store;
+  final String price;
   Item({
     required this.name,
     required this.quantity,
     required this.store,
+    required this.price,
   });
 }

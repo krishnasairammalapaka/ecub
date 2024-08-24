@@ -1,12 +1,84 @@
-import 'package:ecub_s1_v2/translation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:ecub_s1_v2/models/Hotels_Db.dart';
+import 'package:ecub_s1_v2/translation.dart';
 
-class FS_CategoryScreen extends StatelessWidget {
+class FS_CategoryScreen extends StatefulWidget {
+  @override
+  _FS_CategoryScreenState createState() => _FS_CategoryScreenState();
+}
+
+class _FS_CategoryScreenState extends State<FS_CategoryScreen> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String hotelName = '';
+  String hotelMail = '';
+  String hotelAddress = '';
+  String hotelUsername = '';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchLastOrder();
+  }
+
+  void _showSuggestionPopUp(String timeElapsed) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Would you like to reorder?"),
+          content: Text(
+              "Your last order from this hotel was delivered $timeElapsed hours ago. Would you like to buy from them again?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Navigate to the order page or add item to cart
+              },
+              child: Text("Yes"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("No"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _fetchLastOrder() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final userMail = user?.email;
+
+    if (userMail != null) {
+      final orderQuerySnapshot = await _firestore
+          .collection('orders')
+          .where('userId', isEqualTo: userMail)
+          .orderBy('deliveryTime', descending: true)
+          .limit(1)
+          .get();
+
+      if (orderQuerySnapshot.docs.isNotEmpty) {
+        final lastOrder = orderQuerySnapshot.docs.first.data();
+        final lastOrderHotel = lastOrder['vendor'];
+        final lastOrderDeliveryTime = lastOrder['deliveryTime'];
+
+        // Compare hotel usernames
+        if (lastOrderHotel == hotelUsername) {
+          // final timeElapsed = DateTime.now().difference(lastOrderDeliveryTime).inHours.toString();
+          _showSuggestionPopUp(lastOrderDeliveryTime);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Retrieve the arguments passed to this screen
     final Map arguments = ModalRoute.of(context)!.settings.arguments as Map;
     final String type = arguments['type'];
 
@@ -14,9 +86,7 @@ class FS_CategoryScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Color(0xFF0D5EF9),
         elevation: 0,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        ),
+        title: Text('Categories'), // Added a title for better UI
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -25,18 +95,17 @@ class FS_CategoryScreen extends StatelessWidget {
           children: [
             SizedBox(height: 10),
             Expanded(
-              child: FutureBuilder(
+              child: FutureBuilder<List<Hotels_Db>>(
                 future: _getFilteredHotels(type),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData ||
-                      (snapshot.data as List).isEmpty) {
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                     return Center(child: Text('No hotels found.'));
                   } else {
-                    final hotels = snapshot.data as List<Hotels_Db>;
+                    final hotels = snapshot.data!;
                     return ListView.builder(
                       itemCount: hotels.length,
                       itemBuilder: (context, index) {
@@ -44,12 +113,9 @@ class FS_CategoryScreen extends StatelessWidget {
                         return RestaurantCard(
                           name: hotel.hotelName,
                           location: hotel.hotelAddress,
-                          rating:
-                              4.5, // Assuming rating is constant, replace with actual data if available
-                          deliveryTime: hotel
-                              .hotelPhoneNo, // Assuming delivery time is constant, replace with actual data if available
-                          imageUrl:
-                              'assets/hotel.png', // Replace with actual image URL if available
+                          rating: 4.5, // Example rating, replace with actual data
+                          deliveryTime: hotel.hotelPhoneNo, // Example data, replace if needed
+                          imageUrl: 'assets/hotel.png', // Replace with actual image URL
                           Username: hotel.hotelUsername,
                         );
                       },
@@ -99,7 +165,7 @@ class RestaurantCard extends StatelessWidget {
       },
       child: Card(
         child: ListTile(
-          leading: Image.asset('assets/hotel_prof.png', width: 50, height: 50),
+          leading: Image.asset(imageUrl, width: 50, height: 50),
           title: FutureBuilder<String>(
             future: Translate.translateText(name),
             builder: (context, snapshot) {
@@ -125,9 +191,7 @@ class RestaurantCard extends StatelessWidget {
                       child: CircularProgressIndicator(),
                     );
                   } else {
-                    return snapshot.hasData
-                        ? Text(snapshot.data!)
-                        : Text(location);
+                    return snapshot.hasData ? Text(snapshot.data!) : Text(location);
                   }
                 },
               ),

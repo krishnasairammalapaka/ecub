@@ -77,6 +77,91 @@ class _PayHomeMedState extends State<PayHomeMed> {
                 Navigator.pushNamedAndRemoveUntil(
                     context, '/home', (Route<dynamic> route) => false);
                 Navigator.pushNamed(context, '/me');
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    int rating = 0;
+                    return StatefulBuilder(
+                      builder: (context, setState) {
+                        return AlertDialog(
+                          title: Text('Feedback'),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.star,
+                                        color: rating >= 1
+                                            ? Colors.amber[200]
+                                            : Colors.grey),
+                                    onPressed: () {
+                                      setState(() {
+                                        rating = 1;
+                                      });
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.star,
+                                        color: rating >= 2
+                                            ? Colors.amber[200]
+                                            : Colors.grey),
+                                    onPressed: () {
+                                      setState(() {
+                                        rating = 2;
+                                      });
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.star,
+                                        color: rating >= 3
+                                            ? Colors.amber[200]
+                                            : Colors.grey),
+                                    onPressed: () {
+                                      setState(() {
+                                        rating = 3;
+                                      });
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.star,
+                                        color: rating >= 4
+                                            ? Colors.amber[200]
+                                            : Colors.grey),
+                                    onPressed: () {
+                                      setState(() {
+                                        rating = 4;
+                                      });
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.star,
+                                        color: rating >= 5
+                                            ? Colors.amber[200]
+                                            : Colors.grey),
+                                    onPressed: () {
+                                      setState(() {
+                                        rating = 5;
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  // TODO: Submit feedback with rating
+                                },
+                                child: Text('Submit'),
+                              )
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
               },
               child: Text('OK'),
             ),
@@ -169,7 +254,7 @@ class _PayHomeMedState extends State<PayHomeMed> {
   void openCheckout() {
     var options = {
       'key': 'rzp_test_ILKXehI3hPXJdo',
-      'amount': widget.price*100, // Amount in paise
+      'amount': widget.price * 100, // Amount in paise
       'name': 'ECUB',
       'description': '',
       'external': {
