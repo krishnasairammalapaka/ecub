@@ -1,14 +1,9 @@
-import 'package:ecub_s1_v2/models/CheckoutHistory_DB.dart';
 import 'package:ecub_s1_v2/translation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 
 
@@ -280,7 +275,7 @@ class OrdersListView extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       final querySnapshot = await FirebaseFirestore.instance
-          .collection('orders')
+          .collection("orders")
           .where('userId', isEqualTo: user.email)
           .get();
       return querySnapshot.docs;
@@ -325,6 +320,7 @@ class OrdersListView extends StatelessWidget {
         }
       },
     );
+
   }
 }
 
@@ -357,10 +353,12 @@ class OrderHistoryItem extends StatelessWidget {
         statusMessage = 'Food is being cooked';
         actionWidget = SizedBox.shrink();
         break;
+
       case 'in_transit':
         statusMessage = 'Food is on the way';
         actionWidget = Text('Estimated delivery time: $deliveryTime');
         break;
+
       case 'Completed':
         statusMessage = 'Food is waiting to deliver';
         actionWidget = TextButton(
@@ -371,6 +369,7 @@ class OrderHistoryItem extends StatelessWidget {
           child: Text('Reorder'),
         );
         break;
+
       case 'delivered':
         statusMessage = 'Order delivered';
         actionWidget = Column(
@@ -387,6 +386,7 @@ class OrderHistoryItem extends StatelessWidget {
           ],
         );
         break;
+
       default:
         statusMessage = 'Unknown status';
         actionWidget = SizedBox.shrink();
@@ -468,11 +468,10 @@ class OrderHistoryItem extends StatelessWidget {
   Future<DocumentSnapshot> _getExistingReview() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
+      print(orderId);
       return FirebaseFirestore.instance
           .collection('fs_comments')
-          .doc(foodId)
-          .collection(user.email!)
-          .doc('comments')
+          .doc(orderId)
           .get();
     } else {
       throw Exception('User not logged in');
@@ -530,18 +529,18 @@ class _ReviewDialogState extends State<ReviewDialog> {
     User? user = FirebaseAuth.instance.currentUser;
 
     if (user != null) {
+      final formattedTimestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       await FirebaseFirestore.instance
           .collection('fs_comments')
-          .doc(widget.foodId)
-          .collection(user.email!)
-          .doc('comments')
+          .doc(widget.orderId)
           .set({
+        'foodId': widget.foodId,
         'orderId': widget.orderId,
         'restaurant': widget.restaurant,
         'userId': user.email,
         'rating': _rating,
         'comments': _commentsController.text,
-        'timestamp': FieldValue.serverTimestamp(),
+        'timestamp': formattedTimestamp,
       });
 
       Navigator.pop(context);

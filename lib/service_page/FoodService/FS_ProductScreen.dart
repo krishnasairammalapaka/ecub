@@ -3,7 +3,6 @@ import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/models/Favourites_DB.dart';
 import 'package:ecub_s1_v2/translation.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -235,7 +234,66 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
     });
   }
 
-
+  // void _loadComments() async {
+  //   // Fetch comments from Firestore
+  //   final QuerySnapshot snapshot = await FirebaseFirestore.instance
+  //       .collection('fs_comments')
+  //       .where('foodId', isEqualTo: int.parse(productId))
+  //       .get();
+  //
+  //   final commentsList = snapshot.docs.map((doc) {
+  //     final data = doc.data() as Map<String, dynamic>;
+  //     return Comment(
+  //       profilePhotoUrl: data['profilePhotoUrl'],
+  //       userName: data['userName'],
+  //       commentText: data['commentText'],
+  //       rating: data['rating'],
+  //       timestamp: (data['timestamp'] as Timestamp).toDate(),
+  //     );
+  //   }).toList();
+  //
+  //   setState(() {
+  //     comments = commentsList;
+  //     _sortComments();
+  //   });
+  // }
+  //
+  // void _loadRatingStatistics() async {
+  //   // Fetch rating statistics from Firestore
+  //   final QuerySnapshot snapshot = await FirebaseFirestore.instance
+  //       .collection('fs_comments')
+  //       .where('foodId', isEqualTo: int.parse(productId))
+  //       .get();
+  //
+  //   if (snapshot.docs.isNotEmpty) {
+  //     int totalRating = 0;
+  //     int totalReviewsCount = snapshot.docs.length;
+  //     List<int> ratingDistribution = [0, 0, 0, 0, 0];
+  //
+  //     for (var doc in snapshot.docs) {
+  //       final data = doc.data() as Map<String, dynamic>;
+  //       int rating = data['rating'];
+  //       totalRating += rating;
+  //       ratingDistribution[rating - 1]++;
+  //     }
+  //
+  //     setState(() {
+  //       averageRating = totalRating / totalReviewsCount;
+  //       totalRatings = totalReviewsCount;
+  //       totalReviews = totalReviewsCount;
+  //     });
+  //   }
+  // }
+  //
+  // void _sortComments() {
+  //   setState(() {
+  //     if (sortOrder == 'newest') {
+  //       comments.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+  //     } else if (sortOrder == 'oldest') {
+  //       comments.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+  //     }
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -591,44 +649,201 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                   ),
 
                   SizedBox(height: 20),
-                  Row(
-                    children: [
-                      FutureBuilder<String>(
-                        future: Translate.translateText("Sort by: "),
-                        builder: (context, snapshot) {
-                          return snapshot.hasData
-                              ? Text(snapshot.data!)
-                              : Text("Sort by: ");
-                        },
-                      ),
-                      DropdownButton<String>(
-                        value: sortOrder,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            sortOrder = newValue!;
-                          });
-                        },
-                        items: <String>['newest', 'oldest']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: FutureBuilder<String>(
-                              future: Translate.translateText(value),
-                              builder: (context, snapshot) {
-                                return snapshot.hasData
-                                    ? Text(snapshot.data!)
-                                    : Text(value);
-                              },
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
+                  // Row(
+                  //   children: [
+                  //     FutureBuilder<String>(
+                  //       future: Translate.translateText("Sort by: "),
+                  //       builder: (context, snapshot) {
+                  //         return snapshot.hasData
+                  //             ? Text(snapshot.data!)
+                  //             : Text("Sort by: ");
+                  //       },
+                  //     ),
+                  //     DropdownButton<String>(
+                  //       value: sortOrder,
+                  //       onChanged: (String? newValue) {
+                  //         setState(() {
+                  //           sortOrder = newValue!;
+                  //           _sortComments();
+                  //         });
+                  //       },
+                  //       items: <String>['newest', 'oldest']
+                  //           .map<DropdownMenuItem<String>>((String value) {
+                  //         return DropdownMenuItem<String>(
+                  //           value: value,
+                  //           child: FutureBuilder<String>(
+                  //             future: Translate.translateText(value),
+                  //             builder: (context, snapshot) {
+                  //               return snapshot.hasData
+                  //                   ? Text(snapshot.data!)
+                  //                   : Text(value);
+                  //             },
+                  //           ),
+                  //         );
+                  //       }).toList(),
+                  //     ),
+                  //   ],
+                  // ),
+                  //
+                  // FutureBuilder(
+                  //   future: Translate.translateText("Comments"),
+                  //   builder: (context, snapshot) {
+                  //     if (snapshot.hasData) {
+                  //       return Text(snapshot.data!,
+                  //           style: TextStyle(
+                  //             fontSize: 20,
+                  //             fontWeight: FontWeight.bold,
+                  //           ));
+                  //     } else {
+                  //       return Text('Comments',
+                  //           style: TextStyle(
+                  //             fontSize: 20,
+                  //             fontWeight: FontWeight.bold,
+                  //           ));
+                  //     }
+                  //   },
+                  // ),
+                  //
+                  // Row(
+                  //   children: [
+                  //     Column(
+                  //       children: [
+                  //         Text(
+                  //           averageRating.toStringAsFixed(1),
+                  //           style: TextStyle(
+                  //             fontSize: 24,
+                  //             fontWeight: FontWeight.bold,
+                  //           ),
+                  //         ),
+                  //         SizedBox(height: 4),
+                  //         Row(
+                  //           children: List.generate(5, (index) {
+                  //             return Icon(
+                  //               index < averageRating
+                  //                   ? Icons.star
+                  //                   : Icons.star_border,
+                  //               color: Colors.yellow,
+                  //             );
+                  //           }),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //     SizedBox(width: 16),
+                  //     Column(
+                  //       crossAxisAlignment: CrossAxisAlignment.start,
+                  //       children: [
+                  //         FutureBuilder<String>(
+                  //           future: Translate.translateText(
+                  //               '$totalRatings Ratings and $totalReviews Reviews'),
+                  //           builder: (context, snapshot) {
+                  //             return snapshot.hasData
+                  //                 ? Text(snapshot.data!,
+                  //                 style: TextStyle(
+                  //                     overflow: TextOverflow.ellipsis))
+                  //                 : Text(
+                  //                 "$totalRatings Ratings and $totalReviews Reviews",
+                  //                 style: TextStyle(
+                  //                     overflow: TextOverflow.ellipsis));
+                  //           },
+                  //         ),
+                  //         SizedBox(height: 8),
+                  //         Row(
+                  //           children: [
+                  //             Text('67%'),
+                  //             SizedBox(width: 4),
+                  //             Container(
+                  //               width: 150,
+                  //               child: LinearProgressIndicator(
+                  //                 value: 0.67,
+                  //                 backgroundColor: Colors.grey[300],
+                  //                 valueColor: AlwaysStoppedAnimation<Color>(
+                  //                     Colors.blue),
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         Row(
+                  //           children: [
+                  //             Text('20%'),
+                  //             SizedBox(width: 4),
+                  //             Container(
+                  //               width: 150,
+                  //               child: LinearProgressIndicator(
+                  //                 value: 0.20,
+                  //                 backgroundColor: Colors.grey[300],
+                  //                 valueColor: AlwaysStoppedAnimation<Color>(
+                  //                     Colors.blue),
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         Row(
+                  //           children: [
+                  //             Text('7%'),
+                  //             SizedBox(width: 4),
+                  //             Container(
+                  //               width: 150,
+                  //               child: LinearProgressIndicator(
+                  //                 value: 0.07,
+                  //                 backgroundColor: Colors.grey[300],
+                  //                 valueColor: AlwaysStoppedAnimation<Color>(
+                  //                     Colors.blue),
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         Row(
+                  //           children: [
+                  //             Text('2%'),
+                  //             SizedBox(width: 4),
+                  //             Container(
+                  //               width: 150,
+                  //               child: LinearProgressIndicator(
+                  //                 value: 0.02,
+                  //                 backgroundColor: Colors.grey[300],
+                  //                 valueColor: AlwaysStoppedAnimation<Color>(
+                  //                     Colors.blue),
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ],
+                  // ),
+
+                  ReviewWidget(productId: productId,),
+
+
+                  SizedBox(height: 20),
+
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: comments.length,
+                    itemBuilder: (context, index) {
+                      final comment = comments[index];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage:
+                          NetworkImage(comment.profilePhotoUrl),
+                        ),
+                        title: Text(comment.userName),
+                        subtitle: Text(comment.commentText),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(5, (starIndex) {
+                            return Icon(
+                              starIndex < comment.rating
+                                  ? Icons.star
+                                  : Icons.star_border,
+                              color: Colors.amber,
+                            );
+                          }),
+                        ),
+                      );
+                    },
                   ),
-
-                  CommentsWidget(foodId: productId),
-
-
                   // Rest of your UI...
                 ],
               ),
@@ -728,185 +943,253 @@ class Comment {
     required this.rating,
     required this.timestamp,
   });
+}
+class ReviewWidget extends StatefulWidget {
+  final String productId;
+  const ReviewWidget({Key? key, required this.productId}) : super(key: key);
 
-  factory Comment.fromFirestore(DocumentSnapshot doc) {
-    Map data = doc.data() as Map<String, dynamic>;
-    return Comment(
-      profilePhotoUrl: data['profilePhotoUrl'] ?? '',
-      userName: data['userName'] ?? 'Anonymous',
-      commentText: data['commentText'] ?? '',
-      rating: data['rating'] ?? 0,
-      timestamp: (data['timestamp'] as Timestamp).toDate(),
-    );
-  }
+  @override
+  State<ReviewWidget> createState() => _ReviewWidgetState();
 }
 
+class _ReviewWidgetState extends State<ReviewWidget> {
+  double overallRating = 0.0;
+  int totalReviews = 0;
+  Map<int, double> starPercentages = {};
+  bool hasError = false;
+  bool isempty = false;
 
-class CommentsWidget extends StatelessWidget {
-  final String foodId;
-
-  const CommentsWidget({required this.foodId});
-
-  Future<Map<String, dynamic>> _fetchCommentsData() async {
-    final foodCommentsDoc = FirebaseFirestore.instance
-        .collection('fs_comments')
-        .doc(foodId);
-
-    List<Comment> commentsList = [];
-    int totalRatings = 0;
-    int totalReviews = 0;
-
-    // Get all user-specific sub-collections under the foodId document
-    final userDocuments = await foodCommentsDoc.collection('comments').get();
-
-    // Iterate through each document to retrieve comment data
-    for (var userDocSnapshot in userDocuments.docs) {
-      Comment comment = Comment.fromFirestore(userDocSnapshot);
-      commentsList.add(comment);
-      totalRatings += comment.rating;
-      totalReviews++;
-    }
-
-    double averageRating = totalReviews > 0
-        ? totalRatings / totalReviews
-        : 0;
-
-    return {
-      'averageRating': averageRating,
-      'totalRatings': totalRatings,
-      'totalReviews': totalReviews,
-      'comments': commentsList,
-    };
+  @override
+  void initState() {
+    super.initState();
+    _fetchRatings();
   }
 
+  Future<void> _fetchRatings() async {
+    try {
+      final QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('fs_comments')
+          .where("foodId", isEqualTo: widget.productId)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        // Handle the case when no reviews are found
+        setState(() {
+
+          overallRating = 0.0;
+          totalReviews = 0;
+          starPercentages = {1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0};
+          isempty = true;
+        });
+        return; // Exit the function early since there's no data to process
+      }
+
+      int totalRatings = 0;
+      num totalStars = 0;
+
+      for (final DocumentSnapshot doc in snapshot.docs) {
+        totalRatings++;
+        totalStars += doc['rating']!;
+      }
+
+      if (totalRatings > 0) {
+        overallRating = totalStars / totalRatings;
+      }
+
+      // Calculate percentage of each star rating
+      for (int i = 1; i <= 5; i++) {
+        int count = snapshot.docs.where((doc) => doc['rating'] == i).length;
+        starPercentages[i] = (count / totalRatings) * 100;
+      }
+
+      setState(() {
+        totalReviews = totalRatings;
+        hasError = false; // Reset error state
+      });
+    } catch (error) {
+      setState(() {
+        hasError = true;
+      });
+    }
+  }
 
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _fetchCommentsData(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
-        } else if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
-        } else if (!snapshot.hasData || snapshot.data!['comments'].isEmpty) {
-          return Text('No comments available.');
-        } else {
-          final data = snapshot.data!;
-          final averageRating = data['averageRating'];
-          final totalRatings = data['totalRatings'];
-          final totalReviews = data['totalReviews'];
-          final List<Comment> commentsList = data['comments'];
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FutureBuilder(
-                future: Translate.translateText("Comments"),
-                builder: (context, snapshot) {
-                  return Text(snapshot.hasData ? snapshot.data! : 'Comments',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ));
-                },
-              ),
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      Text(
-                        averageRating.toStringAsFixed(1),
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Row(
-                        children: List.generate(5, (index) {
-                          return Icon(
-                            index < averageRating
-                                ? Icons.star
-                                : Icons.star_border,
-                            color: Colors.yellow,
-                          );
-                        }),
-                      ),
-                    ],
-                  ),
-                  SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FutureBuilder<String>(
-                        future: Translate.translateText(
-                            '$totalRatings Ratings and $totalReviews Reviews'),
-                        builder: (context, snapshot) {
-                          return Text(snapshot.hasData
-                              ? snapshot.data!
-                              : "$totalRatings Ratings and $totalReviews Reviews",
-                              style: TextStyle(
-                                  overflow: TextOverflow.ellipsis));
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: commentsList.length,
-                itemBuilder: (context, index) {
-                  final comment = commentsList[index];
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: NetworkImage(comment.profilePhotoUrl),
-                    ),
-                    title: Text(comment.userName),
-                    subtitle: Text(comment.commentText),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(5, (starIndex) {
-                        return Icon(
-                          starIndex < comment.rating
-                              ? Icons.star
-                              : Icons.star_border,
-                          color: Colors.amber,
-                        );
-                      }),
-                    ),
-                  );
-                },
-              ),
-            ],
-          );
-        }
-      },
-    );
-  }
-}
-
-
-
-List<Widget> _buildRatingBars(Map<String, double> ratingDistribution) {
-  return ratingDistribution.entries.map((entry) {
-    return Row(
-      children: [
-        Text('${entry.key}%'),
-        SizedBox(width: 4),
-        Container(
-          width: 150,
-          child: LinearProgressIndicator(
-            value: entry.value,
-            backgroundColor: Colors.grey[300],
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+    if (isempty) {
+      // No reviews found
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Comments',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-      ],
-    );
-  }).toList();
+          SizedBox(height: 10),
+          Row(
+            children: [
+              Text(
+                '$overallRating',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(width: 10),
+              for (int i = 0; i < overallRating.round(); i++)
+                Icon(
+                  Icons.star,
+                  color: Colors.amber,
+                ),
+              for (int i = 0; i < 5 - overallRating.round(); i++)
+                Icon(
+                  Icons.star_border,
+                  color: Colors.amber,
+                ),
+            ],
+          ),
+          SizedBox(height: 10),
+          Text(
+            '$totalReviews Ratings and $totalReviews Reviews',
+            style: TextStyle(fontSize: 14),
+          ),
+          SizedBox(height: 10),
+          for (int i = 5; i >= 1; i--)
+            Row(
+              children: [
+                Text('${starPercentages[i]?.toStringAsFixed(1) ?? 0}%'),
+                SizedBox(width: 10),
+                Expanded(
+                  child: LinearProgressIndicator(
+                    value: (starPercentages[i] ?? 0) / 100,
+                  ),
+                ),
+              ],
+            ),
+          SizedBox(height: 10),
+          Center(child: Text('No comments yet.')),
+        ],
+      );
+    } else if (hasError) {
+      return Center(child: Text('Error fetching comments.'));
+    } else {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Comments',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 10),
+          Row(
+            children: [
+              Text(
+                '$overallRating',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(width: 10),
+              for (int i = 0; i < overallRating.round(); i++)
+                Icon(
+                  Icons.star,
+                  color: Colors.amber,
+                ),
+              for (int i = 0; i < 5 - overallRating.round(); i++)
+                Icon(
+                  Icons.star_border,
+                  color: Colors.amber,
+                ),
+            ],
+          ),
+          SizedBox(height: 10),
+          Text(
+            '$totalReviews Ratings and $totalReviews Reviews',
+            style: TextStyle(fontSize: 14),
+          ),
+          SizedBox(height: 10),
+          for (int i = 5; i >= 1; i--)
+            Row(
+              children: [
+                Text('${starPercentages[i]?.toStringAsFixed(1) ?? 0}%'),
+                SizedBox(width: 10),
+                Expanded(
+                  child: LinearProgressIndicator(
+                    value: (starPercentages[i] ?? 0) / 100,
+                  ),
+                ),
+              ],
+            ),
+          SizedBox(height: 10),
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('fs_comments')
+                .where("foodId", isEqualTo: widget.productId)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                if (snapshot.data!.docs.isNotEmpty) {
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: snapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      final doc = snapshot.data!.docs[index];
+                      final String username = doc['userName'] ?? 'Anonymous';
+                      final double rating = doc['rating'];
+                      final String comment = doc['comments'] ?? '';
+                      final String timestamp = doc['timestamp'];
+
+                      return ListTile(
+                        title: Text(username),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                for (int i = 0; i < rating; i++)
+                                  Icon(
+                                    Icons.star,
+                                    color: Colors.amber,
+                                    size: 16,
+                                  ),
+                                for (int i = 0; i < 5 - rating; i++)
+                                  Icon(
+                                    Icons.star_border,
+                                    color: Colors.amber,
+                                    size: 16,
+                                  ),
+                              ],
+                            ),
+                            Text(comment),
+                            Text(timestamp, style: TextStyle(
+                                fontSize: 12, color: Colors.grey)),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                } else {
+                  return Center(child: Text('No comments yet.'));
+                }
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error fetching comments.'));
+              } else {
+                return Center(child: CircularProgressIndicator());
+              }
+            },
+          ),
+        ],
+      );
+    }
+  }
+
+
 }

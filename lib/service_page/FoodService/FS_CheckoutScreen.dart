@@ -7,7 +7,8 @@ import 'package:twilio_flutter/twilio_flutter.dart';
 import 'package:ecub_s1_v2/models/CheckoutHistory_DB.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart'; // Add this package for map functionality
+import 'package:intl/intl.dart';
 
 class FS_CheckoutScreen extends StatefulWidget {
   @override
@@ -24,7 +25,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
   String userName = '';
   String userAddress = '';
   String userPhoneNumber = '';
-  LatLng? userLocation;
+  LatLng? userLocation; // Track user's location
   String selectedPaymentOption = 'Cash on Delivery';
   bool hasSubscription = false;
   Map<String, dynamic>? subscriptionPack;
@@ -67,6 +68,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
           .doc(userId)
           .get();
       if (userDoc.exists) {
+        // Get document data as a Map
         Map<String, dynamic>? userData =
         userDoc.data() as Map<String, dynamic>?;
 
@@ -74,9 +76,18 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
           userName = userData?['firstname'] ?? 'No name';
           userPhoneNumber = userData?['phonenumber'] ?? 'No phone number';
 
+          // Check if 'address' field exists and set a placeholder if not
           userAddress = userData?.containsKey('address') == true
               ? userData!['address'] ?? 'Enter address'
-              : 'Enter address';
+              : 'Enter address'; // Placeholder value
+
+          print('Address: $userAddress');
+          // Uncomment and adjust this section if you want to handle location
+          // double? lat = userData?['latitude'];
+          // double? lon = userData?['longitude'];
+          // if (lat != null && lon != null) {
+          //   userLocation = LatLng(lat, lon);
+          // }
         });
       } else {
         print('User document does not exist');
@@ -84,6 +95,89 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     } catch (e) {
       print('Error fetching user details: $e');
     }
+  }
+
+  void _showEditAddressDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        String tempAddress = userAddress;
+
+        return AlertDialog(
+          title: Text('Edit Address'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: InputDecoration(labelText: 'Address'),
+                onChanged: (value) => tempAddress = value,
+                controller: TextEditingController(text: tempAddress),
+              ),
+              SizedBox(height: 16),
+              // ElevatedButton(
+              //   onPressed: () {
+              //     // Navigate to the map screen to pick a location
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //         builder: (context) => MapScreen(
+              //           onLocationSelected: (LatLng location) {
+              //             setState(() {
+              //               userLocation = location;
+              //               // Save location to Firestore
+              //               FirebaseFirestore.instance
+              //                   .collection('users')
+              //                   .doc(userId)
+              //                   .update({
+              //                 'address': tempAddress,
+              //                 'latitude': location.latitude,
+              //                 'longitude': location.longitude,
+              //               }).then((_) {
+              //                 print('Address and location updated successfully');
+              //               }).catchError((e) {
+              //                 print('Error updating address and location: $e');
+              //               });
+              //             });
+              //             Navigator.pop(context);
+              //           },
+              //         ),
+              //       ),
+              //     );
+              //   },
+              //   child: Text('Pick Location on Map'),
+              // ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                setState(() {
+                  userAddress = tempAddress;
+                });
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(userId)
+                    .update({
+                  'address': userAddress,
+                }).then((_) {
+                  print('Address updated successfully');
+                }).catchError((e) {
+                  print('Error updating address: $e');
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _checkSubscription() async {
@@ -102,7 +196,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
           hasSubscription = true;
           subscriptionPack = data;
         });
-        _calculateTotalAmount();
+        _calculateTotalAmount(); // Calculate total amount after setting the pack price
       } else {
         setState(() {
           hasSubscription = false;
@@ -124,51 +218,66 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     if (hasSubscription && subscriptionPack != null) {
       totalAmount += packPPrice;
     }
-    setState(() {});
+    setState(() {}); // Update the UI with the new total amount
     print(totalAmount);
     print(packPPrice);
   }
 
-  Future<void> _confirmOrder() async {
-    // Save order details to Firestore, including address and payment method
-    for (var item in _cartBox!.values) {
-      final newItem = CheckoutHistory_DB(
-        UserId: userId,
-        ItemId: item.ItemId,
-        ItemCount: item.ItemCount,
-        TimeStamp: "",
-        key: DateTime.now().millisecondsSinceEpoch,
-      );
-      await _checkoutHistoryBox!.add(newItem);
+  void _showEditUserDetailsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        String tempName = userName;
+        String tempAddress = userAddress;
+        String tempPhoneNumber = userPhoneNumber;
 
-      var productDetails = FDbox!.values
-          .firstWhere((element) => element.productId == item.ItemId);
-      await FirebaseFirestore.instance.collection('orders').add({
-        'userId': userId,
-        'itemId': item.ItemId,
-        'itemCount': item.ItemCount,
-        'timestamp': FieldValue.serverTimestamp(),
-        'status': 'Pending',
-        'itemName': productDetails.productTitle,
-        'itemPrice': productDetails.productPrice * item.ItemCount,
-        'vendor': productDetails.productOwnership,
-        'payment-method': selectedPaymentOption, // Save payment method
-        'address': userAddress, // Save address
-      });
-    }
-
-    await _cartBox!.clear();
-    setState(() {});
-
-    await FirebaseFirestore.instance
-        .collection('fs_cart')
-        .doc(userId)
-        .collection('packs')
-        .doc('info')
-        .update({'active': 'True'});
-
-    // Navigate to the profile page
-    // Navigator.pushNamed(context, '/fs_home');
+        return AlertDialog(
+          title: Text('Edit User Details'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: InputDecoration(labelText: 'Name'),
+                onChanged: (value) => tempName = value,
+                controller: TextEditingController(text: tempName),
+              ),
+              TextField(
+                decoration: InputDecoration(labelText: 'Phone Number'),
+                onChanged: (value) => tempPhoneNumber = value,
+                controller: TextEditingController(text: tempPhoneNumber),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                setState(() {
+                  userName = tempName;
+                  userAddress = tempAddress;
+                  userPhoneNumber = tempPhoneNumber;
+                });
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(userId)
+                    .update({
+                  'name': userName,
+                  'address': userAddress,
+                  'phoneNumber': userPhoneNumber,
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showOrderConfirmationDialog() {
@@ -202,6 +311,50 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
         );
       },
     );
+  }
+
+  Future<void> _confirmOrder() async {
+
+    for (var item in _cartBox!.values) {
+      final newItem = CheckoutHistory_DB(
+        UserId: userId,
+        ItemId: item.ItemId,
+        ItemCount: item.ItemCount,
+        TimeStamp: "",
+        key: DateTime.now().millisecondsSinceEpoch,
+      );
+      await _checkoutHistoryBox!.add(newItem);
+
+      var productDetails = FDbox!.values
+          .firstWhere((element) => element.productId == item.ItemId);
+      final formattedTimestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+
+      await FirebaseFirestore.instance.collection('orders').add({
+        'userId': userId,
+        'itemId': item.ItemId,
+        'itemCount': item.ItemCount,
+        'timestamp': formattedTimestamp, // Store the timestamp as a string
+        'status': 'Pending',
+        'itemName': productDetails.productTitle,
+        'itemPrice': productDetails.productPrice * item.ItemCount,
+        'vendor': productDetails.productOwnership,
+        'address': userAddress,
+      });
+    }
+
+    // Clear the cart
+    await _cartBox!.clear();
+    setState(() {});
+
+    await FirebaseFirestore.instance
+        .collection('fs_cart')
+        .doc(userId)
+        .collection('packs')
+        .doc('info')
+        .update({'active': 'True'});
+
+    // Navigate to the profile page
+    // Navigator.pushNamed(context, '/fs_home');
   }
 
   @override
@@ -284,98 +437,52 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
             ),
             ListTile(
               title: Text(userAddress),
+              subtitle: userLocation != null
+                  ? Text(
+                  'Lat: ${userLocation!.latitude}, Lon: ${userLocation!.longitude}')
+                  : null,
               trailing: IconButton(
                 icon: Icon(Icons.edit),
-                onPressed: _showEditUserDetailsDialog,
+                onPressed: _showEditAddressDialog,
               ),
             ),
             SizedBox(height: 16),
             Text(
-              'Payment Method:',
+              'Total Amount: ₹ $totalAmount',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            ListTile(
-              title: Text(selectedPaymentOption),
-              trailing: IconButton(
-                icon: Icon(Icons.edit),
-                onPressed: _showPaymentOptionsDialog,
-              ),
-            ),
             SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Total Amount:',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '\₹${totalAmount.toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
+            Text(
+              'Payment Options:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _showOrderConfirmationDialog,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF0D5EF9),
-                minimumSize: Size.fromHeight(50),
-              ),
-              child: Text(
-                'Confirm Order',
-                style: TextStyle(fontSize: 16),
-              ),
+            SizedBox(height: 8),
+            DropdownButton<String>(
+              value: selectedPaymentOption,
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedPaymentOption = newValue!;
+                });
+              },
+              items: <String>[
+                'Cash on Delivery',
+                'Online Payment',
+                'Card Payment'
+              ].map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  void _showEditUserDetailsDialog() {
-    // Implement this method to allow users to edit their details
-  }
-
-  void _showPaymentOptionsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Select Payment Method'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: Text('Cash on Delivery'),
-                leading: Radio<String>(
-                  value: 'Cash on Delivery',
-                  groupValue: selectedPaymentOption,
-                  onChanged: (String? value) {
-                    setState(() {
-                      selectedPaymentOption = value!;
-                    });
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ),
-              ListTile(
-                title: Text('Online Payment'),
-                leading: Radio<String>(
-                  value: 'Online Payment',
-                  groupValue: selectedPaymentOption,
-                  onChanged: (String? value) {
-                    setState(() {
-                      selectedPaymentOption = value!;
-                    });
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showOrderConfirmationDialog,
+        child: Icon(Icons.check),
+        backgroundColor: Color(0xFF0D5EF9),
+      ),
     );
   }
 }
