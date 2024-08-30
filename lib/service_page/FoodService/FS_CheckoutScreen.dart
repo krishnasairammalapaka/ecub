@@ -336,7 +336,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
         'itemId': item.ItemId,
         'itemCount': item.ItemCount,
         'timestamp': formattedTimestamp, // Store the timestamp as a string
-        'status': 'Pending',
+        'status': 'pending',
         'itemName': productDetails.productTitle,
         'itemPrice': productDetails.productPrice * item.ItemCount,
         'vendor': productDetails.productOwnership,

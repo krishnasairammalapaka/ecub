@@ -300,44 +300,53 @@ class MenuItem extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(8),
-                      image: DecorationImage(
-                        image: NetworkImage(assetImage),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    snapshot.data![0] ?? name,
-                    style: TextStyle(
-                      fontSize: 16,
-                      overflow: TextOverflow.ellipsis,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '₹$price',
-                        style: TextStyle(
-                          color: Color(0xFF0D5EF9),
-                          fontSize: 15,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[400],
+                        borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(
+                          image: NetworkImage(assetImage),
+                          fit: BoxFit.cover,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      snapshot.data![0] ?? name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        overflow: TextOverflow.ellipsis,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '₹$price',
+                            style: TextStyle(
+                              color: Color(0xFF0D5EF9),
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 1), // Add spacing between the text and logo
+                        Image.asset(
+                          'assets/toprated.png', // Replace with your logo's URL
+                          height: 35,
+                          width: 45,
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+
             ),
           );
         }

@@ -48,7 +48,6 @@ void main() async {
   // ------------- Food Service ---------------
   Hive.registerAdapter<Cart_Db>(CartDbAdapter());
   Hive.registerAdapter<Food_db>(FooddbAdapter());
-  Hive.registerAdapter<Hotels_Db>(HotelsDbAdapter());
   Hive.registerAdapter<Favourites_DB>(FavouritesDBAdapter());
   Hive.registerAdapter<CheckoutHistory_DB>(CheckoutHistoryDBAdapter());
 
@@ -58,7 +57,6 @@ void main() async {
   var appBox = await Hive.openBox("appdb");
   var loginBox = await Hive.openBox("login_state");
   var foodBox = await Hive.openBox<Food_db>('foodDbBox');
-  var hotelBox = await Hive.openBox<Hotels_Db>('hotelDbBox');
 
   // Store static data only if the box is empty
   if (foodBox.isEmpty) {
@@ -309,86 +307,7 @@ void main() async {
     }
   }
 
-  if (hotelBox.isEmpty) {
-    var hotelDbItems = [
-      Hotels_Db(
-          hotelId: "1",
-          hotelName: "KS Bakers",
-          hotelMail: "ksbakers@gmail.com",
-          hotelAddress: "KodomBakkam",
-          hotelPhoneNo: "8778997952",
-          hotelUsername: "ks-bakers",
-          hotelType: "restaurant"),
-      Hotels_Db(
-          hotelId: "2",
-          hotelName: "Chennai Bakers",
-          hotelMail: "chennaibakers@gmail.com",
-          hotelAddress: "POES Garden",
-          hotelPhoneNo: "8778997952",
-          hotelUsername: "chennai-bakers",
-          hotelType: "restaurant"),
-      Hotels_Db(
-          hotelId: "8",
-          hotelName: "Sangai Bakers",
-          hotelMail: "sangaibakers@gmail.com",
-          hotelAddress: "Chintai Chandranagar",
-          hotelPhoneNo: "8778997952",
-          hotelUsername: "sangai-bakers",
-          hotelType: "restaurant"),
-      Hotels_Db(
-          hotelId: "9",
-          hotelName: "Trichy Bakers",
-          hotelMail: "Trichybakers@gmail.com",
-          hotelAddress: "Trichy",
-          hotelPhoneNo: "8778997952",
-          hotelUsername: "trichy-bakers",
-          hotelType: "restaurant"),
-      Hotels_Db(
-          hotelId: "3",
-          hotelName: "Home Chef Sara",
-          hotelMail: "sara@gmail.com",
-          hotelAddress: "Saravanampatti",
-          hotelPhoneNo: "9876543210",
-          hotelUsername: "home-chef-sara",
-          hotelType: "homemade"),
-      Hotels_Db(
-          hotelId: "4",
-          hotelName: "Home Chef John",
-          hotelMail: "john@gmail.com",
-          hotelAddress: "Coimbatore",
-          hotelPhoneNo: "9876543211",
-          hotelUsername: "home-chef-john",
-          hotelType: "homemade"),
-      Hotels_Db(
-          hotelId: "5",
-          hotelName: "Home Chef Anita",
-          hotelMail: "anita@gmail.com",
-          hotelAddress: "Salem",
-          hotelPhoneNo: "9876543212",
-          hotelUsername: "home-chef-anita",
-          hotelType: "homemade"),
-      Hotels_Db(
-          hotelId: "6",
-          hotelName: "Home Chef Lee",
-          hotelMail: "lee@gmail.com",
-          hotelAddress: "Erode",
-          hotelPhoneNo: "9876543213",
-          hotelUsername: "home-chef-lee",
-          hotelType: "homemade"),
-      Hotels_Db(
-          hotelId: "7",
-          hotelName: "Home Chef Emma",
-          hotelMail: "emma@gmail.com",
-          hotelAddress: "Madurai",
-          hotelPhoneNo: "9876543214",
-          hotelUsername: "home-chef-emma",
-          hotelType: "homemade"),
-    ];
 
-    for (var item in hotelDbItems) {
-      hotelBox.add(item);
-    }
-  }
 
   runApp(const MyApp());
 }

@@ -82,6 +82,7 @@ class _FS_CategoryScreenState extends State<FS_CategoryScreen> {
     final Map arguments = ModalRoute.of(context)!.settings.arguments as Map;
     final String type = arguments['type'];
 
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF0D5EF9),
@@ -115,7 +116,7 @@ class _FS_CategoryScreenState extends State<FS_CategoryScreen> {
                           location: hotel.hotelAddress,
                           rating: 4.5, // Example rating, replace with actual data
                           deliveryTime: hotel.hotelPhoneNo, // Example data, replace if needed
-                          imageUrl: 'assets/hotel.png', // Replace with actual image URL
+                          imageUrl: 'assets/hotel_prof.png', // Replace with actual image URL
                           Username: hotel.hotelUsername,
                         );
                       },
@@ -131,9 +132,24 @@ class _FS_CategoryScreenState extends State<FS_CategoryScreen> {
   }
 
   Future<List<Hotels_Db>> _getFilteredHotels(String type) async {
-    final hotelBox = await Hive.openBox<Hotels_Db>('hotelDbBox');
-    return hotelBox.values.where((hotel) => hotel.hotelType == type).toList();
+    final querySnapshot = await _firestore
+        .collection('fs_hotels')
+        .where('hotelType', isEqualTo: type)
+        .get();
+
+    return querySnapshot.docs.map((doc) {
+      final data = doc.data();
+      return Hotels_Db(
+        hotelName: data['hotelName'],
+        hotelAddress: data['hotelAddress'],
+        hotelPhoneNo: data['hotelPhoneNo'],
+        hotelType: data['hotelType'],
+        hotelUsername: data['hotelUsername'],
+        // Add more fields as per your Hotels_Db model
+      );
+    }).toList();
   }
+
 }
 
 class RestaurantCard extends StatelessWidget {
@@ -213,4 +229,22 @@ class RestaurantCard extends StatelessWidget {
       ),
     );
   }
+}
+
+
+class Hotels_Db {
+  final String hotelName;
+  final String hotelAddress;
+  final String hotelPhoneNo;
+  final String hotelType;
+  final String hotelUsername;
+  // Add more fields as necessary
+
+  Hotels_Db({
+    required this.hotelName,
+    required this.hotelAddress,
+    required this.hotelPhoneNo,
+    required this.hotelType,
+    required this.hotelUsername,
+  });
 }

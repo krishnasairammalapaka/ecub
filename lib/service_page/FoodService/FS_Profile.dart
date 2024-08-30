@@ -349,7 +349,7 @@ class OrderHistoryItem extends StatelessWidget {
     Widget actionWidget;
 
     switch (status) {
-      case 'Pending':
+      case 'pending':
         statusMessage = 'Food is being cooked';
         actionWidget = SizedBox.shrink();
         break;
@@ -359,7 +359,7 @@ class OrderHistoryItem extends StatelessWidget {
         actionWidget = Text('Estimated delivery time: $deliveryTime');
         break;
 
-      case 'Completed':
+      case 'completed':
         statusMessage = 'Food is waiting to deliver';
         actionWidget = TextButton(
           onPressed: () {
