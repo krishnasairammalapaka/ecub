@@ -57,17 +57,32 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
       setState(() {
         foodItems = foodItemsSnapshot.docs
             .map((doc) => {
-                  'name': doc['productTitle'],
-                  'restaurant': doc['productOwnership'],
-                  'price': doc['productPrice'],
-                  'image': doc['productImg'],
-                  'id': doc['productId'],
-                  'desc': doc['productDesc']
-                })
+          'name': doc['productTitle'],
+          'restaurant': doc['productOwnership'],
+          'price': doc['productPrice'],
+          'image': doc['productImg'],
+          'id': doc['productId'],
+          'desc': doc['productDesc'],
+          'rating': doc['productRating'],
+        })
             .toList();
+      });
+
+
+      final mostRatedItem = foodItems.reduce((curr, next) =>
+      curr['rating'] > next['rating'] ? curr : next);
+
+      setState(() {
+        foodItems = foodItems.map((item) {
+          return {
+            ...item,
+            'isTopRated': item['id'] == mostRatedItem['id'],
+          };
+        }).toList();
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -251,14 +266,17 @@ class MenuItem extends StatelessWidget {
   final String image;
   final String desc;
   final String restaurant;
+  final bool isTopRated;
 
-  MenuItem(
-      {required this.name,
-      required this.restaurant,
-      required this.price,
-      required this.image,
-      required this.id,
-      required this.desc});
+  MenuItem({
+    required this.name,
+    required this.restaurant,
+    required this.price,
+    required this.image,
+    required this.id,
+    required this.desc,
+    this.isTopRated = false, // New parameter to mark the top-rated item
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -300,53 +318,54 @@ class MenuItem extends StatelessWidget {
                   ),
                 ],
               ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[400],
-                        borderRadius: BorderRadius.circular(8),
-                        image: DecorationImage(
-                          image: NetworkImage(assetImage),
-                          fit: BoxFit.cover,
-                        ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(8),
+                      image: DecorationImage(
+                        image: NetworkImage(assetImage),
+                        fit: BoxFit.cover,
                       ),
                     ),
-                    SizedBox(height: 12),
-                    Text(
-                      snapshot.data![0] ?? name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        overflow: TextOverflow.ellipsis,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    snapshot.data![0] ?? name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      overflow: TextOverflow.ellipsis,
+                      fontWeight: FontWeight.bold,
                     ),
-                    SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '₹$price',
-                            style: TextStyle(
-                              color: Color(0xFF0D5EF9),
-                              fontSize: 15,
-                            ),
+                  ),
+                  SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '₹$price',
+                          style: TextStyle(
+                            color: Color(0xFF0D5EF9),
+                            fontSize: 15,
                           ),
                         ),
-                        SizedBox(width: 1), // Add spacing between the text and logo
+                      ),
+                      if (isTopRated) // Show logo only for top-rated item
+                        SizedBox(width: 1),
+                      if (isTopRated)
                         Image.asset(
-                          'assets/toprated.png', // Replace with your logo's URL
+                          'assets/toprated.png',
                           height: 35,
                           width: 45,
                         ),
-                      ],
-                    ),
-                  ],
-                )
-
+                    ],
+                  ),
+                ],
+              ),
             ),
           );
         }
