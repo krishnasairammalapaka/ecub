@@ -304,7 +304,7 @@ class OrdersListView extends StatelessWidget {
             itemBuilder: (context, index) {
               final order = orders[index].data()!;
               final status = order['status'] ?? 'pending';
-              final deliveryTime = order['deliveryTime'] ?? 'Loading...';
+              final deliveryTime = order['etd'] ?? 'Loading...';
 
               return OrderHistoryItem(
                 orderId: orders[index].id,
@@ -528,6 +528,14 @@ class _ReviewDialogState extends State<ReviewDialog> {
   void _submitReview() async {
     User? user = FirebaseAuth.instance.currentUser;
 
+    DocumentSnapshot<Map<String, dynamic>> userDoc = await FirebaseFirestore
+        .instance
+        .collection('users')
+        .doc(user?.email)
+        .get();
+
+    var name=userDoc['firstname'];
+
     if (user != null) {
       final formattedTimestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       await FirebaseFirestore.instance
@@ -541,6 +549,7 @@ class _ReviewDialogState extends State<ReviewDialog> {
         'rating': _rating,
         'comments': _commentsController.text,
         'timestamp': formattedTimestamp,
+        'userName': name
       });
 
       Navigator.pop(context);

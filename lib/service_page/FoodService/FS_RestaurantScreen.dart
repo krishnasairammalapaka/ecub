@@ -309,7 +309,7 @@ class MenuItem extends StatelessWidget {
                       color: Colors.grey[400],
                       borderRadius: BorderRadius.circular(8),
                       image: DecorationImage(
-                        image: AssetImage(assetImage),
+                        image: NetworkImage(assetImage),
                         fit: BoxFit.cover,
                       ),
                     ),

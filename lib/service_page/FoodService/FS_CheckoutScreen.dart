@@ -329,7 +329,9 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
           .firstWhere((element) => element.productId == item.ItemId);
       final formattedTimestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
-      await FirebaseFirestore.instance.collection('orders').add({
+      var newDocRef = FirebaseFirestore.instance.collection('orders').doc(); // Create a reference for the new document
+
+      await newDocRef.set({
         'userId': userId,
         'itemId': item.ItemId,
         'itemCount': item.ItemCount,
@@ -339,7 +341,9 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
         'itemPrice': productDetails.productPrice * item.ItemCount,
         'vendor': productDetails.productOwnership,
         'address': userAddress,
+        'docId': newDocRef.id, // Store the document ID in the field
       });
+
     }
 
     // Clear the cart
