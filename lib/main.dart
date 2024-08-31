@@ -58,7 +58,7 @@ Future<void> syncFoodDbWithFirestore() async {
       productImg: data['productImg'] ?? '',
       productDesc: data['productDesc'] ?? '',
       productOwnership: data['productOwnership'] ?? '',
-      productRating: 0.0,
+      productRating: data['productRating'] ?? 3.0,
       productOffer:  0.0,
       productMainCategory: data['productMainCategory'] ?? '',
       productPrepTime: data['productPrepTime'] ?? '',
