@@ -1,4 +1,5 @@
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:ecub_s1_v2/translation.dart';
@@ -321,6 +322,7 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                                         item.productTitle),
                                     builder: (context, snapshot) {
                                       return FoodTile(
+                                        id: item.productId,
                                         title: snapshot.hasData
                                             ? snapshot.data!
                                             : item.productTitle,
@@ -382,93 +384,124 @@ class CategoryCard extends StatelessWidget {
   }
 }
 
+
 class FoodTile extends StatelessWidget {
+  final String id;
   final String title;
   final int price;
   final String image;
-  final double rating;
+  double rating;
 
-  FoodTile(
-      {required this.title,
-      required this.price,
-      required this.image,
-      required this.rating});
+  FoodTile({
+    required this.id,
+    required this.title,
+    required this.price,
+    required this.image,
+    required this.rating,
+  });
+
+  Future<double?> _fetchAverageRating() async {
+    final commentsCollection = FirebaseFirestore.instance.collection('fs_comments');
+    final querySnapshot = await commentsCollection.where('foodId', isEqualTo: id).get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      double totalRating = 0;
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        totalRating += data['rating'] ?? 0.0;
+      }
+      return totalRating / querySnapshot.docs.length;
+    }
+    return null; // Return null if there are no ratings
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: Offset(0, 3),
+    return FutureBuilder<double?>(
+      future: _fetchAverageRating(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasData && snapshot.data != null) {
+          rating = snapshot.data!;
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.2),
+                spreadRadius: 2,
+                blurRadius: 5,
+                offset: Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 3,
-            child: Image.network(
-              image,
-              width: double.infinity,
-              height: 70,
-              fit: BoxFit.cover,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 3,
+                child: Image.network(
+                  image,
+                  width: double.infinity,
+                  height: 70,
+                  fit: BoxFit.cover,
                 ),
-                SizedBox(height: 4),
-                Text(
-                  '₹$price',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color.fromRGBO(0, 157, 255, 1.0),
-                  ),
-                ),
-                SizedBox(height: 4),
-                Row(
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.star,
-                      color: Colors.yellow,
-                      size: 20,
-                    ),
                     Text(
-                      rating.toString(),
+                      title,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '₹$price',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color.fromRGBO(0, 157, 255, 1.0),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.star,
+                          color: Colors.yellow,
+                          size: 20,
+                        ),
+                        Text(
+                          rating.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
+
 
 class CategoryTile extends StatelessWidget {
   final String title;

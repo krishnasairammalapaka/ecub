@@ -11,11 +11,11 @@ class CartDB {
 
   Future<void> addToCart(String userId, String itemId, double itemCount) async {
     bool itemExists = _cartBox.values.any(
-            (cartItem) => cartItem.UserId == userId && cartItem.ItemId == itemId);
+        (cartItem) => cartItem.UserId == userId && cartItem.ItemId == itemId);
 
     if (itemExists) {
       Cart_Db existingItem = _cartBox.values.firstWhere(
-            (cartItem) => cartItem.UserId == userId && cartItem.ItemId == itemId,
+        (cartItem) => cartItem.UserId == userId && cartItem.ItemId == itemId,
       );
       existingItem =
           existingItem.copyWith(ItemCount: existingItem.ItemCount + itemCount);
@@ -33,7 +33,7 @@ class CartDB {
 
   Future<List<Cart_Db>> getCartItems(String userId) async {
     List<Cart_Db> userCartItems =
-    _cartBox.values.where((cartItem) => cartItem.UserId == userId).toList();
+        _cartBox.values.where((cartItem) => cartItem.UserId == userId).toList();
     return userCartItems;
   }
 
@@ -43,7 +43,7 @@ class CartDB {
 
   Future<void> clearCart(String userId) async {
     List<Cart_Db> userCartItems =
-    _cartBox.values.where((cartItem) => cartItem.UserId == userId).toList();
+        _cartBox.values.where((cartItem) => cartItem.UserId == userId).toList();
     for (var item in userCartItems) {
       await _cartBox.delete(item.key);
     }
@@ -89,7 +89,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   void _checkIfProductInCart() {
     final existingItems = _cartBox.values.toList();
     final existingItemIndex =
-    existingItems.indexWhere((item) => item.ItemId == productId);
+        existingItems.indexWhere((item) => item.ItemId == productId);
 
     if (existingItemIndex != -1) {
       setState(() {
@@ -101,7 +101,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
   void _checkIfProductFavorite() {
     final existingItems = _favouritesBox.values.toList();
     final existingItemIndex =
-    existingItems.indexWhere((item) => item.ItemId == productId);
+        existingItems.indexWhere((item) => item.ItemId == productId);
 
     if (existingItemIndex != -1) {
       setState(() {
@@ -112,7 +112,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
 
   void addToCart() async {
     final foodItem =
-    FDbox?.values.firstWhere((food) => food.productId == productId);
+        FDbox?.values.firstWhere((food) => food.productId == productId);
     final String? itemOwnership = foodItem?.productOwnership;
 
     final existingItems = _cartBox.values.toList();
@@ -137,11 +137,11 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: FutureBuilder<String>(
-          future: Translate.translateText("Added to cart"),
-          builder: (context, snapshot) {
-            return snapshot.hasData ? Text(snapshot.data!) : Text("Added to cart");
-          },
-        )));
+      future: Translate.translateText("Added to cart"),
+      builder: (context, snapshot) {
+        return snapshot.hasData ? Text(snapshot.data!) : Text("Added to cart");
+      },
+    )));
     setState(() {
       isProductInCart = true;
     });
@@ -167,7 +167,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
               return snapshot.hasData
                   ? Text(snapshot.data!)
                   : Text(
-                  "The products in your Cart are from a diiferent hotel.Do you want to reset the cart");
+                      "The products in your Cart are from a diiferent hotel.Do you want to reset the cart");
             },
           ),
           actions: [
@@ -234,71 +234,11 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
     });
   }
 
-  // void _loadComments() async {
-  //   // Fetch comments from Firestore
-  //   final QuerySnapshot snapshot = await FirebaseFirestore.instance
-  //       .collection('fs_comments')
-  //       .where('foodId', isEqualTo: int.parse(productId))
-  //       .get();
-  //
-  //   final commentsList = snapshot.docs.map((doc) {
-  //     final data = doc.data() as Map<String, dynamic>;
-  //     return Comment(
-  //       profilePhotoUrl: data['profilePhotoUrl'],
-  //       userName: data['userName'],
-  //       commentText: data['commentText'],
-  //       rating: data['rating'],
-  //       timestamp: (data['timestamp'] as Timestamp).toDate(),
-  //     );
-  //   }).toList();
-  //
-  //   setState(() {
-  //     comments = commentsList;
-  //     _sortComments();
-  //   });
-  // }
-  //
-  // void _loadRatingStatistics() async {
-  //   // Fetch rating statistics from Firestore
-  //   final QuerySnapshot snapshot = await FirebaseFirestore.instance
-  //       .collection('fs_comments')
-  //       .where('foodId', isEqualTo: int.parse(productId))
-  //       .get();
-  //
-  //   if (snapshot.docs.isNotEmpty) {
-  //     int totalRating = 0;
-  //     int totalReviewsCount = snapshot.docs.length;
-  //     List<int> ratingDistribution = [0, 0, 0, 0, 0];
-  //
-  //     for (var doc in snapshot.docs) {
-  //       final data = doc.data() as Map<String, dynamic>;
-  //       int rating = data['rating'];
-  //       totalRating += rating;
-  //       ratingDistribution[rating - 1]++;
-  //     }
-  //
-  //     setState(() {
-  //       averageRating = totalRating / totalReviewsCount;
-  //       totalRatings = totalReviewsCount;
-  //       totalReviews = totalReviewsCount;
-  //     });
-  //   }
-  // }
-  //
-  // void _sortComments() {
-  //   setState(() {
-  //     if (sortOrder == 'newest') {
-  //       comments.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-  //     } else if (sortOrder == 'oldest') {
-  //       comments.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-  //     }
-  //   });
-  // }
 
   @override
   Widget build(BuildContext context) {
     final Map<String, dynamic> args =
-    ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     productId = args['id'];
     pricePerItem = args['price'];
     ShopUsername = args['shop'];
@@ -534,286 +474,125 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                     child: FDbox == null
                         ? Center(child: CircularProgressIndicator())
                         : ValueListenableBuilder(
-                      valueListenable: FDbox!.listenable(),
-                      builder: (context, Box<Food_db> items, _) {
-                        if (items.isEmpty) {
-                          return Center(
-                              child: FutureBuilder<String>(
-                                future:
-                                Translate.translateText("No Items Found"),
-                                builder: (context, snapshot) {
-                                  return snapshot.hasData
-                                      ? Text(snapshot.data!)
-                                      : Text("No Items Found");
-                                },
-                              ));
-                        } else {
-                          List<Food_db> sortedItems =
-                          items.values.toList();
-                          sortedItems.sort((a, b) =>
-                              b.productRating.compareTo(a.productRating));
+                            valueListenable: FDbox!.listenable(),
+                            builder: (context, Box<Food_db> items, _) {
+                              if (items.isEmpty) {
+                                return Center(
+                                    child: FutureBuilder<String>(
+                                  future:
+                                      Translate.translateText("No Items Found"),
+                                  builder: (context, snapshot) {
+                                    return snapshot.hasData
+                                        ? Text(snapshot.data!)
+                                        : Text("No Items Found");
+                                  },
+                                ));
+                              } else {
+                                List<Food_db> sortedItems =
+                                    items.values.toList();
+                                sortedItems.sort((a, b) =>
+                                    b.productRating.compareTo(a.productRating));
 
-                          List<Food_db> popularItems = sortedItems
-                              .where((item) => item.productRating < 4.4)
-                              .toList();
+                                List<Food_db> popularItems = sortedItems
+                                    .where((item) => item.productRating < 4.4)
+                                    .toList();
 
-                          popularItems.shuffle();
+                                popularItems.shuffle();
 
-                          return ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: popularItems.length,
-                            itemBuilder: (context, index) {
-                              var item = popularItems[index];
-                              return GestureDetector(
-                                onTap: () {
-                                  Navigator.pushNamed(
-                                      context, '/fs_product',
-                                      arguments: {
-                                        'id': item.productId,
-                                        'title': item.productTitle,
-                                        'price':
-                                        item.productPrice.toInt(),
-                                        'image': item.productImg,
-                                        'description': item.productDesc,
-                                        'shop': item.productOwnership,
-                                      });
-                                },
-                                child: Container(
-                                  width: 150,
-                                  margin:
-                                  EdgeInsets.symmetric(horizontal: 5),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        height: 120,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                          BorderRadius.circular(10),
-                                          image: DecorationImage(
-                                            image: NetworkImage(
-                                                item.productImg),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(height: 8),
-                                      FutureBuilder<String>(
-                                        future: Translate.translateText(
-                                            item.productTitle),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasData) {
-                                            return Text(
-                                              snapshot.data!,
+                                return ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: popularItems.length,
+                                  itemBuilder: (context, index) {
+                                    var item = popularItems[index];
+                                    return GestureDetector(
+                                      onTap: () {
+                                        Navigator.pushNamed(
+                                            context, '/fs_product',
+                                            arguments: {
+                                              'id': item.productId,
+                                              'title': item.productTitle,
+                                              'price':
+                                                  item.productPrice.toInt(),
+                                              'image': item.productImg,
+                                              'description': item.productDesc,
+                                              'shop': item.productOwnership,
+                                            });
+                                      },
+                                      child: Container(
+                                        width: 150,
+                                        margin:
+                                            EdgeInsets.symmetric(horizontal: 5),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Container(
+                                              height: 120,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                image: DecorationImage(
+                                                  image: NetworkImage(
+                                                      item.productImg),
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(height: 8),
+                                            FutureBuilder<String>(
+                                              future: Translate.translateText(
+                                                  item.productTitle),
+                                              builder: (context, snapshot) {
+                                                if (snapshot.hasData) {
+                                                  return Text(
+                                                    snapshot.data!,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  );
+                                                } else {
+                                                  return Text(
+                                                    item.productTitle,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  );
+                                                }
+                                              },
+                                            ),
+                                            Text(
+                                              '₹ ${item.productPrice}',
                                               style: TextStyle(
                                                 fontSize: 16,
-                                                fontWeight:
-                                                FontWeight.bold,
+                                                color: Color(0xFF0D5EF9),
                                               ),
-                                              maxLines: 1,
-                                              overflow:
-                                              TextOverflow.ellipsis,
-                                            );
-                                          } else {
-                                            return Text(
-                                              item.productTitle,
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight:
-                                                FontWeight.bold,
-                                              ),
-                                              maxLines: 1,
-                                              overflow:
-                                              TextOverflow.ellipsis,
-                                            );
-                                          }
-                                        },
-                                      ),
-                                      Text(
-                                        '₹ ${item.productPrice}',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Color(0xFF0D5EF9),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              );
+                                    );
+                                  },
+                                );
+                              }
                             },
-                          );
-                        }
-                      },
-                    ),
+                          ),
                   ),
 
                   SizedBox(height: 20),
-                  // Row(
-                  //   children: [
-                  //     FutureBuilder<String>(
-                  //       future: Translate.translateText("Sort by: "),
-                  //       builder: (context, snapshot) {
-                  //         return snapshot.hasData
-                  //             ? Text(snapshot.data!)
-                  //             : Text("Sort by: ");
-                  //       },
-                  //     ),
-                  //     DropdownButton<String>(
-                  //       value: sortOrder,
-                  //       onChanged: (String? newValue) {
-                  //         setState(() {
-                  //           sortOrder = newValue!;
-                  //           _sortComments();
-                  //         });
-                  //       },
-                  //       items: <String>['newest', 'oldest']
-                  //           .map<DropdownMenuItem<String>>((String value) {
-                  //         return DropdownMenuItem<String>(
-                  //           value: value,
-                  //           child: FutureBuilder<String>(
-                  //             future: Translate.translateText(value),
-                  //             builder: (context, snapshot) {
-                  //               return snapshot.hasData
-                  //                   ? Text(snapshot.data!)
-                  //                   : Text(value);
-                  //             },
-                  //           ),
-                  //         );
-                  //       }).toList(),
-                  //     ),
-                  //   ],
-                  // ),
-                  //
-                  // FutureBuilder(
-                  //   future: Translate.translateText("Comments"),
-                  //   builder: (context, snapshot) {
-                  //     if (snapshot.hasData) {
-                  //       return Text(snapshot.data!,
-                  //           style: TextStyle(
-                  //             fontSize: 20,
-                  //             fontWeight: FontWeight.bold,
-                  //           ));
-                  //     } else {
-                  //       return Text('Comments',
-                  //           style: TextStyle(
-                  //             fontSize: 20,
-                  //             fontWeight: FontWeight.bold,
-                  //           ));
-                  //     }
-                  //   },
-                  // ),
-                  //
-                  // Row(
-                  //   children: [
-                  //     Column(
-                  //       children: [
-                  //         Text(
-                  //           averageRating.toStringAsFixed(1),
-                  //           style: TextStyle(
-                  //             fontSize: 24,
-                  //             fontWeight: FontWeight.bold,
-                  //           ),
-                  //         ),
-                  //         SizedBox(height: 4),
-                  //         Row(
-                  //           children: List.generate(5, (index) {
-                  //             return Icon(
-                  //               index < averageRating
-                  //                   ? Icons.star
-                  //                   : Icons.star_border,
-                  //               color: Colors.yellow,
-                  //             );
-                  //           }),
-                  //         ),
-                  //       ],
-                  //     ),
-                  //     SizedBox(width: 16),
-                  //     Column(
-                  //       crossAxisAlignment: CrossAxisAlignment.start,
-                  //       children: [
-                  //         FutureBuilder<String>(
-                  //           future: Translate.translateText(
-                  //               '$totalRatings Ratings and $totalReviews Reviews'),
-                  //           builder: (context, snapshot) {
-                  //             return snapshot.hasData
-                  //                 ? Text(snapshot.data!,
-                  //                 style: TextStyle(
-                  //                     overflow: TextOverflow.ellipsis))
-                  //                 : Text(
-                  //                 "$totalRatings Ratings and $totalReviews Reviews",
-                  //                 style: TextStyle(
-                  //                     overflow: TextOverflow.ellipsis));
-                  //           },
-                  //         ),
-                  //         SizedBox(height: 8),
-                  //         Row(
-                  //           children: [
-                  //             Text('67%'),
-                  //             SizedBox(width: 4),
-                  //             Container(
-                  //               width: 150,
-                  //               child: LinearProgressIndicator(
-                  //                 value: 0.67,
-                  //                 backgroundColor: Colors.grey[300],
-                  //                 valueColor: AlwaysStoppedAnimation<Color>(
-                  //                     Colors.blue),
-                  //               ),
-                  //             ),
-                  //           ],
-                  //         ),
-                  //         Row(
-                  //           children: [
-                  //             Text('20%'),
-                  //             SizedBox(width: 4),
-                  //             Container(
-                  //               width: 150,
-                  //               child: LinearProgressIndicator(
-                  //                 value: 0.20,
-                  //                 backgroundColor: Colors.grey[300],
-                  //                 valueColor: AlwaysStoppedAnimation<Color>(
-                  //                     Colors.blue),
-                  //               ),
-                  //             ),
-                  //           ],
-                  //         ),
-                  //         Row(
-                  //           children: [
-                  //             Text('7%'),
-                  //             SizedBox(width: 4),
-                  //             Container(
-                  //               width: 150,
-                  //               child: LinearProgressIndicator(
-                  //                 value: 0.07,
-                  //                 backgroundColor: Colors.grey[300],
-                  //                 valueColor: AlwaysStoppedAnimation<Color>(
-                  //                     Colors.blue),
-                  //               ),
-                  //             ),
-                  //           ],
-                  //         ),
-                  //         Row(
-                  //           children: [
-                  //             Text('2%'),
-                  //             SizedBox(width: 4),
-                  //             Container(
-                  //               width: 150,
-                  //               child: LinearProgressIndicator(
-                  //                 value: 0.02,
-                  //                 backgroundColor: Colors.grey[300],
-                  //                 valueColor: AlwaysStoppedAnimation<Color>(
-                  //                     Colors.blue),
-                  //               ),
-                  //             ),
-                  //           ],
-                  //         ),
-                  //       ],
-                  //     ),
-                  //   ],
-                  // ),
 
-                  ReviewWidget(productId: productId,),
-
+                  ReviewWidget(
+                    productId: productId,
+                  ),
 
                   SizedBox(height: 20),
 
@@ -826,7 +605,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundImage:
-                          NetworkImage(comment.profilePhotoUrl),
+                              NetworkImage(comment.profilePhotoUrl),
                         ),
                         title: Text(comment.userName),
                         subtitle: Text(comment.commentText),
@@ -880,12 +659,12 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                     onPressed: isProductInCart
                         ? null
                         : () {
-                      if (checkOwnership(productId)) {
-                        addToCart();
-                      } else {
-                        showOwnershipConflictDialog();
-                      }
-                    },
+                            if (checkOwnership(productId)) {
+                              addToCart();
+                            } else {
+                              showOwnershipConflictDialog();
+                            }
+                          },
                     child: Text(
                       isProductInCart ? 'Already Added' : 'Add to Cart',
                       style: TextStyle(fontSize: 18),
@@ -902,7 +681,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
 
   bool checkOwnership(String productId) {
     final foodItem =
-    FDbox?.values.firstWhere((food) => food.productId == productId);
+        FDbox?.values.firstWhere((food) => food.productId == productId);
     final String? itemOwnership = foodItem?.productOwnership;
 
     final existingItems = _cartBox.values.toList();
@@ -944,6 +723,7 @@ class Comment {
     required this.timestamp,
   });
 }
+
 class ReviewWidget extends StatefulWidget {
   final String productId;
   const ReviewWidget({Key? key, required this.productId}) : super(key: key);
@@ -975,7 +755,6 @@ class _ReviewWidgetState extends State<ReviewWidget> {
       if (snapshot.docs.isEmpty) {
         // Handle the case when no reviews are found
         setState(() {
-
           overallRating = 0.0;
           totalReviews = 0;
           starPercentages = {1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0};
@@ -1012,7 +791,6 @@ class _ReviewWidgetState extends State<ReviewWidget> {
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -1169,8 +947,9 @@ class _ReviewWidgetState extends State<ReviewWidget> {
                               ],
                             ),
                             Text(comment),
-                            Text(timestamp, style: TextStyle(
-                                fontSize: 12, color: Colors.grey)),
+                            Text(timestamp,
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey)),
                           ],
                         ),
                       );
@@ -1190,6 +969,4 @@ class _ReviewWidgetState extends State<ReviewWidget> {
       );
     }
   }
-
-
 }
