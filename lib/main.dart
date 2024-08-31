@@ -66,7 +66,6 @@ Future<void> syncFoodDbWithFirestore() async {
       calories: 150,
     );
 
-    // Add or update the item in Hive
     foodBox.put(doc.id, foodItem);
   }
 }
