@@ -1,4 +1,5 @@
 import 'package:ecub_s1_v2/firebase_options.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecub_s1_v2/pages/home/auth.dart';
 import 'package:ecub_s1_v2/pages/home/home.dart';
 import 'package:ecub_s1_v2/pages/intro/intro.dart';
@@ -38,6 +39,47 @@ import 'package:ecub_s1_v2/service_page/FoodService/FS_CartScreen.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/FS_CheckoutScreen.dart';
 import 'package:ecub_s1_v2/service_page/FoodService/FS_Search.dart';
 
+
+
+Future<void> syncFoodDbWithFirestore() async {
+  // Reference to Firestore collection
+  CollectionReference foodCollection = FirebaseFirestore.instance.collection('fs_food_items1');
+
+  // Reference to Hive box
+  var foodBox = await Hive.openBox<Food_db>('foodDbBox');
+
+  // Fetch all documents from Firestore
+  QuerySnapshot querySnapshot = await foodCollection.get();
+
+  // Iterate through each document and store it in Hive
+  for (var doc in querySnapshot.docs) {
+    var data = doc.data() as Map<String, dynamic>;
+
+
+
+    // Create a Food_db object from Firestore data
+    Food_db foodItem = Food_db(
+      productId: data['productId'] ?? '',
+      productTitle: data['productTitle'] ?? '',
+      productPrice: data['productPrice'] ?? 0.0,
+      productImg: data['productImg'] ?? '',
+      productDesc: data['productDesc'] ?? '',
+      productOwnership: data['productOwnership'] ?? '',
+      productRating: 0.0,
+      productOffer:  0.0,
+      productMainCategory: data['productMainCategory'] ?? '',
+      productPrepTime: data['productPrepTime'] ?? '',
+      productType: data['productType'] ?? '',
+      calories: 150,
+    );
+
+    // Add or update the item in Hive
+    foodBox.put(doc.id, foodItem);
+  }
+}
+
+
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -59,253 +101,7 @@ void main() async {
   var foodBox = await Hive.openBox<Food_db>('foodDbBox');
 
   // Store static data only if the box is empty
-  if (foodBox.isEmpty) {
-    var foodDBItems = [
-      Food_db(
-        productId: '1',
-        productTitle: 'Steak',
-        productPrice: 120.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/steak.png',
-        productDesc:
-            'Delicious and juicy steak with garlic and butter, served with asparagus.',
-        productOwnership: 'ks-bakers',
-        productRating: 4.1,
-        productOffer: 10,
-        productMainCategory: "biriyani",
-        productPrepTime: "20 - 30 mins",
-        productType: "restaurant",
-        calories: 600,
-      ),
-      Food_db(
-        productId: '2',
-        productTitle: 'Chicken Quinoa',
-        productPrice: 80.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/quinoa.png',
-        productDesc:
-            'Healthy and flavorful dish with grilled chicken, quinoa, and Mediterranean spices.',
-        productOwnership: 'chennai-bakers',
-        productRating: 4.7,
-        productOffer: 5,
-        productMainCategory: "chicken",
-        productPrepTime: "20 - 30 mins",
-        productType: "restaurant",
-        calories: 450,
-      ),
-      Food_db(
-        productId: '3',
-        productTitle: 'French Fries',
-        productPrice: 40.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/frfi.jpeg',
-        productDesc: 'Crispy and golden french fries.',
-        productOwnership: 'chennai-bakers',
-        productRating: 4.1,
-        productOffer: 5,
-        productMainCategory: "side-dish",
-        productPrepTime: "20 - 30 mins",
-        productType: "restaurant",
-        calories: 300,
-      ),
-      Food_db(
-        productId: '4',
-        productTitle: 'Chicken Quinoa',
-        productPrice: 45.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/quinoa.png',
-        productDesc:
-            'Healthy and flavorful dish with grilled chicken, quinoa, and Mediterranean spices.',
-        productOwnership: 'chennai-bakers',
-        productRating: 4.0,
-        productOffer: 5,
-        productMainCategory: "chicken",
-        productPrepTime: "20 - 30 mins",
-        productType: "restaurant",
-        calories: 450,
-      ),
-      Food_db(
-        productId: '5',
-        productTitle: 'Veggie Pizza',
-        productPrice: 60.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/pizza.jpg',
-        productDesc:
-            'Classic pizza topped with fresh vegetables, mozzarella cheese, and tomato sauce.',
-        productOwnership: 'ks-bakers',
-        productRating: 4.8,
-        productOffer: 15,
-        productMainCategory: "pizza",
-        productPrepTime: "15 - 20 mins",
-        productType: "restaurant",
-        calories: 500,
-      ),
-      Food_db(
-        productId: '6',
-        productTitle: 'Pasta Carbonara',
-        productPrice: 70.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/pasta.jpg',
-        productDesc:
-            'Creamy pasta carbonara with bacon, parmesan cheese, and black pepper.',
-        productOwnership: 'chennai-bakers',
-        productRating: 4.3,
-        productOffer: 10,
-        productMainCategory: "pasta",
-        productPrepTime: "25 - 30 mins",
-        productType: "restaurant",
-        calories: 550,
-      ),
-      Food_db(
-        productId: '7',
-        productTitle: 'Grilled Salmon',
-        productPrice: 150.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/Salmon.jpg',
-        productDesc:
-            'Freshly grilled salmon fillet served with lemon butter sauce and vegetables.',
-        productOwnership: 'ks-bakers',
-        productRating: 4.9,
-        productOffer: 20,
-        productMainCategory: "seafood",
-        productPrepTime: "30 - 35 mins",
-        productType: "restaurant",
-        calories: 400,
-      ),
-      Food_db(
-        productId: '8',
-        productTitle: 'Caesar Salad',
-        productPrice: 50.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/salad.jpg',
-        productDesc:
-            'Crispy romaine lettuce, croutons, parmesan cheese, and Caesar dressing.',
-        productOwnership: 'chennai-bakers',
-        productRating: 4.3,
-        productOffer: 5,
-        productMainCategory: "salad",
-        productPrepTime: "10 - 15 mins",
-        productType: "restaurant",
-        calories: 350,
-      ),
-      Food_db(
-        productId: '9',
-        productTitle: 'Beef Burger',
-        productPrice: 90.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/burger.jpg',
-        productDesc:
-            'Juicy beef patty with lettuce, tomato, cheese, and special sauce in a sesame bun.',
-        productOwnership: 'ks-bakers',
-        productRating: 4.7,
-        productOffer: 10,
-        productMainCategory: "burger",
-        productPrepTime: "20 - 25 mins",
-        productType: "restaurant",
-        calories: 700,
-      ),
-      Food_db(
-        productId: '10',
-        productTitle: 'Chocolate Cake',
-        productPrice: 60.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/cake.jpg',
-        productDesc:
-            'Rich and moist chocolate cake with a creamy chocolate frosting.',
-        productOwnership: 'chennai-bakers',
-        productRating: 4.9,
-        productOffer: 20,
-        productMainCategory: "dessert",
-        productPrepTime: "45 - 50 mins",
-        productType: "restaurant",
-        calories: 600,
-      ),
-      Food_db(
-        productId: '11',
-        productTitle: 'Apple Pie',
-        productPrice: 55.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/apple_pie.jpg',
-        productDesc:
-            'Classic homemade apple pie with a flaky crust and sweet apple filling.',
-        productOwnership: 'home-chef-sara',
-        productRating: 4.1,
-        productOffer: 10,
-        productMainCategory: "dessert",
-        productPrepTime: "60 - 70 mins",
-        productType: "homemade",
-        calories: 450,
-      ),
-      Food_db(
-        productId: '12',
-        productTitle: 'Lasagna',
-        productPrice: 90.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/lasagna.jpg',
-        productDesc:
-            'Layered lasagna with rich meat sauce, creamy ricotta, and melted mozzarella.',
-        productOwnership: 'home-chef-john',
-        productRating: 4.2,
-        productOffer: 15,
-        productMainCategory: "pasta",
-        productPrepTime: "80 - 90 mins",
-        productType: "homemade",
-        calories: 800,
-      ),
-      Food_db(
-        productId: '13',
-        productTitle: 'Chicken Curry',
-        productPrice: 70.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/chicken_curry.jpg',
-        productDesc:
-            'Spicy and flavorful chicken curry made with fresh spices and herbs.',
-        productOwnership: 'home-chef-anita',
-        productRating: 4.7,
-        productOffer: 10,
-        productMainCategory: "chicken",
-        productPrepTime: "45 - 55 mins",
-        productType: "homemade",
-        calories: 500,
-      ),
-      Food_db(
-        productId: '14',
-        productTitle: 'Vegetable Stir-fry',
-        productPrice: 50.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/veg_stirfry.jpg',
-        productDesc:
-            'Fresh and crunchy vegetable stir-fry with a tangy soy sauce.',
-        productOwnership: 'home-chef-lee',
-        productRating: 4.6,
-        productOffer: 5,
-        productMainCategory: "vegetarian",
-        productPrepTime: "25 - 35 mins",
-        productType: "homemade",
-        calories: 300,
-      ),
-      Food_db(
-        productId: '15',
-        productTitle: 'Banana Bread',
-        productPrice: 40.00,
-        productImg:
-            'https://raw.githubusercontent.com/karuppan-the-pentester/ImagesDB/master/assets/foods/banana_bread.jpg',
-        productDesc:
-            'Moist and flavorful banana bread with a hint of cinnamon.',
-        productOwnership: 'home-chef-emma',
-        productRating: 4.4,
-        productOffer: 10,
-        productMainCategory: "dessert",
-        productPrepTime: "50 - 60 mins",
-        productType: "homemade",
-        calories: 350,
-      ),
-    ];
-
-    for (var item in foodDBItems) {
-      foodBox.add(item);
-    }
-  }
+  await syncFoodDbWithFirestore();
 
 
 
