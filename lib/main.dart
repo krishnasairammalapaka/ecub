@@ -42,22 +42,15 @@ import 'package:ecub_s1_v2/service_page/FoodService/FS_Search.dart';
 
 
 Future<void> syncFoodDbWithFirestore() async {
-  // Reference to Firestore collection
   CollectionReference foodCollection = FirebaseFirestore.instance.collection('fs_food_items1');
 
-  // Reference to Hive box
   var foodBox = await Hive.openBox<Food_db>('foodDbBox');
 
-  // Fetch all documents from Firestore
   QuerySnapshot querySnapshot = await foodCollection.get();
 
-  // Iterate through each document and store it in Hive
   for (var doc in querySnapshot.docs) {
     var data = doc.data() as Map<String, dynamic>;
 
-
-
-    // Create a Food_db object from Firestore data
     Food_db foodItem = Food_db(
       productId: data['productId'] ?? '',
       productTitle: data['productTitle'] ?? '',
