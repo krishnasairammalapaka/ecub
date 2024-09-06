@@ -264,83 +264,87 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                 },
               ),
               SizedBox(height: 20),
-              FDbox == null
-                  ? Center(child: CircularProgressIndicator())
-                  : ValueListenableBuilder(
-                      valueListenable: FDbox!.listenable(),
-                      builder: (context, Box<Food_db> items, _) {
-                        if (items.isEmpty) {
-                          return Center(
-                              child: FutureBuilder<String>(
-                            future: Translate.translateText('No items found.'),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return CircularProgressIndicator();
-                              } else if (snapshot.hasData) {
-                                return Center(child: Text(snapshot.data!));
-                              } else {
-                                return Center(
-                                    child: Text(
-                                        'No items found.')); // Fall back to original text if translation fails
-                              }
-                            },
-                          ));
-                        } else {
-                          List<Food_db> sortedItems = items.values.toList();
-                          sortedItems.sort((a, b) =>
-                              b.productRating.compareTo(a.productRating));
+        FDbox == null
+            ? Center(child: CircularProgressIndicator())
+            : ValueListenableBuilder(
+          valueListenable: FDbox!.listenable(),
+          builder: (context, Box<Food_db> items, _) {
+            if (items.isEmpty) {
+              return Center(
+                  child: FutureBuilder<String>(
+                    future: Translate.translateText('No items found.'),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return CircularProgressIndicator();
+                      } else if (snapshot.hasData) {
+                        return Center(child: Text(snapshot.data!));
+                      } else {
+                        return Center(
+                            child: Text('No items found.')); // Fall back to original text if translation fails
+                      }
+                    },
+                  ));
+            } else {
+              // Sort the items based on product rating
+              List<Food_db> sortedItems = items.values.toList();
+              sortedItems.sort((a, b) => b.productRating.compareTo(a.productRating));
 
-                          return GridView.builder(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: sortedItems.length,
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 10,
-                              mainAxisSpacing: 10,
-                              childAspectRatio: 2 / 3,
-                            ),
-                            itemBuilder: (context, index) {
-                              var item = sortedItems[index];
-                              if (item.productRating > 4.4) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    Navigator.pushNamed(context, '/fs_product',
-                                        arguments: {
-                                          'id': item.productId,
-                                          'title': item.productTitle,
-                                          'price': item.productPrice.toInt(),
-                                          'image': item.productImg,
-                                          'description': item.productDesc,
-                                          'shop': item.productOwnership,
-                                        });
-                                  },
-                                  child: FutureBuilder<String>(
-                                    future: Translate.translateText(
-                                        item.productTitle),
-                                    builder: (context, snapshot) {
-                                      return FoodTile(
-                                        id: item.productId,
-                                        title: snapshot.hasData
-                                            ? snapshot.data!
-                                            : item.productTitle,
-                                        price: item.productPrice.toInt(),
-                                        image: item.productImg,
-                                        rating: item.productRating,
-                                      );
-                                    },
-                                  ),
-                                );
-                              }
-                              return null;
-                            },
-                          );
-                        }
+              // Filter items to include only those with unique product IDs and a rating above 4.4
+              Set<String> displayedProductIds = Set();
+              List<Food_db> validItems = sortedItems.where((item) {
+                if (item.productRating > 4.4 && !displayedProductIds.contains(item.productId)) {
+                  displayedProductIds.add(item.productId); // Mark as displayed
+                  return true; // Include this item
+                }
+                return false; // Exclude this item
+              }).toList();
+
+              // Now display only the filtered list of items
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: validItems.length, // Use the count of filtered items
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 2 / 3,
+                ),
+                itemBuilder: (context, index) {
+                  var item = validItems[index];
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/fs_product', arguments: {
+                        'id': item.productId,
+                        'title': item.productTitle,
+                        'price': item.productPrice.toInt(),
+                        'image': item.productImg,
+                        'description': item.productDesc,
+                        'shop': item.productOwnership,
+                      });
+                    },
+                    child: FutureBuilder<String>(
+                      future: Translate.translateText(item.productTitle),
+                      builder: (context, snapshot) {
+                        return FoodTile(
+                          id: item.productId,
+                          title: snapshot.hasData ? snapshot.data! : item.productTitle,
+                          price: item.productPrice.toInt(),
+                          image: item.productImg,
+                          rating: item.productRating,
+                        );
                       },
                     ),
-            ],
+                  );
+                },
+              );
+            }
+          },
+        )
+
+
+        ],
           ),
         ),
       ),

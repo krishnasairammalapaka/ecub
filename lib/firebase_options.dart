@@ -70,6 +70,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '214420805388',
     projectId: 'ecub-v2',
     storageBucket: 'ecub-v2.appspot.com',
+    androidClientId: '214420805388-476ro9sto1snq2pkv22ce08v5f45an97.apps.googleusercontent.com',
     iosClientId: '214420805388-pvcavjeb5jf1pouvkg8fa6dck99nf5u0.apps.googleusercontent.com',
     iosBundleId: 'com.example.ecubS1V2',
   );

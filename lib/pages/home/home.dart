@@ -1,4 +1,5 @@
 // import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecub_s1_v2/components/bottom_nav_bar.dart';
 import 'package:ecub_s1_v2/components/speech_recog_page.dart';
 import 'package:ecub_s1_v2/main.dart';
@@ -8,7 +9,10 @@ import 'package:ecub_s1_v2/service_page/medical_equipment/me_cart.dart';
 import 'package:ecub_s1_v2/service_page/medical_equipment/me_orders.dart';
 import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive/hive.dart';
 import 'package:ecub_s1_v2/globals.dart' as globals;
@@ -22,6 +26,57 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  @override
+  void initState() {
+    super.initState();
+
+    // Ensure FirebaseAuth is initialized and user is logged in
+    var user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // Set up Firestore listener once email is retrieved
+      FirestoreNotificationService.initializeFirestoreListener(user.email!);
+    } else {
+      print("User not logged in.");
+    }
+  }
+
+
+  Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+    await Firebase.initializeApp();
+    print("Handling a background message: ${message.messageId}");
+
+    if (message.notification != null) {
+      OrderNotification({
+        'title': message.notification!.title,
+        'description': message.notification!.body
+      });
+    }
+  }
+
+
+  void OrderNotification(Map<String, dynamic> data) async {
+    var androidDetails = AndroidNotificationDetails(
+      'channelId',
+      'channelName',
+      channelDescription: 'Your channel description',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    var notificationDetails = NotificationDetails(android: androidDetails);
+
+    // Customize title and body based on the status update
+    String title = data['title'] ?? 'Order Status Updated';
+    String body = data['description'] ?? 'Your order status has changed.';
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      title,
+      body,
+      notificationDetails,
+    );
+  }
+
 
   Future<String> getUserName() async {
     var box = Hive.box('user_data');
@@ -184,6 +239,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -196,7 +252,7 @@ class _HomePageState extends State<HomePage> {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Text('Loading...');
                     }
-                    // return Text('Hi, ${snapshot.data}');
+
                     return FutureBuilder(
                         future: Translate.translateText('Hi! ${snapshot.data}'),
                         builder: (context, snapshotx) {
@@ -309,4 +365,34 @@ class _HomePageState extends State<HomePage> {
           onTabChange: (index) => navigateBottomBar(index),
         ));
   }
+}
+
+class FirestoreNotificationService {
+  static void initializeFirestoreListener(String userId) {
+    FirebaseFirestore.instance
+        .collection('orders')
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .listen((event) {
+      for (var change in event.docChanges) {
+        print('Document change detected: ${change.type}');
+        if (change.type == DocumentChangeType.modified) {
+          final data = change.doc.data();
+          print('Data received: $data');
+          if (data != null && data['status'] != null) {
+            String newStatus = data['status'];
+            print('Status changed to: $newStatus');
+            OrderNotification({
+              'title': 'Order Status Updated',
+              'description': 'Your order status has changed to $newStatus.'
+            });
+          } else {
+            print('Status is null or data is null.');
+          }
+        }
+      }
+    });
+  }
+
+
 }

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 class FS_RestaurantScreen extends StatefulWidget {
   @override
@@ -17,10 +18,53 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
   double averageRating = 0.0;
   List<Map<String, dynamic>> foodItems = [];
 
+  double userLatitude = 0.0;
+  double userLongitude = 0.0;
+  double distanceInKm = 0.0;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _fetchHotelInfo();
+    _fetchUserLocation();
+  }
+
+  void _fetchUserLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+
+    setState(() {
+      userLatitude = position.latitude;
+      userLongitude = position.longitude;
+      print("User Lat: $userLatitude");
+      print("User Lon: $userLongitude");
+
+      // Calculate distance only if both user and hotel data are available
+      if (hotelLatitude != 0.0 && hotelLongitude != 0.0) {
+        _calculateDistance();
+      }
+    });
   }
 
   void _fetchHotelInfo() async {
@@ -39,12 +83,42 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
         hotelMail = hotelData['hotelMail'];
         hotelAddress = hotelData['hotelAddress'];
         this.hotelUsername = hotelData['hotelUsername'];
+
+        hotelLatitude = double.parse(hotelData['latitude']);
+        hotelLongitude = double.parse(hotelData['longitude']);
+        print("Hotel Lat: $hotelLatitude");
+        print("Hotel Lon: $hotelLongitude");
+
+        if (userLatitude != 0.0 && userLongitude != 0.0) {
+          _calculateDistance();
+        }
       });
+
       _fetchFoodItems();
     } else {
       print('No hotel found with the given username.');
     }
   }
+
+
+  void _calculateDistance() async {
+    if (hotelLatitude != 0.0 && hotelLongitude != 0.0) {
+      double distance = Geolocator.distanceBetween(
+          userLatitude, userLongitude, hotelLatitude, hotelLongitude);
+
+      setState(() {
+        distanceInKm = distance / 1000;
+      });
+    }
+  }
+
+
+  double hotelLatitude = 0.0;
+  double hotelLongitude = 0.0;
+
+
+
+
 
   void _fetchFoodItems() async {
     final foodItemsSnapshot = await _firestore
@@ -116,7 +190,6 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
           IconButton(
             icon: Icon(Icons.favorite_border, color: Color(0xFF0D5EF9)),
             onPressed: () {
-
               // Add your favorite button action here
             },
           ),
@@ -205,16 +278,15 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
                     },
                   ),
                   SizedBox(width: 16),
-                  Icon(Icons.access_time, color: Color(0xFF0D5EF9)),
+                  Icon(Icons.location_on, color: Color(0xFF0D5EF9)),
                   SizedBox(width: 4),
-                  FutureBuilder<String>(
-                    future: Translate.translateText("20 minutes"),
-                    builder: (context, snapshot) {
-                      return snapshot.hasData
-                          ? Text(snapshot.data!)
-                          : Text("20 min");
-                    },
+                  Text(
+                    distanceInKm > 0
+                        ? "${distanceInKm.toStringAsFixed(2)} km away"
+                        : "Calculating...",
                   ),
+
+
                 ],
               ),
               SizedBox(height: 16),
@@ -226,14 +298,14 @@ class _FS_RestaurantScreenState extends State<FS_RestaurantScreen> {
                 physics: NeverScrollableScrollPhysics(),
                 children: foodItems
                     .map((item) => MenuItem(
-                  name: item['name'],
-                  restaurant: item['restaurant'],
-                  price: item['price'].toInt(),
-                  image: item['image'],
-                  id: item['id'],
-                  desc: item['desc'],
-                  averageRating: averageRating,
-                ))
+                          name: item['name'],
+                          restaurant: item['restaurant'],
+                          price: item['price'].toInt(),
+                          image: item['image'],
+                          id: item['id'],
+                          desc: item['desc'],
+                          averageRating: averageRating,
+                        ))
                     .toList(),
               ),
             ],
@@ -308,12 +380,9 @@ class MenuItem extends StatelessWidget {
     return totalRating / ratingsSnapshot.docs.length;
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final assetImage = image;
-
 
     return FutureBuilder<double>(
       future: _calculateAverageRating(id),

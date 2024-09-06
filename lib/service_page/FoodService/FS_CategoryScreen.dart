@@ -1,9 +1,11 @@
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:ecub_s1_v2/models/Hotels_Db.dart';
 import 'package:ecub_s1_v2/translation.dart';
+import 'package:geolocator/geolocator.dart'; // Add this for geolocation
 
 class FS_CategoryScreen extends StatefulWidget {
   @override
@@ -16,6 +18,8 @@ class _FS_CategoryScreenState extends State<FS_CategoryScreen> {
   String hotelMail = '';
   String hotelAddress = '';
   String hotelUsername = '';
+  double userLat = 0.0;
+  double userLng = 0.0;
 
   @override
   void didChangeDependencies() {
@@ -77,56 +81,103 @@ class _FS_CategoryScreenState extends State<FS_CategoryScreen> {
     }
   }
 
+
+
+  Future<Position> _getUserLocation() async {
+    LocationPermission permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse) {
+      return await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+    } else {
+      throw Exception('Location permission not granted');
+    }
+  }
+
+  double _calculateDistance(double lat1, double lng1, double lat2, double lng2) {
+    const double R = 6371; // Radius of the earth in km
+    double dLat = _deg2rad(lat2 - lat1);
+    double dLng = _deg2rad(lng2 - lng1);
+    double a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(_deg2rad(lat1)) * cos(_deg2rad(lat2)) *
+            sin(dLng / 2) * sin(dLng / 2);
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return R * c; // Distance in km
+  }
+
+  double _deg2rad(double deg) {
+    return deg * (pi / 180);
+  }
+
   @override
   Widget build(BuildContext context) {
     final Map arguments = ModalRoute.of(context)!.settings.arguments as Map;
     final String type = arguments['type'];
 
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF0D5EF9),
         elevation: 0,
-        title: Text('Categories'), // Added a title for better UI
+        title: Text('Categories'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 10),
-            Expanded(
-              child: FutureBuilder<List<Hotels_Db>>(
-                future: _getFilteredHotels(type),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(child: Text('No hotels found.'));
-                  } else {
-                    final hotels = snapshot.data!;
-                    return ListView.builder(
-                      itemCount: hotels.length,
-                      itemBuilder: (context, index) {
-                        final hotel = hotels[index];
-                        return RestaurantCard(
-                          name: hotel.hotelName,
-                          location: hotel.hotelAddress,
-                          rating: 4.5, // Example rating, replace with actual data
-                          deliveryTime: hotel.hotelPhoneNo, // Example data, replace if needed
-                          imageUrl: 'assets/hotel_prof.png', // Replace with actual image URL
-                          Username: hotel.hotelUsername,
-                        );
-                      },
-                    );
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
+      body: FutureBuilder<Position>(
+        future: _getUserLocation(), // Wait for user location
+        builder: (context, locationSnapshot) {
+          if (locationSnapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator()); // Show loading spinner
+          } else if (locationSnapshot.hasError) {
+            return Center(child: Text('Error: ${locationSnapshot.error}'));
+          } else if (locationSnapshot.hasData) {
+            Position position = locationSnapshot.data!;
+            userLat = position.latitude;
+            userLng = position.longitude;
+
+            return FutureBuilder<List<Hotels_Db>>(
+              future: _getFilteredHotels(type),
+              builder: (context, hotelSnapshot) {
+                if (hotelSnapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (hotelSnapshot.hasError) {
+                  return Center(child: Text('Error: ${hotelSnapshot.error}'));
+                } else if (!hotelSnapshot.hasData || hotelSnapshot.data!.isEmpty) {
+                  return Center(child: Text('No hotels found.'));
+                } else {
+                  final hotels = hotelSnapshot.data!;
+
+                  // Sort the hotels based on distance from user's location
+                  hotels.sort((a, b) {
+                    double distanceA = _calculateDistance(
+                        userLat, userLng, a.hotelLat, a.hotelLng);
+                    double distanceB = _calculateDistance(
+                        userLat, userLng, b.hotelLat, b.hotelLng);
+                    return distanceA.compareTo(distanceB);
+                  });
+
+                  return ListView.builder(
+                    itemCount: hotels.length,
+                    itemBuilder: (context, index) {
+                      final hotel = hotels[index];
+                      final distance = _calculateDistance(
+                          userLat, userLng, hotel.hotelLat, hotel.hotelLng);
+
+                      return RestaurantCard(
+                        name: hotel.hotelName,
+                        location: hotel.hotelAddress,
+                        rating: 4.5, // Example rating
+                        deliveryTime: hotel.hotelPhoneNo,
+                        imageUrl: 'assets/hotel_prof.png', // Example image URL
+                        Username: hotel.hotelUsername,
+                        distance: distance, // Add distance here
+                      );
+                    },
+                  );
+                }
+              },
+            );
+          } else {
+            return Center(child: Text('Could not fetch location.'));
+          }
+        },
       ),
     );
   }
@@ -145,11 +196,11 @@ class _FS_CategoryScreenState extends State<FS_CategoryScreen> {
         hotelPhoneNo: data['hotelPhoneNo'],
         hotelType: data['hotelType'],
         hotelUsername: data['hotelUsername'],
-        // Add more fields as per your Hotels_Db model
+        hotelLat: double.parse(data['latitude']),
+          hotelLng: double.parse(data['longitude'])
       );
     }).toList();
   }
-
 }
 
 class RestaurantCard extends StatelessWidget {
@@ -159,6 +210,7 @@ class RestaurantCard extends StatelessWidget {
   final String deliveryTime;
   final String imageUrl;
   final String Username;
+  final double distance; // Distance in km
 
   RestaurantCard({
     required this.name,
@@ -167,6 +219,7 @@ class RestaurantCard extends StatelessWidget {
     required this.deliveryTime,
     required this.imageUrl,
     required this.Username,
+    required this.distance,
   });
 
   @override
@@ -179,58 +232,67 @@ class RestaurantCard extends StatelessWidget {
           'name': name,
         });
       },
-      child: Card(
-        child: ListTile(
-          leading: Image.asset(imageUrl, width: 50, height: 50),
-          title: FutureBuilder<String>(
-            future: Translate.translateText(name),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Transform.scale(
-                  scale: 0.4,
-                  child: CircularProgressIndicator(),
-                );
-              } else {
-                return snapshot.hasData ? Text(snapshot.data!) : Text(name);
-              }
-            },
+        child: Card(
+          child: ListTile(
+            leading: Image.asset(imageUrl, width: 50, height: 50),
+            title: FutureBuilder<String>(
+              future: Translate.translateText(name),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Transform.scale(
+                    scale: 0.4,
+                    child: CircularProgressIndicator(),
+                  );
+                } else {
+                  return snapshot.hasData ? Text(snapshot.data!) : Text(name);
+                }
+              },
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: FutureBuilder<String>(
+                        future: Translate.translateText(location),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return Transform.scale(
+                              scale: 0.4,
+                              child: CircularProgressIndicator(),
+                            );
+                          } else {
+                            return snapshot.hasData ? Text(snapshot.data!) : Text(location);
+                          }
+                        },
+                      ),
+                    ),
+                    SizedBox(width: 10), // Spacer between location and distance
+                    Text('${distance.toStringAsFixed(2)} km', // Display distance
+                        style: TextStyle(color: Colors.grey)),
+                  ],
+                ),
+                SizedBox(height: 10), // Spacer
+                Row(
+                  children: [
+                    Icon(Icons.star, color: Colors.yellow[700]),
+                    SizedBox(width: 5),
+                    Text('$rating'),
+                    SizedBox(width: 10),
+                    Icon(Icons.phone, color: Colors.grey),
+                    SizedBox(width: 5),
+                    Text(deliveryTime),
+                  ],
+                ),
+              ],
+            ),
           ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FutureBuilder<String>(
-                future: Translate.translateText(location),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Transform.scale(
-                      scale: 0.4,
-                      child: CircularProgressIndicator(),
-                    );
-                  } else {
-                    return snapshot.hasData ? Text(snapshot.data!) : Text(location);
-                  }
-                },
-              ),
-              Row(
-                children: [
-                  Icon(Icons.star, color: Colors.yellow[700]),
-                  SizedBox(width: 5),
-                  Text('$rating'),
-                  SizedBox(width: 10),
-                  Icon(Icons.phone, color: Colors.grey),
-                  SizedBox(width: 5),
-                  Text(deliveryTime),
-                ],
-              ),
-              SizedBox(height: 10)
-            ],
-          ),
-        ),
-      ),
+        )
+
     );
   }
 }
-
 
 class Hotels_Db {
   final String hotelName;
@@ -238,7 +300,8 @@ class Hotels_Db {
   final String hotelPhoneNo;
   final String hotelType;
   final String hotelUsername;
-  // Add more fields as necessary
+  final double hotelLat; // Latitude of the hotel
+  final double hotelLng; // Longitude of the hotel
 
   Hotels_Db({
     required this.hotelName,
@@ -246,5 +309,7 @@ class Hotels_Db {
     required this.hotelPhoneNo,
     required this.hotelType,
     required this.hotelUsername,
+    required this.hotelLat,
+    required this.hotelLng,
   });
 }

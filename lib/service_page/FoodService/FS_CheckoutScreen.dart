@@ -76,19 +76,12 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
           userName = userData?['firstname'] ?? 'No name';
           userPhoneNumber = userData?['phonenumber'] ?? 'No phone number';
 
-          // Check if 'address' field exists and set a placeholder if not
-          userAddress = userData?.containsKey('address') == true
-              ? userData!['address'] ?? 'Enter address'
-              : 'Enter address'; // Placeholder value
+
+          userAddress = userData?['address'] ?? '';
 
           print('Address: $userAddress');
-          // Uncomment and adjust this section if you want to handle location
-          // double? lat = userData?['latitude'];
-          // double? lon = userData?['longitude'];
-          // if (lat != null && lon != null) {
-          //   userLocation = LatLng(lat, lon);
-          // }
         });
+
       } else {
         print('User document does not exist');
       }
