@@ -40,6 +40,9 @@ class Food_db {
   @HiveField(11)
   final int calories;
 
+  @HiveField(12)
+  final bool isVeg;
+
 
   Food_db({
     required this.productId,
@@ -53,6 +56,7 @@ class Food_db {
     required this.productMainCategory,
     required this.productPrepTime,
     required this.productType,
-    required this.calories
+    required this.calories,
+    required this.isVeg
   });
 }

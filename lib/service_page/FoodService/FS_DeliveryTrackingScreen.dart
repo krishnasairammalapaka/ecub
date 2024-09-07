@@ -1,124 +1,94 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+class FS_DeliveryTrackingScreen extends StatefulWidget {
+  @override
+  _FS_DeliveryTrackingScreenState createState() => _FS_DeliveryTrackingScreenState();
+}
 
+class _FS_DeliveryTrackingScreenState extends State<FS_DeliveryTrackingScreen> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late GoogleMapController _mapController;
+  LatLng _currentLocation = LatLng(0.0, 0.0);
+  String? _deliveryBoyId;
+  String? _orderId;
 
-class FS_DeliveryTrackingScreen extends StatelessWidget {
-  final LatLng _initialPosition = LatLng(37.77483, -122.41942);
+  @override
+  void initState() {
+    super.initState();
+    _fetchArguments();
+  }
+
+  void _fetchArguments() {
+    // Fetch the order ID from navigation arguments
+    final arguments = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    _orderId = arguments['Orderid'] as String?;
+    if (_orderId != null) {
+      _fetchDeliveryBoyId();
+    }
+  }
+
+  Future<void> _fetchDeliveryBoyId() async {
+    try {
+      final orderDoc = await _firestore.collection('orders').doc(_orderId).get();
+      if (orderDoc.exists) {
+        final orderData = orderDoc.data();
+        _deliveryBoyId = orderData?['del_agent']; // Assuming 'deliveryBoyId' is the field in your orders collection
+        _listenToLocationUpdates();
+      }
+    } catch (e) {
+      // Handle errors
+      print('Error fetching delivery boy ID: $e');
+    }
+  }
+
+  void _listenToLocationUpdates() {
+    if (_deliveryBoyId != null) {
+      _firestore
+          .collection('orders')
+          .doc(_orderId)
+          .snapshots()
+          .listen((snapshot) {
+        if (snapshot.exists) {
+          final data = snapshot.data();
+          final lat = data?['current_latitude'] ?? 0.0;
+          final lng = data?['current_longitude'] ?? 0.0;
+
+          setState(() {
+            _currentLocation = LatLng(lat, lng);
+            _mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation));
+          });
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _initialPosition,
-              zoom: 14.0,
-            ),
-            markers: {
-              Marker(
-                markerId: MarkerId('scooter'),
-                position: _initialPosition,
-                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
-              ),
-            },
+      appBar: AppBar(
+        title: Text('Track Delivery'),
+      ),
+      body: GoogleMap(
+        initialCameraPosition: CameraPosition(
+          target: _currentLocation,
+          zoom: 14.0,
+        ),
+        onMapCreated: (controller) {
+          _mapController = controller;
+          // Optionally move the camera to the initial location
+          if (_currentLocation.latitude != 0.0 && _currentLocation.longitude != 0.0) {
+            _mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation));
+          }
+        },
+        markers: {
+          Marker(
+            markerId: MarkerId('delivery_boy'),
+            position: _currentLocation,
+            infoWindow: InfoWindow(title: 'Delivery Boy'),
           ),
-          Positioned(
-            top: 50,
-            left: 10,
-            child: IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ),
-          Positioned(
-            top: 50,
-            right: 10,
-            child: IconButton(
-              icon: Icon(Icons.my_location, color: Colors.black),
-              onPressed: () {
-                // Logic to center map on user's location
-              },
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    spreadRadius: 5,
-                    blurRadius: 10,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.access_time, color: Colors.black),
-                      SizedBox(width: 10),
-                      Text("10-15 min", style: TextStyle(fontSize: 16)),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on, color: Colors.black),
-                      SizedBox(width: 10),
-                      Text("Chintal Chandranagar", style: TextStyle(fontSize: 16)),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Color(0xFF0D5EF9),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundImage: AssetImage('assets/delivery_person.png'),
-                        ),
-                        SizedBox(width: 20),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("XXXXXX", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                            Text("AAAAAA", style: TextStyle(color: Colors.white, fontSize: 16)),
-                          ],
-                        ),
-                        Spacer(),
-                        IconButton(
-                          icon: Icon(Icons.call, color: Colors.white),
-                          onPressed: () {
-                            // Logic to call the delivery person
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        },
       ),
     );
   }

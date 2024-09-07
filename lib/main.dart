@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecub_s1_v2/service_page/FoodService/NearHotelView.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -45,10 +46,6 @@ import 'package:ecub_s1_v2/models/CheckoutHistory_DB.dart';
 
 FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-
-
-
-
 Future<void> syncFoodDbWithFirestore() async {
   CollectionReference foodCollection = FirebaseFirestore.instance.collection('fs_food_items1');
   var foodBox = await Hive.openBox<Food_db>('foodDbBox');
@@ -71,6 +68,7 @@ Future<void> syncFoodDbWithFirestore() async {
       productPrepTime: data['productPrepTime'] ?? '',
       productType: data['productType'] ?? '',
       calories: 150,
+      isVeg: data['isVeg'] ?? true,
     );
     // Store the item in the Hive box
     foodBox.put(doc.id, foodItem);
@@ -245,6 +243,8 @@ class MyApp extends StatelessWidget {
         '/fs_favourite': (context) => FS_FavoriteScreen(),
         '/fs_profile': (context) => FS_Profile(),
         '/fs_category': (context) => FS_CategoryScreen(),
+
+        '/fs_nearhotel': (context) => NearHotel(),
 
         '/fs_s_home': (context) => FS_S_Home(),
         '/fs_s_desc': (context) => FS_S_Desc(),

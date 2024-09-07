@@ -3,8 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:ecub_s1_v2/translation.dart';
-import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
+import 'package:flutter/material.dart' hide CarouselController;
 
 class FS_HomeScreenContent extends StatefulWidget {
   @override
@@ -15,6 +18,7 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
   int _selectedIndex = 0;
   Box<Food_db>? FDbox;
   Box<Cart_Db>? _cartBox;
+  String userFavType = 'both';
 
   Map<String, String> categoryImages = {};
 
@@ -22,6 +26,7 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
   void initState() {
     super.initState();
     _openBox();
+    _fetchUserFavType();
   }
 
   Future<void> _openBox() async {
@@ -39,6 +44,26 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
       setState(() {
         categoryImages = categories;
       });
+    }
+  }
+
+  Future<void> _fetchUserFavType() async {
+    var user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      final userId = user.email;
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          userFavType = userDoc.data()?['userfavtype'] ?? 'both';
+        });
+      }
+    } else {
+      print("User not logged in.");
     }
   }
 
@@ -264,87 +289,74 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                 },
               ),
               SizedBox(height: 20),
-        FDbox == null
-            ? Center(child: CircularProgressIndicator())
-            : ValueListenableBuilder(
-          valueListenable: FDbox!.listenable(),
-          builder: (context, Box<Food_db> items, _) {
-            if (items.isEmpty) {
-              return Center(
-                  child: FutureBuilder<String>(
-                    future: Translate.translateText('No items found.'),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return CircularProgressIndicator();
-                      } else if (snapshot.hasData) {
-                        return Center(child: Text(snapshot.data!));
-                      } else {
-                        return Center(
-                            child: Text('No items found.')); // Fall back to original text if translation fails
-                      }
-                    },
-                  ));
-            } else {
-              // Sort the items based on product rating
-              List<Food_db> sortedItems = items.values.toList();
-              sortedItems.sort((a, b) => b.productRating.compareTo(a.productRating));
+              FDbox == null
+                  ? Center(child: CircularProgressIndicator())
+                  : ValueListenableBuilder(
+                      valueListenable: FDbox!.listenable(),
+                      builder: (context, Box<Food_db> items, _) {
+                        if (items.isEmpty) {
+                          return Center(child: Text('No items found.'));
+                        } else {
+                          List<Food_db> sortedItems = items.values
+                              .where((item) => item.productRating >= 4.4)
+                              .toList();
 
-              // Filter items to include only those with unique product IDs and a rating above 4.4
-              Set<String> displayedProductIds = Set();
-              List<Food_db> validItems = sortedItems.where((item) {
-                if (item.productRating > 4.4 && !displayedProductIds.contains(item.productId)) {
-                  displayedProductIds.add(item.productId); // Mark as displayed
-                  return true; // Include this item
-                }
-                return false; // Exclude this item
-              }).toList();
+                          sortedItems.sort((a, b) =>
+                              b.productRating.compareTo(a.productRating));
 
-              // Now display only the filtered list of items
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: validItems.length, // Use the count of filtered items
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 2 / 3,
-                ),
-                itemBuilder: (context, index) {
-                  var item = validItems[index];
+                          List<Food_db> favoriteItems =
+                              sortedItems.where((item) {
+                            return item.isVeg == userFavType;
+                          }).toList();
 
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, '/fs_product', arguments: {
-                        'id': item.productId,
-                        'title': item.productTitle,
-                        'price': item.productPrice.toInt(),
-                        'image': item.productImg,
-                        'description': item.productDesc,
-                        'shop': item.productOwnership,
-                      });
-                    },
-                    child: FutureBuilder<String>(
-                      future: Translate.translateText(item.productTitle),
-                      builder: (context, snapshot) {
-                        return FoodTile(
-                          id: item.productId,
-                          title: snapshot.hasData ? snapshot.data! : item.productTitle,
-                          price: item.productPrice.toInt(),
-                          image: item.productImg,
-                          rating: item.productRating,
-                        );
+                          List<Food_db> nonFavoriteItems =
+                              sortedItems.where((item) {
+                            return item.isVeg != userFavType;
+                          }).toList();
+
+                          List<Food_db> finalSortedItems =
+                              favoriteItems + nonFavoriteItems;
+
+                          return GridView.builder(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: finalSortedItems.length,
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 2 / 3,
+                            ),
+                            itemBuilder: (context, index) {
+                              var item = finalSortedItems[index];
+
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(context, '/fs_product',
+                                      arguments: {
+                                        'id': item.productId,
+                                        'title': item.productTitle,
+                                        'price': item.productPrice.toInt(),
+                                        'image': item.productImg,
+                                        'description': item.productDesc,
+                                        'shop': item.productOwnership,
+                                      });
+                                },
+                                child: FoodTile(
+                                  id: item.productId,
+                                  title: item.productTitle,
+                                  price: item.productPrice.toInt(),
+                                  image: item.productImg,
+                                  rating: item.productRating,
+                                ),
+                              );
+                            },
+                          );
+                        }
                       },
-                    ),
-                  );
-                },
-              );
-            }
-          },
-        )
-
-
-        ],
+                    )
+            ],
           ),
         ),
       ),
@@ -388,7 +400,6 @@ class CategoryCard extends StatelessWidget {
   }
 }
 
-
 class FoodTile extends StatelessWidget {
   final String id;
   final String title;
@@ -405,8 +416,10 @@ class FoodTile extends StatelessWidget {
   });
 
   Future<double?> _fetchAverageRating() async {
-    final commentsCollection = FirebaseFirestore.instance.collection('fs_comments');
-    final querySnapshot = await commentsCollection.where('foodId', isEqualTo: id).get();
+    final commentsCollection =
+        FirebaseFirestore.instance.collection('fs_comments');
+    final querySnapshot =
+        await commentsCollection.where('foodId', isEqualTo: id).get();
 
     if (querySnapshot.docs.isNotEmpty) {
       double totalRating = 0;
@@ -505,7 +518,6 @@ class FoodTile extends StatelessWidget {
     );
   }
 }
-
 
 class CategoryTile extends StatelessWidget {
   final String title;

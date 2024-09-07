@@ -363,6 +363,9 @@ class OrderHistoryItem extends StatelessWidget {
         statusMessage = 'Food is waiting to deliver';
         actionWidget = TextButton(
           onPressed: () {
+            Navigator.pushNamed(context, '/fs_delivery', arguments: {
+              "Orderid":orderId
+            });
             // Handle reorder
             _addToCart(context, foodId);
           },

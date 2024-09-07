@@ -35,23 +35,60 @@ class _HomePageState extends State<HomePage> {
     if (user != null) {
       // Set up Firestore listener once email is retrieved
       FirestoreNotificationService.initializeFirestoreListener(user.email!);
+      analyzeAndSaveUserFavType(user.email!);
     } else {
       print("User not logged in.");
     }
   }
 
 
-  Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-    await Firebase.initializeApp();
-    print("Handling a background message: ${message.messageId}");
+  Future<void> analyzeAndSaveUserFavType(String userId) async {
+    final ordersRef = FirebaseFirestore.instance.collection('orders');
+    final usersRef = FirebaseFirestore.instance.collection('users');
 
-    if (message.notification != null) {
-      OrderNotification({
-        'title': message.notification!.title,
-        'description': message.notification!.body
-      });
+    QuerySnapshot userOrdersSnapshot = await ordersRef.where('userId', isEqualTo: userId).get();
+
+    if (userOrdersSnapshot.docs.isEmpty) {
+      await usersRef.doc(userId).update({'userfavtype': 'veg and nonveg'});
+      return;
     }
+
+    bool likesVeg = false;
+    bool likesNonVeg = false;
+
+    for (var order in userOrdersSnapshot.docs) {
+      String foodId = order.get(
+          'itemId');
+      DocumentSnapshot foodSnapshot = await FirebaseFirestore.instance
+          .collection('fs_food_items1').doc(foodId).get();
+
+      if (foodSnapshot.exists) {
+        String foodType = foodSnapshot.get('isVeg').toString();
+
+        if (foodType == 'true') {
+          likesVeg = true;
+        } else if (foodType == 'false') {
+          likesNonVeg = true;
+        }
+      }
+    }
+
+    // Determine user's preference
+    String userFavType;
+    if (likesVeg && likesNonVeg) {
+      userFavType = 'veg and nonveg';
+    } else if (likesVeg) {
+      userFavType = 'veg';
+    } else if (likesNonVeg) {
+      userFavType = 'nonveg';
+    } else {
+      userFavType = 'veg and nonveg'; // Fallback in case of unexpected cases
+    }
+
+    // Update user's favorite type in Firestore
+    await usersRef.doc(userId).update({'userfavtype': userFavType});
   }
+
 
 
   void OrderNotification(Map<String, dynamic> data) async {

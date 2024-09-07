@@ -119,6 +119,26 @@ class _FS_CategoryScreenState extends State<FS_CategoryScreen> {
         backgroundColor: Color(0xFF0D5EF9),
         elevation: 0,
         title: Text('Categories'),
+        actions: [
+          GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, '/fs_nearhotel');
+            },
+            child: Container(
+              margin: EdgeInsets.only(right: 10),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: AssetImage('assets/maps.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+
+        ],
       ),
       body: FutureBuilder<Position>(
         future: _getUserLocation(), // Wait for user location
