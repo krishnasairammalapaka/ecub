@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class NearHotel extends StatefulWidget {
@@ -8,28 +9,62 @@ class NearHotel extends StatefulWidget {
 }
 
 class _NearHotelState extends State<NearHotel> {
-  GoogleMapController? _mapController;
-  LatLng _initialPosition = LatLng(0, 0); // Default initial position
+  GoogleMapController? mapController;
+  Position? _userPosition;
+  List<Marker> _markers = [];
+  bool _isLoading = true; // Add loading state
 
   @override
   void initState() {
     super.initState();
-    _fetchLocationFromFirestore();
+    _getUserLocation();
+    _fetchHotels();
   }
 
-  // Fetch longitude and latitude from Firestore
-  Future<void> _fetchLocationFromFirestore() async {
-    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-        .collection('fs_hotels')
-        .doc('fs_hotels') // Change to your Firestore document ID
-        .get();
+  Future<void> _getUserLocation() async {
+    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    setState(() {
+      _userPosition = position;
+    });
+  }
 
-    if (documentSnapshot.exists) {
-      double latitude = documentSnapshot['latitude'];
-      double longitude = documentSnapshot['longitude'];
+  Future<void> _fetchHotels() async {
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('fs_hotels').get();
+      snapshot.docs.forEach((doc) {
+        var data = doc.data() as Map<String, dynamic>;
 
+        // Safely fetch latitude and longitude (null check)
+        double? latitude = data['latitude'] != null ? double.parse(data['latitude'].toString()) : null;
+        double? longitude = data['longitude'] != null ? double.parse(data['longitude'].toString()) : null;
+
+        // Safely fetch the hotel name, using an empty string if null
+        String hotelName = data['hotelName'] ?? 'Unknown Hotel';
+
+        // Ensure latitude and longitude are not null before proceeding
+        if (latitude != null && longitude != null && _userPosition != null) {
+          double distanceInMeters = Geolocator.distanceBetween(
+            _userPosition!.latitude, _userPosition!.longitude,
+            latitude, longitude,
+          );
+          double distanceInKm = distanceInMeters / 1000;
+
+          // Add marker to map
+          _markers.add(Marker(
+            markerId: MarkerId(doc.id),
+            position: LatLng(latitude, longitude),
+            infoWindow: InfoWindow(
+              title: 'Hotel: $hotelName',
+              snippet: '${distanceInKm.toStringAsFixed(2)} km away',
+            ),
+          ));
+        }
+      });
+    } catch (e) {
+      print('Error fetching hotel data: $e');
+    } finally {
       setState(() {
-        _initialPosition = LatLng(latitude, longitude);
+        _isLoading = false; // Data fetched, stop loading
       });
     }
   }
@@ -37,26 +72,20 @@ class _NearHotelState extends State<NearHotel> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Map View'),
-      ),
-      body: GoogleMap(
-        initialCameraPosition: CameraPosition(
-          target: _initialPosition,
-          zoom: 15, // Set zoom level
-        ),
-        markers: {
-          Marker(
-            markerId: MarkerId('locationMarker'),
-            position: _initialPosition,
-            infoWindow: InfoWindow(
-              title: 'Marked Location',
-            ),
-          ),
-        },
+      appBar: AppBar(title: Text('Nearby Hotels')),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator()) // Show loading indicator while fetching data
+          : _userPosition == null
+          ? Center(child: Text("Failed to get location"))
+          : GoogleMap(
         onMapCreated: (GoogleMapController controller) {
-          _mapController = controller;
+          mapController = controller;
         },
+        markers: Set.from(_markers),
+        initialCameraPosition: CameraPosition(
+          target: LatLng(_userPosition!.latitude, _userPosition!.longitude),
+          zoom: 12,
+        ),
       ),
     );
   }

@@ -23,7 +23,7 @@ class Food_db {
   final String productOwnership;
 
   @HiveField(6)
-  final double productRating;
+  late double productRating;
 
   @HiveField(7)
   final double productOffer;

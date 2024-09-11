@@ -334,6 +334,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
         'itemPrice': productDetails.productPrice * item.ItemCount,
         'vendor': productDetails.productOwnership,
         'address': userAddress,
+        'isVeg': productDetails.isVeg,
         'docId': newDocRef.id, // Store the document ID in the field
       });
 
