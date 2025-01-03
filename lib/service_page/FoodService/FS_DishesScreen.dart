@@ -5,6 +5,8 @@ import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/models/Hotels_Db.dart';
 
 class FS_DishesScreen extends StatefulWidget {
+  const FS_DishesScreen({super.key});
+
   @override
   _FS_DishesScreenState createState() => _FS_DishesScreenState();
 }
@@ -49,18 +51,18 @@ class _FS_DishesScreenState extends State<FS_DishesScreen> {
             DropdownButton<String>(
               underline: SizedBox(),
               icon: Icon(Icons.arrow_drop_down, color: Colors.white),
-              items: [
+              items: const [
                 DropdownMenuItem(
-                  child: Text("All"),
                   value: "all",
+                  child: Text("All"),
                 ),
                 DropdownMenuItem(
-                  child: Text("Restaurant"),
                   value: "restuarent",
+                  child: Text("Restaurant"),
                 ),
                 DropdownMenuItem(
-                  child: Text("Home-made"),
                   value: "homemade",
+                  child: Text("Home-made"),
                 ),
               ],
               onChanged: (value) {
@@ -161,7 +163,7 @@ class RestaurantCard extends StatelessWidget {
   final String imageUrl;
   final bool isHomeMade;
 
-  RestaurantCard({
+  const RestaurantCard({super.key, 
     required this.name,
     required this.location,
     required this.rating,

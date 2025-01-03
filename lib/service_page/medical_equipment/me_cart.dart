@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:slide_to_act/slide_to_act.dart';
 
 class Mecart extends StatefulWidget {
-  const Mecart({Key? key}) : super(key: key);
+  const Mecart({super.key});
 
   @override
   State<Mecart> createState() => _MecartState();
@@ -341,14 +341,14 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                                                 builder: (context, snapshot) {
                                                   return snapshot.hasData
                                                       ? Text(
-                                                          '${snapshot.data!} \₹${item['price']}',
+                                                          '${snapshot.data!} ₹${item['price']}',
                                                           style: TextStyle(
                                                               fontSize: 14,
                                                               color:
                                                                   Colors.green),
                                                         )
                                                       : Text(
-                                                          'Price: \₹${item['price'].toString()}',
+                                                          'Price: ₹${item['price'].toString()}',
                                                           style: TextStyle(
                                                               fontSize: 14,
                                                               color:
@@ -447,13 +447,13 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                         builder: (context, snapshot) {
                           return snapshot.hasData
                               ? Text(
-                                  '${snapshot.data!} \₹${totalPrice.toStringAsFixed(2)}',
+                                  '${snapshot.data!} ₹${totalPrice.toStringAsFixed(2)}',
                                   style: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold),
                                 )
                               : Text(
-                                  'Total Price: \₹${totalPrice.toStringAsFixed(2)}',
+                                  'Total Price: ₹${totalPrice.toStringAsFixed(2)}',
                                   style: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold),
@@ -612,7 +612,7 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                         : Text('Order Summary');
                   },
                 ),
-                content: Container(
+                content: SizedBox(
                   width: double.maxFinite, // Ensures the dialog is wide enough
                   child: ListView.builder(
                     shrinkWrap:
@@ -711,6 +711,8 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
 }
 
 class RentPage extends StatefulWidget {
+  const RentPage({super.key});
+
   @override
   State<RentPage> createState() => _RentPageState();
 }

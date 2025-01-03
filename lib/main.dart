@@ -9,6 +9,10 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+// KSM: Added google maps flutter platform interface android
+import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
+import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
+
 // Import your models and pages
 import 'firebase_options.dart';
 import 'package:ecub_s1_v2/pages/home/auth.dart';
@@ -58,11 +62,11 @@ Future<void> syncFoodDbWithFirestore() async {
     Food_db foodItem = Food_db(
       productId: data['productId'] ?? '',
       productTitle: data['productTitle'] ?? '',
-      productPrice: data['productPrice'] ?? 0.0,
+      productPrice: (data['productPrice'] is int ? (data['productPrice'] as int).toDouble() : data['productPrice']) ?? 0.0,
       productImg: data['productImg'] ?? '',
       productDesc: data['productDesc'] ?? '',
       productOwnership: data['productOwnership'] ?? '',
-      productRating: data['productRating'] ?? 3.0,
+      productRating: (data['productRating'] is int ? (data['productRating'] as int).toDouble() : data['productRating']) ?? 0.0,
       productOffer: 0.0,
       productMainCategory: data['productMainCategory'] ?? '',
       productPrepTime: data['productPrepTime'] ?? '',
@@ -170,9 +174,9 @@ void main() async {
   var user = FirebaseAuth.instance.currentUser;
 
   String? email = user?.email;
-  if (email != null) {
-    FirestoreNotificationService.initializeFirestoreListener(email);
-  }
+  FirestoreNotificationService.initializeFirestoreListener(email!);
+  final mapsImplementation = GoogleMapsFlutterAndroid();
+  GoogleMapsFlutterPlatform.instance = mapsImplementation;
 
   runApp(const MyApp());
 }
@@ -236,7 +240,6 @@ class MyApp extends StatelessWidget {
         '/fs_product': (context) => FS_ProductScreen(),
         '/fs_cart': (context) => FS_CartScreen(),
         '/fs_checkout': (context) => FS_CheckoutScreen(),
-        '/fs_delivery': (context) => FS_DeliveryTrackingScreen(),
         '/fs_dishes': (context) => FS_DishesScreen(),
         '/fs_hotel': (context) => FS_RestaurantScreen(),
         '/fs_search': (context) => FS_Search(),
@@ -245,7 +248,7 @@ class MyApp extends StatelessWidget {
         '/fs_category': (context) => FS_CategoryScreen(),
 
         '/fs_nearhotel': (context) => NearHotel(),
-
+        '/fs_track': (context) => FS_DeliveryTrackingScreen(),
         '/fs_s_home': (context) => FS_S_Home(),
         '/fs_s_desc': (context) => FS_S_Desc(),
         '/fs_s_checkout': (context) => FS_S_Checkout(),

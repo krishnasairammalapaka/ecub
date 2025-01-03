@@ -5,13 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
 class FS_S_Home extends StatefulWidget {
+  const FS_S_Home({super.key});
+
   @override
   _FS_S_HomeState createState() => _FS_S_HomeState();
 }
 
 class _FS_S_HomeState extends State<FS_S_Home>
     with SingleTickerProviderStateMixin {
-  int _selectedIndex = 0;
+  final int _selectedIndex = 0;
   TabController? _tabController;
 
   final firestoreInstance = FirebaseFirestore.instance;
@@ -134,14 +136,18 @@ class _FS_S_HomeState extends State<FS_S_Home>
           children: packs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             final packID = doc.id; // Extract the document ID
+
+            int packPriceW = (data['pack_price_w'] is int) ? data['pack_price_w'] : int.tryParse(data['pack_price_w'].toString()) ?? 0; // Convert to int
+            int packPriceM = (data['pack_price_m'] is int) ? data['pack_price_m'] : int.tryParse(data['pack_price_m'].toString()) ?? 0; // Convert to int
+
             // print(packID);
             return _buildMealItem(
               packID,
               data['pack_name'],
               data['pack_img'],
               data['pack_rating'],
-              data['pack_price_w'],
-              data['pack_price_m'],
+              packPriceW,
+              ((packPriceW / 7) * 30).round(),
             );
           }).toList(),
         );

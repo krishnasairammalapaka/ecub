@@ -7,7 +7,7 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 class PayHomeFood extends StatefulWidget {
   final double amount;
 
-  PayHomeFood({required this.amount});
+  const PayHomeFood({super.key, required this.amount});
 
   @override
   _PayHomeFoodState createState() => _PayHomeFoodState();

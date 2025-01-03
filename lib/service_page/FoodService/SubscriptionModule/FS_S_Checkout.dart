@@ -13,6 +13,8 @@ class DateUtil {
 }
 
 class FS_S_Checkout extends StatefulWidget {
+  const FS_S_Checkout({super.key});
+
   @override
   _FS_S_CheckoutState createState() => _FS_S_CheckoutState();
 }
@@ -265,7 +267,7 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                 builder: (context, snapshot) {
                   return snapshot.hasData
                       ? Text(
-                          snapshot.data! + '$price',
+                          '${snapshot.data!}$price',
                           style: TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold),
                         )
@@ -360,13 +362,13 @@ class _FS_S_CheckoutState extends State<FS_S_Checkout> {
                     print('Error updating Firestore: $e');
                   }
                 },
-                child: Text('Confirm Subscription'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF0D5EF9),
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   textStyle: TextStyle(fontSize: 18),
                 ),
+                child: Text('Confirm Subscription'),
               ),
             ],
           ),
@@ -421,7 +423,7 @@ class AlarmSetting extends StatefulWidget {
   final bool initialIsOn;
   final Function(int, List<bool>, TimeOfDay, bool) onChanged;
 
-  AlarmSetting({
+  const AlarmSetting({super.key, 
     required this.title,
     required this.initialTime,
     required this.initialIsOn,

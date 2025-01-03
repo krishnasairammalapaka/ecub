@@ -16,6 +16,7 @@ class CheckoutHistory_DB extends HiveObject {
   @HiveField(4)
   late String TimeStamp;
 
+  @override
   @HiveField(3)
   final int key;
 

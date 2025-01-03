@@ -5,10 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
 
 class ProfileScreen extends StatelessWidget {
-  ProfileScreen({Key? key})
-      : super(
-            key:
-                key); // Removed the 'super.' prefix for clarity and compatibility
+  ProfileScreen({super.key}); // Removed the 'super.' prefix for clarity and compatibility
 
   final User? user = FirebaseAuth.instance.currentUser;
 

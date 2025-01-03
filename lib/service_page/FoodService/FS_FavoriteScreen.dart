@@ -7,12 +7,14 @@ import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/components/bottom_nav_fs.dart';
 
 class FS_FavoriteScreen extends StatefulWidget {
+  const FS_FavoriteScreen({super.key});
+
   @override
   _FS_FavoriteScreenState createState() => _FS_FavoriteScreenState();
 }
 
 class _FS_FavoriteScreenState extends State<FS_FavoriteScreen> with RouteAware {
-  int _selectedIndex = 2; // Index for the Favorite screen
+  final int _selectedIndex = 2; // Index for the Favorite screen
   Box<Favourites_DB>? _favouritesBox;
   Box<Food_db>? FDbox;
 
@@ -208,7 +210,7 @@ class RestaurantCard extends StatelessWidget {
   final bool isHomeMade;
   final VoidCallback onDelete;
 
-  RestaurantCard({
+  const RestaurantCard({super.key, 
     required this.name,
     required this.location,
     required this.rating,

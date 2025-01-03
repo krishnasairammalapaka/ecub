@@ -5,12 +5,14 @@ import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/models/Hotels_Db.dart';
 
 class FS_Search extends StatefulWidget {
+  const FS_Search({super.key});
+
   @override
   _FS_SearchState createState() => _FS_SearchState();
 }
 
 class _FS_SearchState extends State<FS_Search> {
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   Box<Food_db>? foodBox;
   Box<Hotels_Db>? hotelBox;
 
@@ -267,7 +269,7 @@ class FullSizedTile extends StatelessWidget {
   final String location;
   final double rating;
 
-  FullSizedTile({
+  const FullSizedTile({super.key, 
     required this.title,
     required this.description,
     required this.imageUrl,

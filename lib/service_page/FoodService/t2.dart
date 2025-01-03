@@ -4,6 +4,8 @@ import 'package:ecub_s1_v2/translation.dart';
 import 'package:flutter/material.dart';
 
 class FS_HomeScreenContent extends StatefulWidget {
+  const FS_HomeScreenContent({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -389,7 +391,7 @@ class CategoryTile extends StatelessWidget {
   final String title;
   final String image;
 
-  CategoryTile({required this.title, required this.image});
+  const CategoryTile({super.key, required this.title, required this.image});
 
   @override
   Widget build(BuildContext context) {
@@ -407,7 +409,7 @@ class CategoryCard extends StatelessWidget {
   final String title;
   final String image;
 
-  CategoryCard({required this.title, required this.image});
+  const CategoryCard({super.key, required this.title, required this.image});
 
   @override
   Widget build(BuildContext context) {
@@ -434,7 +436,7 @@ class FoodCard extends StatelessWidget {
   final double price;
   final double rating;
 
-  FoodCard({
+  const FoodCard({super.key, 
     required this.title,
     required this.image,
     required this.price,

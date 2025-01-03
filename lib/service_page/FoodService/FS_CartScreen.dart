@@ -8,6 +8,8 @@ import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:ecub_s1_v2/models/Food_db.dart';
 
 class FS_CartScreen extends StatefulWidget {
+  const FS_CartScreen({super.key});
+
   @override
   _FS_CartScreenState createState() => _FS_CartScreenState();
 }
@@ -241,7 +243,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
                                   ConnectionState.waiting) {
                                 return CircularProgressIndicator();
                               } else if (snapshot.hasData) {
-                                return Text(snapshot.data!);
+                                return Text(snapshot.data!.replaceFirst(snapshot.data![0], snapshot.data![0].toUpperCase()));
                               } else {
                                 return Text('No items Found');
                               }
@@ -274,7 +276,7 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
                                           ConnectionState.waiting) {
                                         return CircularProgressIndicator();
                                       } else if (snapshot.hasData) {
-                                        return Text(snapshot.data!);
+                                        return Text(snapshot.data!.replaceFirst(snapshot.data![0], snapshot.data![0].toUpperCase()));
                                       } else {
                                         return Text('No items Found');
                                       }
@@ -338,8 +340,8 @@ class _FS_CartScreenState extends State<FS_CartScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToCheckout,
-        child: Icon(Icons.check),
         backgroundColor: Color(0xFF0D5EF9),
+        child: Icon(Icons.check),
       ),
     );
   }
@@ -352,7 +354,7 @@ class CartItemCard extends StatelessWidget {
   final VoidCallback onDecrement;
   final VoidCallback onDelete;
 
-  CartItemCard({
+  const CartItemCard({super.key, 
     required this.productDetails,
     required this.itemCount,
     required this.onIncrement,
@@ -373,7 +375,7 @@ class CartItemCard extends StatelessWidget {
             fit: BoxFit.cover,
           ),
         ),
-        title: Text(productDetails.productTitle),
+        title: Text(productDetails.productTitle.replaceFirst(productDetails.productTitle[0], productDetails.productTitle[0].toUpperCase())),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -406,7 +408,7 @@ class CartItemCard extends StatelessWidget {
 class SubscriptionPackCard extends StatelessWidget {
   final Map<String, dynamic> subscriptionPack;
 
-  SubscriptionPackCard({required this.subscriptionPack});
+  const SubscriptionPackCard({super.key, required this.subscriptionPack});
 
   @override
   Widget build(BuildContext context) {

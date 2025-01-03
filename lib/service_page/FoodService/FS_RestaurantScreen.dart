@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 class FS_RestaurantScreen extends StatefulWidget {
+  const FS_RestaurantScreen({super.key});
+
   @override
   _FS_RestaurantScreenState createState() => _FS_RestaurantScreenState();
 }
@@ -320,7 +322,7 @@ class CategoryTab extends StatelessWidget {
   final String text;
   final bool isSelected;
 
-  CategoryTab({required this.text, this.isSelected = false});
+  const CategoryTab({super.key, required this.text, this.isSelected = false});
 
   @override
   Widget build(BuildContext context) {
@@ -350,7 +352,7 @@ class MenuItem extends StatelessWidget {
   final String restaurant;
   final double averageRating;
 
-  MenuItem({
+  MenuItem({super.key, 
     required this.name,
     required this.restaurant,
     required this.price,

@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class MenuItem {
   final String id;
   final String name;
-  final int price;
+  final double price;
   final String image;
   final String desc;
   final String restaurant;
@@ -34,6 +34,8 @@ class MenuItem {
 }
 
 class FS_S_Desc extends StatefulWidget {
+  const FS_S_Desc({super.key});
+
   @override
   _FS_S_DescState createState() => _FS_S_DescState();
 }
@@ -81,7 +83,7 @@ class _FS_S_DescState extends State<FS_S_Desc> {
         for (String foodId in foodIds) {
           DocumentSnapshot<Map<String, dynamic>> foodDoc =
               await FirebaseFirestore.instance
-                  .collection('fs_food_items')
+                  .collection('fs_food_items1')
                   .doc(foodId)
                   .get();
           if (foodDoc.exists) {
@@ -90,11 +92,11 @@ class _FS_S_DescState extends State<FS_S_Desc> {
             MenuItem menuItem = MenuItem(
               id: foodData['id'],
               name: foodData['productTitle'],
-              price: foodData['productPrice'],
+              price: (foodData['productPrice'] is int ? (foodData['productPrice'] as int).toDouble() : foodData['productPrice']) ?? 0.0,
               image: foodData['productImg'],
               desc: foodData['productDesc'],
               restaurant: foodData['productOwnership'],
-              rating: foodData['productRating'],
+              rating: (foodData['productRating'] is int ? (foodData['productRating'] as int).toDouble() : foodData['productRating']) ?? 0.0,
               foodAvailTime: category,
               // use the category directly
               isVeg: foodData['isVeg'],
@@ -403,7 +405,7 @@ class MenuItemWidget extends StatelessWidget {
   final MenuItem item;
   final VoidCallback onSelect;
 
-  MenuItemWidget({required this.item, required this.onSelect});
+  const MenuItemWidget({super.key, required this.item, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {

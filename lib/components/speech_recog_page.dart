@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 class SpeechRecognitionScreen extends StatefulWidget {
+  const SpeechRecognitionScreen({super.key});
+
   @override
   _SpeechRecognitionScreenState createState() =>
       _SpeechRecognitionScreenState();

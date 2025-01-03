@@ -27,7 +27,7 @@ class _TodaysMenu extends StatefulWidget {
   final String FoodTime;
   final String packId;
 
-  _TodaysMenu({
+  const _TodaysMenu({
     required this.packId,
     required this.FoodTime,
   });
@@ -80,7 +80,7 @@ class __TodaysMenuState extends State<_TodaysMenu> {
       // Check if today's menu item is in the selected IDs list
       if (selectedIds.contains(foodId)) {
         DocumentSnapshot foodDoc = await FirebaseFirestore.instance
-            .collection('fs_food_items')
+            .collection('fs_food_items1')
             .doc(foodId)
             .get();
 
@@ -103,7 +103,7 @@ class __TodaysMenuState extends State<_TodaysMenu> {
         String selectedId = selectedIds[0]; // Pick the first selected item
 
         DocumentSnapshot selectedFoodDoc = await FirebaseFirestore.instance
-            .collection('fs_food_items')
+            .collection('fs_food_items1')
             .doc(selectedId)
             .get();
 
@@ -168,6 +168,8 @@ class DateUtil {
 }
 
 class FS_S_PackCheck extends StatefulWidget {
+  const FS_S_PackCheck({super.key});
+
   @override
   _FS_S_PackCheckState createState() => _FS_S_PackCheckState();
 }
@@ -674,13 +676,13 @@ class _FS_S_PackCheckState extends State<FS_S_PackCheck> {
                     print('Error updating Firestore: $e');
                   }
                 },
-                child: Text('Update Subscription'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF0D5EF9),
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   textStyle: TextStyle(fontSize: 18),
                 ),
+                child: Text('Update Subscription'),
               )
             ],
           ),
@@ -725,7 +727,7 @@ class AlarmSetting extends StatefulWidget {
   final bool initialIsOn;
   final Function(int, List<bool>, TimeOfDay, bool) onChanged;
 
-  AlarmSetting({
+  const AlarmSetting({super.key, 
     required this.title,
     required this.initialTime,
     required this.initialIsOn,
@@ -868,7 +870,7 @@ class MenuItemWidget extends StatelessWidget {
   final MenuItem item;
   final VoidCallback onSelect;
 
-  MenuItemWidget({required this.item, required this.onSelect});
+  const MenuItemWidget({super.key, required this.item, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {

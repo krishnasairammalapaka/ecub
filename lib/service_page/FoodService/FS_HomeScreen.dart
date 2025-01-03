@@ -10,6 +10,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:ecub_s1_v2/components/bottom_nav_fs.dart';
 
 class FS_HomeScreen extends StatefulWidget {
+  const FS_HomeScreen({super.key});
+
   @override
   _FS_HomeScreenState createState() => _FS_HomeScreenState();
 }
@@ -149,7 +151,7 @@ class CategoryCard extends StatelessWidget {
   final String title;
   final String image;
 
-  CategoryCard({required this.title, required this.image});
+  const CategoryCard({super.key, required this.title, required this.image});
 
   @override
   Widget build(BuildContext context) {
@@ -187,8 +189,8 @@ class FoodTile extends StatelessWidget {
   final String image;
   final double rating;
 
-  FoodTile(
-      {required this.title,
+  const FoodTile(
+      {super.key, required this.title,
         required this.price,
         required this.image,
         required this.rating});
@@ -274,7 +276,7 @@ class CategoryTile extends StatelessWidget {
   final String image;
   final VoidCallback onTap;
 
-  CategoryTile({required this.title, required this.image, required this.onTap});
+  const CategoryTile({super.key, required this.title, required this.image, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -288,7 +290,7 @@ class CategoryTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10.0),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black26,
               blurRadius: 4.0,

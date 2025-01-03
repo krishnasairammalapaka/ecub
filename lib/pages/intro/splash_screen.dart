@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 // import 'package:ecub_s1_v2/pages/intro/intro.dart';
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }

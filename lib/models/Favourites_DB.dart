@@ -10,6 +10,7 @@ class Favourites_DB extends HiveObject {
   @HiveField(1)
   final String ItemId;
 
+  @override
   @HiveField(2)
   final int key; // Add a key field for Hive box key
 

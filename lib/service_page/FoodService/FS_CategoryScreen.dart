@@ -8,6 +8,8 @@ import 'package:ecub_s1_v2/translation.dart';
 import 'package:geolocator/geolocator.dart'; // Add this for geolocation
 
 class FS_CategoryScreen extends StatefulWidget {
+  const FS_CategoryScreen({super.key});
+
   @override
   _FS_CategoryScreenState createState() => _FS_CategoryScreenState();
 }
@@ -26,6 +28,17 @@ class _FS_CategoryScreenState extends State<FS_CategoryScreen> {
     super.didChangeDependencies();
     _fetchLastOrder();
   }
+
+  Future<Object> _fetchData(String type) async {
+    final position = _getUserLocation();
+    final hotels = _getFilteredHotels(type);
+
+    final results = await Future.wait([position, hotels]);
+    userLat = (results[0] as Position).latitude;
+    userLng = (results[0] as Position).longitude;
+    return results[1];
+  }
+
 
   void _showSuggestionPopUp(String timeElapsed) {
     showDialog(
@@ -140,65 +153,46 @@ class _FS_CategoryScreenState extends State<FS_CategoryScreen> {
 
         ],
       ),
-      body: FutureBuilder<Position>(
-        future: _getUserLocation(), // Wait for user location
-        builder: (context, locationSnapshot) {
-          if (locationSnapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator()); // Show loading spinner
-          } else if (locationSnapshot.hasError) {
-            return Center(child: Text('Error: ${locationSnapshot.error}'));
-          } else if (locationSnapshot.hasData) {
-            Position position = locationSnapshot.data!;
-            userLat = position.latitude;
-            userLng = position.longitude;
+      body: FutureBuilder(
+        future: _fetchData(type), // Fetch user location and hotels in parallel
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: MapLoadingAnimation()); // Show custom animation
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || (snapshot.data as List).isEmpty) {
+            return Center(child: Text('No hotels found.'));
+          } else {
+            final hotels = snapshot.data as List<Hotels_Db>;
 
-            return FutureBuilder<List<Hotels_Db>>(
-              future: _getFilteredHotels(type),
-              builder: (context, hotelSnapshot) {
-                if (hotelSnapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                } else if (hotelSnapshot.hasError) {
-                  return Center(child: Text('Error: ${hotelSnapshot.error}'));
-                } else if (!hotelSnapshot.hasData || hotelSnapshot.data!.isEmpty) {
-                  return Center(child: Text('No hotels found.'));
-                } else {
-                  final hotels = hotelSnapshot.data!;
+            // Sort and display hotels based on distance, etc.
+            hotels.sort((a, b) {
+              double distanceA = _calculateDistance(userLat, userLng, a.hotelLat, a.hotelLng);
+              double distanceB = _calculateDistance(userLat, userLng, b.hotelLat, b.hotelLng);
+              return distanceA.compareTo(distanceB);
+            });
 
-                  // Sort the hotels based on distance from user's location
-                  hotels.sort((a, b) {
-                    double distanceA = _calculateDistance(
-                        userLat, userLng, a.hotelLat, a.hotelLng);
-                    double distanceB = _calculateDistance(
-                        userLat, userLng, b.hotelLat, b.hotelLng);
-                    return distanceA.compareTo(distanceB);
-                  });
+            return ListView.builder(
+              itemCount: hotels.length,
+              itemBuilder: (context, index) {
+                final hotel = hotels[index];
+                final distance = _calculateDistance(userLat, userLng, hotel.hotelLat, hotel.hotelLng);
 
-                  return ListView.builder(
-                    itemCount: hotels.length,
-                    itemBuilder: (context, index) {
-                      final hotel = hotels[index];
-                      final distance = _calculateDistance(
-                          userLat, userLng, hotel.hotelLat, hotel.hotelLng);
-
-                      return RestaurantCard(
-                        name: hotel.hotelName,
-                        location: hotel.hotelAddress,
-                        rating: 4.5, // Example rating
-                        deliveryTime: hotel.hotelPhoneNo,
-                        imageUrl: 'assets/hotel_prof.png', // Example image URL
-                        Username: hotel.hotelUsername,
-                        distance: distance, // Add distance here
-                      );
-                    },
-                  );
-                }
+                return RestaurantCard(
+                  name: hotel.hotelName,
+                  location: hotel.hotelAddress,
+                  rating: 4.5,
+                  deliveryTime: hotel.hotelPhoneNo,
+                  imageUrl: 'assets/hotel_prof.png',
+                  Username: hotel.hotelUsername,
+                  distance: distance, // Add distance here
+                );
               },
             );
-          } else {
-            return Center(child: Text('Could not fetch location.'));
           }
         },
       ),
+
     );
   }
 
@@ -232,7 +226,7 @@ class RestaurantCard extends StatelessWidget {
   final String Username;
   final double distance; // Distance in km
 
-  RestaurantCard({
+  const RestaurantCard({super.key, 
     required this.name,
     required this.location,
     required this.rating,
@@ -256,15 +250,21 @@ class RestaurantCard extends StatelessWidget {
           child: ListTile(
             leading: Image.asset(imageUrl, width: 50, height: 50),
             title: FutureBuilder<String>(
-              future: Translate.translateText(name),
+              future: Translate.translateText(name.replaceFirst(name[0], name[0].toUpperCase())),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Transform.scale(
                     scale: 0.4,
-                    child: CircularProgressIndicator(),
+                    child: Center(
+                      child: Image.asset(
+                        'assets/maploader.gif',
+                        width: 1500,
+                        height: 1500,
+                      ),
+                    ),
                   );
                 } else {
-                  return snapshot.hasData ? Text(snapshot.data!) : Text(name);
+                  return snapshot.hasData ? Text(snapshot.data!.replaceFirst(snapshot.data![0], snapshot.data![0].toUpperCase())) : Text(name.replaceFirst(name[0], name[0].toUpperCase()));
                 }
               },
             ),
@@ -275,15 +275,21 @@ class RestaurantCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: FutureBuilder<String>(
-                        future: Translate.translateText(location),
+                        future: Translate.translateText(location.replaceFirst(location[0], location[0].toUpperCase())),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
                             return Transform.scale(
                               scale: 0.4,
-                              child: CircularProgressIndicator(),
+                              child: Center(
+                                child: Image.asset(
+                                  'assets/maploader.gif',
+                                  width: 1500,
+                                  height: 1500,
+                                ),
+                              ),
                             );
                           } else {
-                            return snapshot.hasData ? Text(snapshot.data!) : Text(location);
+                            return snapshot.hasData ? Text(snapshot.data!.replaceFirst(snapshot.data![0], snapshot.data![0].toUpperCase())) : Text(location.replaceFirst(location[0], location[0].toUpperCase()));
                           }
                         },
                       ),
@@ -332,4 +338,28 @@ class Hotels_Db {
     required this.hotelLat,
     required this.hotelLng,
   });
+}
+
+class MapLoadingAnimation extends StatelessWidget {
+  const MapLoadingAnimation({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(50),
+        ),
+        child: Center(
+          child: Image.asset(
+            'assets/maploader.gif',
+            width: 1500,
+            height: 1500,
+          ),
+        ),
+      ),
+    );
+  }
 }

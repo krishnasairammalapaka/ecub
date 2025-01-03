@@ -34,6 +34,8 @@ class MenuItem {
 }
 
 class FS_S_PackChange extends StatefulWidget {
+  const FS_S_PackChange({super.key});
+
   @override
   _FS_S_PackChangeState createState() => _FS_S_PackChangeState();
 }
@@ -81,7 +83,7 @@ class _FS_S_PackChangeState extends State<FS_S_PackChange> {
         for (String foodId in foodIds) {
           DocumentSnapshot<Map<String, dynamic>> foodDoc =
           await FirebaseFirestore.instance
-              .collection('fs_food_items')
+              .collection('fs_food_items1')
               .doc(foodId)
               .get();
           if (foodDoc.exists) {
@@ -309,13 +311,13 @@ class _FS_S_PackChangeState extends State<FS_S_PackChange> {
           ),
           ElevatedButton(
             onPressed: () => _onCheckoutPressed(packID),
-            child: Text('Update'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFF0D5EF9),
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               textStyle: TextStyle(fontSize: 20),
             ),
+            child: Text('Update'),
           ),
           SizedBox(height: 15),
         ],
@@ -423,7 +425,7 @@ class MenuItemWidget extends StatelessWidget {
   final MenuItem item;
   final VoidCallback onSelect;
 
-  MenuItemWidget({required this.item, required this.onSelect});
+  const MenuItemWidget({super.key, required this.item, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {

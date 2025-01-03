@@ -16,7 +16,7 @@ class MeItemDesc extends StatefulWidget {
   final String storeAddress;
   final String rent;
 
-  MeItemDesc({
+  const MeItemDesc({super.key, 
     required this.storeName,
     required this.categoryName,
     required this.itemName,
@@ -253,6 +253,10 @@ class _MeItemDescState extends State<MeItemDesc> {
                               widget.imageUrl,
                               widget.price);
                         },
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.red, // Text color
+                        ),
                         child: Row(
                           children: [
                             Icon(Icons.shopping_cart),
@@ -267,10 +271,6 @@ class _MeItemDescState extends State<MeItemDesc> {
                               },
                             ),
                           ],
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.red, // Text color
                         ),
                       ),
                       if (widget.rent == "Yes")
@@ -465,7 +465,7 @@ class _MeItemDescState extends State<MeItemDesc> {
                       children: [
                         Text('67%'),
                         SizedBox(width: 4),
-                        Container(
+                        SizedBox(
                           width: 150,
                           child: LinearProgressIndicator(
                             value: 0.67,
@@ -480,7 +480,7 @@ class _MeItemDescState extends State<MeItemDesc> {
                       children: [
                         Text('20%'),
                         SizedBox(width: 4),
-                        Container(
+                        SizedBox(
                           width: 150,
                           child: LinearProgressIndicator(
                             value: 0.20,
@@ -495,7 +495,7 @@ class _MeItemDescState extends State<MeItemDesc> {
                       children: [
                         Text('7%'),
                         SizedBox(width: 4),
-                        Container(
+                        SizedBox(
                           width: 150,
                           child: LinearProgressIndicator(
                             value: 0.07,
@@ -510,7 +510,7 @@ class _MeItemDescState extends State<MeItemDesc> {
                       children: [
                         Text('2%'),
                         SizedBox(width: 4),
-                        Container(
+                        SizedBox(
                           width: 150,
                           child: LinearProgressIndicator(
                             value: 0.02,
@@ -543,6 +543,10 @@ class _MeItemDescState extends State<MeItemDesc> {
                 onPressed: () {
                   Navigator.pushNamed(context, '/me_cart');
                 },
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.blue, // Text color
+                ),
                 child: FutureBuilder<String>(
                   future: Translate.translateText("Go To Cart"),
                   builder: (context, snapshot) {
@@ -552,10 +556,6 @@ class _MeItemDescState extends State<MeItemDesc> {
                             'Go To Cart',
                           );
                   },
-                ),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.blue, // Text color
                 ),
               ),
             ),

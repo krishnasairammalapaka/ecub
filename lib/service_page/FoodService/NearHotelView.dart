@@ -4,6 +4,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class NearHotel extends StatefulWidget {
+  const NearHotel({super.key});
+
   @override
   _NearHotelState createState() => _NearHotelState();
 }
@@ -11,7 +13,7 @@ class NearHotel extends StatefulWidget {
 class _NearHotelState extends State<NearHotel> {
   GoogleMapController? mapController;
   Position? _userPosition;
-  List<Marker> _markers = [];
+  final List<Marker> _markers = [];
   bool _isLoading = true; // Add loading state
 
   @override

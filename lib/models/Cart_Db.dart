@@ -13,6 +13,7 @@ class Cart_Db extends HiveObject {
   @HiveField(2)
   late double ItemCount;
 
+  @override
   @HiveField(3)
   late int key; // Add a key field for Hive box key
 

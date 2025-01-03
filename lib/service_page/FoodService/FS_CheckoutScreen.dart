@@ -7,10 +7,12 @@ import 'package:twilio_flutter/twilio_flutter.dart';
 import 'package:ecub_s1_v2/models/CheckoutHistory_DB.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart'; // Add this package for map functionality
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 
 class FS_CheckoutScreen extends StatefulWidget {
+  const FS_CheckoutScreen({super.key});
+
   @override
   _FS_CheckoutScreenState createState() => _FS_CheckoutScreenState();
 }
@@ -29,6 +31,8 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
   String selectedPaymentOption = 'Cash on Delivery';
   bool hasSubscription = false;
   Map<String, dynamic>? subscriptionPack;
+  String couponCode = '';
+  double discountAmount = 0;
 
   final twilioFlutter = TwilioFlutter(
     accountSid: 'ACd609662616433afac55654bd43d55f46',
@@ -41,6 +45,39 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     super.initState();
     _initializeUser();
     _openBoxes();
+  }
+
+  Future<void> _applyCoupon() async {
+    if (couponCode.isEmpty) {
+      return;
+    }
+
+    final QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('discounts')
+        .where('couponCode', isEqualTo: couponCode)
+        .get();
+
+    if (querySnapshot.docs.isEmpty) {
+
+
+      return;
+    }
+
+    final DocumentSnapshot documentSnapshot = querySnapshot.docs.first;
+
+    final Map<String, dynamic> discountData =
+        documentSnapshot.data() as Map<String, dynamic>;
+
+    if (discountData['serviceType'] == 'all' ||
+        discountData['serviceType'] == 'foodservice') {
+      if (discountData['offerPercentage'] > 0) {
+        discountAmount = (totalAmount * discountData['offerPercentage']) / 100;
+      } else if (discountData['offerAmount'] > 0) {
+        discountAmount = discountData['offerAmount'];
+      }
+
+      setState(() {});
+    }
   }
 
   Future<void> _initializeUser() async {
@@ -57,7 +94,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
     _cartBox = await Hive.openBox<Cart_Db>('cartItems');
     FDbox = await Hive.openBox<Food_db>('foodDbBox');
     _checkoutHistoryBox =
-    await Hive.openBox<CheckoutHistory_DB>('checkoutHistory');
+        await Hive.openBox<CheckoutHistory_DB>('checkoutHistory');
     setState(() {});
   }
 
@@ -68,20 +105,18 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
           .doc(userId)
           .get();
       if (userDoc.exists) {
-        // Get document data as a Map
+
         Map<String, dynamic>? userData =
-        userDoc.data() as Map<String, dynamic>?;
+            userDoc.data() as Map<String, dynamic>?;
 
         setState(() {
           userName = userData?['firstname'] ?? 'No name';
           userPhoneNumber = userData?['phonenumber'] ?? 'No phone number';
 
-
           userAddress = userData?['address'] ?? '';
 
           print('Address: $userAddress');
         });
-
       } else {
         print('User document does not exist');
       }
@@ -294,8 +329,8 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
                   context,
                   MaterialPageRoute(
                       builder: (context) => PayHomeFood(
-                        amount: totalAmount,
-                      )),
+                            amount: totalAmount,
+                          )),
                 );
               },
               child: Text('Confirm'),
@@ -307,7 +342,6 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
   }
 
   Future<void> _confirmOrder() async {
-
     for (var item in _cartBox!.values) {
       final newItem = CheckoutHistory_DB(
         UserId: userId,
@@ -320,9 +354,12 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
 
       var productDetails = FDbox!.values
           .firstWhere((element) => element.productId == item.ItemId);
-      final formattedTimestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      final formattedTimestamp =
+          DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
-      var newDocRef = FirebaseFirestore.instance.collection('orders').doc(); // Create a reference for the new document
+      var newDocRef = FirebaseFirestore.instance
+          .collection('orders')
+          .doc(); // Create a reference for the new document
 
       await newDocRef.set({
         'userId': userId,
@@ -337,7 +374,6 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
         'isVeg': productDetails.isVeg,
         'docId': newDocRef.id, // Store the document ID in the field
       });
-
     }
 
     // Clear the cart
@@ -376,33 +412,33 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
               child: _cartBox == null || FDbox == null || !FDbox!.isOpen
                   ? Center(child: CircularProgressIndicator())
                   : ValueListenableBuilder(
-                valueListenable: _cartBox!.listenable(),
-                builder: (context, Box<Cart_Db> items, _) {
-                  if (items.isEmpty) {
-                    return Center(child: Text('No items in the cart.'));
-                  } else {
-                    return ListView.builder(
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        var item = items.getAt(index);
-                        if (item == null) {
-                          return Center(child: Text('Item not found.'));
+                      valueListenable: _cartBox!.listenable(),
+                      builder: (context, Box<Cart_Db> items, _) {
+                        if (items.isEmpty) {
+                          return Center(child: Text('No items in the cart.'));
+                        } else {
+                          return ListView.builder(
+                            itemCount: items.length,
+                            itemBuilder: (context, index) {
+                              var item = items.getAt(index);
+                              if (item == null) {
+                                return Center(child: Text('Item not found.'));
+                              }
+
+                              var productId = item.ItemId;
+
+                              var productDetails = FDbox!.values.firstWhere(
+                                  (element) => element.productId == productId);
+
+                              return CheckoutItemCard(
+                                productDetails: productDetails,
+                                itemCount: item.ItemCount.toInt(),
+                              );
+                            },
+                          );
                         }
-
-                        var productId = item.ItemId;
-
-                        var productDetails = FDbox!.values.firstWhere(
-                                (element) => element.productId == productId);
-
-                        return CheckoutItemCard(
-                          productDetails: productDetails,
-                          itemCount: item.ItemCount.toInt(),
-                        );
                       },
-                    );
-                  }
-                },
-              ),
+                    ),
             ),
             SizedBox(height: 16),
             if (hasSubscription && subscriptionPack != null) ...[
@@ -422,7 +458,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
             ),
             ListTile(
               title: Text(userName),
-              subtitle: Text('$userPhoneNumber'),
+              subtitle: Text(userPhoneNumber),
               trailing: IconButton(
                 icon: Icon(Icons.edit),
                 onPressed: _showEditUserDetailsDialog,
@@ -437,7 +473,7 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
               title: Text(userAddress),
               subtitle: userLocation != null
                   ? Text(
-                  'Lat: ${userLocation!.latitude}, Lon: ${userLocation!.longitude}')
+                      'Lat: ${userLocation!.latitude}, Lon: ${userLocation!.longitude}')
                   : null,
               trailing: IconButton(
                 icon: Icon(Icons.edit),
@@ -446,7 +482,25 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
             ),
             SizedBox(height: 16),
             Text(
-              'Total Amount: ₹ $totalAmount',
+              'Coupon Code:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            TextField(
+              decoration: InputDecoration(labelText: 'Enter Coupon Code'),
+              onChanged: (value) => couponCode = value,
+            ),
+            ElevatedButton(
+              onPressed: _applyCoupon,
+              child: Text('Apply Coupon'),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Discount Amount: ₹ $discountAmount',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Total Amount: ₹ ${totalAmount - discountAmount}',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
@@ -478,8 +532,8 @@ class _FS_CheckoutScreenState extends State<FS_CheckoutScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showOrderConfirmationDialog,
-        child: Icon(Icons.check),
         backgroundColor: Color(0xFF0D5EF9),
+        child: Icon(Icons.check),
       ),
     );
   }
@@ -489,7 +543,7 @@ class CheckoutItemCard extends StatelessWidget {
   final Food_db productDetails;
   final int itemCount;
 
-  CheckoutItemCard({
+  const CheckoutItemCard({super.key, 
     required this.productDetails,
     required this.itemCount,
   });
@@ -516,7 +570,7 @@ class SubsCard extends StatelessWidget {
   final String packName;
   final int packPrice;
 
-  SubsCard({
+  const SubsCard({super.key, 
     required this.packName,
     required this.packPrice,
   });
@@ -530,7 +584,7 @@ class SubsCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Price: ₹ ${packPrice}'),
+            Text('Price: ₹ $packPrice'),
           ],
         ),
       ),
@@ -541,7 +595,7 @@ class SubsCard extends StatelessWidget {
 class MapScreen extends StatelessWidget {
   final Function(LatLng) onLocationSelected;
 
-  MapScreen({required this.onLocationSelected});
+  const MapScreen({super.key, required this.onLocationSelected});
 
   @override
   Widget build(BuildContext context) {

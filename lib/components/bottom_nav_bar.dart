@@ -30,7 +30,7 @@ class BottomNavBar extends StatelessWidget {
             color: Colors.black,
             mainAxisAlignment: MainAxisAlignment.center,
             onTabChange: (value) => onTabChange!(value),
-            tabs: [
+            tabs: const [
               GButton(
                 icon: Icons.home,
                 text: 'Home',

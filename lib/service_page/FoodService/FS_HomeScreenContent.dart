@@ -4,12 +4,12 @@ import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import 'package:hive_flutter/hive_flutter.dart';
-
 import 'package:flutter/material.dart' hide CarouselController;
 
 class FS_HomeScreenContent extends StatefulWidget {
+  const FS_HomeScreenContent({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -30,6 +30,7 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
     super.initState();
     _openBox();
     _fetchUserFavType();
+    fetchAndStoreRecommendations(); // Start fetching recommendations
   }
 
   Future<double> _calculateAverageRating(String productId) async {
@@ -53,6 +54,7 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
   Future<void> _openBox() async {
     FDbox = await Hive.openBox<Food_db>('foodDbBox');
     _cartBox = await Hive.openBox<Cart_Db>('cartItems');
+    await Hive.openBox<Food_db>('recommendations'); // Open the recommendations box
     _extractCategories();
   }
 
@@ -118,6 +120,105 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
     return totalItems;
   }
 
+  void fetchAndStoreRecommendations() async {
+    List<Food_db> recommendedItems = await fetchItemsWithPreference();
+    // Store recommended items in HiveDB for future use
+    var recommendationBox = Hive.box<Food_db>('recommendations');
+    await recommendationBox.clear();
+    await recommendationBox.addAll(recommendedItems);
+    // Trigger UI update
+    setState(() {});
+  }
+
+  Future<String> fetchUserFavoriteType() async {
+    if (userId == null) {
+      print("No userId, defaulting to 'both'");
+      return 'mixed'; // Default to 'mixed' if no user ID is available
+    }
+
+    // Step 1: Fetch past orders from Firestore for the current user
+    final pastOrdersSnapshot = await _firestore
+        .collection('orders')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    // Step 2: Count the number of veg and non-veg orders
+    int vegCount = 0;
+    int nonVegCount = 0;
+
+    for (var doc in pastOrdersSnapshot.docs) {
+      if (doc['isVeg']) {
+        vegCount++;
+      } else {
+        nonVegCount++;
+      }
+    }
+
+    print('Veg count: $vegCount, Non-Veg count: $nonVegCount');
+
+    // Step 3: Determine preference based on the counts
+    if (vegCount > nonVegCount * 1.5) {
+      return 'veg'; // More veg orders, return 'veg'
+    } else if (nonVegCount > vegCount * 1.5) {
+      return 'nonveg'; // More non-veg orders, return 'nonveg'
+    } else {
+      return 'mixed'; // If counts are close, return 'mixed'
+    }
+  }
+
+  Future<List<Food_db>> fetchItemsWithPreference() async {
+    // Step 1: Fetch user preference (veg, non-veg, mixed)
+    String userFavType = await fetchUserFavoriteType(); // Fetch user preference
+    List<Food_db> vegItems = [];
+    List<Food_db> nonVegItems = [];
+
+    // Step 2: Sort items by veg and non-veg categories
+    for (var item in FDbox!.values) {
+      if (item.isVeg) {
+        vegItems.add(item);
+      } else {
+        nonVegItems.add(item);
+      }
+    }
+
+    // Sort items by rating (descending order)
+    vegItems.sort((a, b) => b.productRating.compareTo(a.productRating));
+    nonVegItems.sort((a, b) => b.productRating.compareTo(a.productRating));
+
+    // Step 3: Prepare recommendation list based on user preference
+    List<Food_db> recommendedItems = [];
+
+    if (userFavType == 'veg') {
+      // If the user prefers veg, recommend top 7 veg items
+      recommendedItems = vegItems.take(7).toList();
+    } else if (userFavType == 'nonveg') {
+      // If the user prefers non-veg, recommend top 7 non-veg items
+      recommendedItems = nonVegItems.take(7).toList();
+    } else {
+      // If the user prefers both, recommend a mix of veg and non-veg items
+      recommendedItems = [
+        ...vegItems.take(4), // Take 4 veg items
+        ...nonVegItems.take(3) // Take 3 non-veg items
+      ];
+    }
+
+    // Return the recommended list of items
+    print(
+        "Recommended Items: ${recommendedItems.map((item) => item.productTitle).toList()}");
+    return recommendedItems;
+  }
+
+  Future<List<Food_db>> getCachedOrFetchRecommendations() async {
+    var recommendationBox = Hive.box<Food_db>('recommendations');
+    if (recommendationBox.isNotEmpty) {
+      // Return cached recommendations
+      return recommendationBox.values.toList();
+    } else {
+      // Fetch new recommendations in the background if none are cached
+      return fetchItemsWithPreference();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -136,7 +237,8 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                     return CircularProgressIndicator();
                   } else if (snapshot.hasData) {
                     return Text(
-                      snapshot.data!,
+                      snapshot.data!.replaceFirst(
+                          snapshot.data![0], snapshot.data![0].toUpperCase()),
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -209,7 +311,8 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                       future: Translate.translateText("Homemade"),
                       builder: (context, snapshot) {
                         return CategoryTile(
-                          title: snapshot.hasData ? snapshot.data! : "Homemade",
+                          title:
+                          snapshot.hasData ? snapshot.data! : "Homemade",
                           image: "assets/home_made.png",
                         );
                       },
@@ -226,8 +329,9 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                       future: Translate.translateText("Restaurants"),
                       builder: (context, snapshot) {
                         return CategoryTile(
-                          title:
-                              snapshot.hasData ? snapshot.data! : "Restaurants",
+                          title: snapshot.hasData
+                              ? snapshot.data!
+                              : "Restaurants",
                           image: "assets/restuarnt_logo.png",
                         );
                       },
@@ -258,32 +362,32 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
               categoryImages.isEmpty
                   ? Center(child: CircularProgressIndicator())
                   : SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: categoryImages.entries.map((entry) {
-                          return GestureDetector(
-                            onTap: () {
-                              print(entry.key);
-                              Navigator.pushNamed(context, '/fs_dishes',
-                                  arguments: {
-                                    'title': entry.key,
-                                    'type': entry.key
-                                  });
-                            },
-                            child: FutureBuilder<String>(
-                              future: Translate.translateText(entry.key),
-                              builder: (context, snapshot) {
-                                return CategoryCard(
-                                    title: snapshot.hasData
-                                        ? snapshot.data!
-                                        : entry.key,
-                                    image: entry.value);
-                              },
-                            ),
-                          );
-                        }).toList(),
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: categoryImages.entries.map((entry) {
+                    return GestureDetector(
+                      onTap: () {
+                        print(entry.key);
+                        Navigator.pushNamed(context, '/fs_dishes',
+                            arguments: {
+                              'title': entry.key,
+                              'type': entry.key
+                            });
+                      },
+                      child: FutureBuilder<String>(
+                        future: Translate.translateText(entry.key),
+                        builder: (context, snapshot) {
+                          return CategoryCard(
+                              title: snapshot.hasData
+                                  ? snapshot.data!
+                                  : entry.key,
+                              image: entry.value);
+                        },
                       ),
-                    ),
+                    );
+                  }).toList(),
+                ),
+              ),
               SizedBox(height: 20),
               FutureBuilder<String>(
                 future: Translate.translateText("Popular Now"),
@@ -292,7 +396,8 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                     return CircularProgressIndicator();
                   } else if (snapshot.hasData) {
                     return Text(
-                      snapshot.data!,
+                      snapshot.data!.replaceFirst(
+                          snapshot.data![0], snapshot.data![0].toUpperCase()),
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -310,103 +415,58 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                 },
               ),
               SizedBox(height: 20),
-        FDbox == null
-            ? Center(child: CircularProgressIndicator())
-            : ValueListenableBuilder(
-          valueListenable: FDbox!.listenable(),
-          builder: (context, Box<Food_db> items, _) {
-            if (items.isEmpty) {
-              return Center(child: CircularProgressIndicator());
-            } else {
-              // Step 1: Fetch past orders to calculate favorite dynamically
-              Future<String> fetchUserFavoriteType() async {
-                if (userId == null) {
-                  print("No userId, defaulting to 'both'");
-                  return 'both'; // Fallback to 'both' if userId is null
-                }
 
-                final pastOrdersSnapshot = await _firestore
-                    .collection('orders')
-                    .where('userId', isEqualTo: userId)
-                    .get();
-
-                int vegCount = 0;
-                int nonVegCount = 0;
-
-                for (var doc in pastOrdersSnapshot.docs) {
-                  if (doc['isVeg']) {
-                    vegCount++;
-                  } else {
-                    nonVegCount++;
-                  }
-                }
-
-                print('Veg count: $vegCount, Non-Veg count: $nonVegCount');
-
-                // Return 'veg', 'nonveg', or 'both' based on order history
-                if (vegCount > nonVegCount * 1.5) {
-                  return 'veg';
-                } else if (nonVegCount > vegCount * 1.5) {
-                  return 'nonveg';
-                } else {
-                  return 'mixed'; // Both if counts are close
-                }
-              }
-
-              // Step 2: Sort and recommend 7 items
-              Future<List<Food_db>> fetchItemsWithPreference() async {
-                String userFavType = await fetchUserFavoriteType();
-                List<Food_db> vegItems = [];
-                List<Food_db> nonVegItems = [];
-
-                for (var item in items.values) {
-                  if (item.isVeg) {
-                    vegItems.add(item);
-                  } else {
-                    nonVegItems.add(item);
-                  }
-                }
-
-                // Sort by rating
-                vegItems.sort((a, b) => b.productRating.compareTo(a.productRating));
-                nonVegItems.sort((a, b) => b.productRating.compareTo(a.productRating));
-
-                List<Food_db> recommendedItems = [];
-
-                if (userFavType == 'veg') {
-                  recommendedItems = vegItems.take(7).toList();
-                } else if (userFavType == 'nonveg') {
-                  recommendedItems = nonVegItems.take(7).toList();
-                } else {
-                  // Mixed: Split items based on availability
-                  int totalItems = vegItems.length + nonVegItems.length;
-
-                  if (totalItems <= 6) {
-                    recommendedItems = [
-                      ...vegItems.take(4),
-                      ...nonVegItems.take(3)
-                    ];
-                  } else {
-                    // If there's a small number of orders, show a mix, otherwise prioritize.
-                    recommendedItems = [
-                      ...vegItems.take(4),
-                      ...nonVegItems.take(3)
-                    ];
-                  }
-                }
-
-                print("Recommended Items: ${recommendedItems.map((item) => item.productTitle).toList()}");
-                return recommendedItems;
-              }
-
-              return FutureBuilder<List<Food_db>>(
-                future: fetchItemsWithPreference(),
+              // Insert the FutureBuilder here
+              FutureBuilder<List<Food_db>>(
+                future: getCachedOrFetchRecommendations(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
+                    // While fetching recommendations, display random items
+                    if (FDbox == null || FDbox!.isEmpty) {
+                      return Center(child: CircularProgressIndicator());
+                    } else {
+                      List<Food_db> randomItems = FDbox!.values.toList()..shuffle();
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: 7, // Display 7 random items
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 2 / 3,
+                        ),
+                        itemBuilder: (context, index) {
+                          var item = randomItems[index];
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/fs_product',
+                                arguments: {
+                                  'id': item.productId,
+                                  'title': item.productTitle,
+                                  'price': item.productPrice.toInt(),
+                                  'image': item.productImg,
+                                  'description': item.productDesc,
+                                  'shop': item.productOwnership,
+                                },
+                              );
+                            },
+                            child: FoodTile(
+                              id: item.productId,
+                              title: item.productTitle,
+                              price: item.productPrice.toInt(),
+                              image: item.productImg,
+                              rating: item.productRating,
+                            ),
+                          );
+                        },
+                      );
+                    }
                   } else if (snapshot.hasData) {
+                    // Once recommendations are fetched, display them
                     List<Food_db> topItems = snapshot.data!;
-
                     return GridView.builder(
                       shrinkWrap: true,
                       physics: NeverScrollableScrollPhysics(),
@@ -419,17 +479,20 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                       ),
                       itemBuilder: (context, index) {
                         var item = topItems[index];
-
                         return GestureDetector(
                           onTap: () {
-                            Navigator.pushNamed(context, '/fs_product', arguments: {
-                              'id': item.productId,
-                              'title': item.productTitle,
-                              'price': item.productPrice.toInt(),
-                              'image': item.productImg,
-                              'description': item.productDesc,
-                              'shop': item.productOwnership,
-                            });
+                            Navigator.pushNamed(
+                              context,
+                              '/fs_product',
+                              arguments: {
+                                'id': item.productId,
+                                'title': item.productTitle,
+                                'price': item.productPrice.toInt(),
+                                'image': item.productImg,
+                                'description': item.productDesc,
+                                'shop': item.productOwnership,
+                              },
+                            );
                           },
                           child: FoodTile(
                             id: item.productId,
@@ -442,16 +505,53 @@ class _HomeScreenState extends State<FS_HomeScreenContent> {
                       },
                     );
                   } else {
-                    print("No data found, defaulting to general recommendations.");
-                    return Center(child: CircularProgressIndicator());
+                    // In case of error or no data, fallback to random items or show an error
+                    if (FDbox == null || FDbox!.isEmpty) {
+                      return Center(child: CircularProgressIndicator());
+                    } else {
+                      List<Food_db> randomItems = FDbox!.values.toList()..shuffle();
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: 7, // Display 7 random items
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 2 / 3,
+                        ),
+                        itemBuilder: (context, index) {
+                          var item = randomItems[index];
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/fs_product',
+                                arguments: {
+                                  'id': item.productId,
+                                  'title': item.productTitle,
+                                  'price': item.productPrice.toInt(),
+                                  'image': item.productImg,
+                                  'description': item.productDesc,
+                                  'shop': item.productOwnership,
+                                },
+                              );
+                            },
+                            child: FoodTile(
+                              id: item.productId,
+                              title: item.productTitle,
+                              price: item.productPrice.toInt(),
+                              image: item.productImg,
+                              rating: item.productRating,
+                            ),
+                          );
+                        },
+                      );
+                    }
                   }
                 },
-              );
-            }
-          },
-        )
-
-        ],
+              ),
+            ],
           ),
         ),
       ),
@@ -463,7 +563,7 @@ class CategoryCard extends StatelessWidget {
   final String title;
   final String image;
 
-  CategoryCard({required this.title, required this.image});
+  const CategoryCard({super.key, required this.title, required this.image});
 
   @override
   Widget build(BuildContext context) {
@@ -502,7 +602,7 @@ class FoodTile extends StatelessWidget {
   final String image;
   double rating;
 
-  FoodTile({
+  FoodTile({super.key, 
     required this.id,
     required this.title,
     required this.price,
@@ -512,9 +612,9 @@ class FoodTile extends StatelessWidget {
 
   Future<double?> _fetchAverageRating() async {
     final commentsCollection =
-        FirebaseFirestore.instance.collection('fs_comments');
+    FirebaseFirestore.instance.collection('fs_comments');
     final querySnapshot =
-        await commentsCollection.where('foodId', isEqualTo: id).get();
+    await commentsCollection.where('foodId', isEqualTo: id).get();
 
     if (querySnapshot.docs.isNotEmpty) {
       double totalRating = 0;
@@ -569,7 +669,7 @@ class FoodTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      title.replaceFirst(title[0], title[0].toUpperCase()),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -618,7 +718,7 @@ class CategoryTile extends StatelessWidget {
   final String title;
   final String image;
 
-  CategoryTile({required this.title, required this.image});
+  const CategoryTile({super.key, required this.title, required this.image});
 
   @override
   Widget build(BuildContext context) {
@@ -631,7 +731,7 @@ class CategoryTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10.0),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black26,
               blurRadius: 4.0,

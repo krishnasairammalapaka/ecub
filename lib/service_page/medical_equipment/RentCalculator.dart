@@ -27,10 +27,10 @@ class RentCalculator extends StatefulWidget {
 class _RentCalculatorState extends State<RentCalculator> {
   bool _isWeekly = true;
   int _numberOfWeeks = 0;
-  int _numberOfMonths = 0;
+  final int _numberOfMonths = 0;
   double _totalRent = 0.0;
-  double _weeklyRate = 100.0;
-  double _monthlyRate = 400.0;
+  final double _weeklyRate = 100.0;
+  final double _monthlyRate = 400.0;
   DateTime? _selectedDeliveryDate;
   DateTime? _deadlineDate;
   bool _detailsSubmitted = false;

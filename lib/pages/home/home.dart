@@ -143,7 +143,7 @@ class _HomePageState extends State<HomePage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text("Select Language"),
-          content: Container(
+          content: SizedBox(
             height: 300,
             child: SingleChildScrollView(
               child: Column(
@@ -310,7 +310,7 @@ class _HomePageState extends State<HomePage> {
                     child: Container(
                       margin: EdgeInsets.only(right: 15),
                       child: Stack(
-                        children: [
+                        children: const [
                           Icon(
                               FontAwesomeIcons
                                   .language, // Font Awesome language icon

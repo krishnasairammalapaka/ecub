@@ -12,12 +12,12 @@ class MeItemDetails extends StatefulWidget {
   // final String rent;
 
   const MeItemDetails({
-    Key? key,
+    super.key,
     required this.itemName,
     required this.itemImage,
     required this.categoryName,
     // required this.rent,
-  }) : super(key: key);
+  });
 
   @override
   _MeItemDetailsState createState() => _MeItemDetailsState();

@@ -51,6 +51,8 @@ class CartDB {
 }
 
 class FS_ProductScreen extends StatefulWidget {
+  const FS_ProductScreen({super.key});
+
   @override
   _FS_ProductScreenState createState() => _FS_ProductScreenState();
 }
@@ -469,7 +471,7 @@ class _FS_ProductScreenState extends State<FS_ProductScreen> {
                     ],
                   ),
                   SizedBox(height: 10),
-                  Container(
+                  SizedBox(
                     height: 200,
                     child: FDbox == null
                         ? Center(child: CircularProgressIndicator())
@@ -726,7 +728,7 @@ class Comment {
 
 class ReviewWidget extends StatefulWidget {
   final String productId;
-  const ReviewWidget({Key? key, required this.productId}) : super(key: key);
+  const ReviewWidget({super.key, required this.productId});
 
   @override
   State<ReviewWidget> createState() => _ReviewWidgetState();

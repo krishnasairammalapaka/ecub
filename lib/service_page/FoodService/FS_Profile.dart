@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+// ignore: depend_on_referenced_packages
+import 'package:maps_launcher/maps_launcher.dart';
 
 
 
@@ -221,6 +224,31 @@ class ActiveSubscriptionSection extends StatelessWidget {
 }
 
 class PastOrdersSection extends StatelessWidget {
+  Future<void> _launchMaps(String orderId) async {
+  try {
+    final orderDoc = await FirebaseFirestore.instance
+        .collection('orders')
+        .doc(orderId)
+        .get();
+
+    if (orderDoc.exists) {
+      // Starting coordinates (9.5121° N, 77.6340° E)
+      final startLat = 9.5121;
+      final startLng = 77.6340;
+      
+      // Destination coordinates (9.5636° N, 77.6822° E)
+      final destLat = 9.5636;
+      final destLng = 77.6822;
+
+      final intent = 'google.navigation:q=$destLat,$destLng&origin=$startLat,$startLng';
+      if (await canLaunch(intent)) {
+        await launch(intent);
+      }
+    }
+  } catch (e) {
+    print('Error launching maps: $e');
+  }
+}
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -230,7 +258,56 @@ class PastOrdersSection extends StatelessWidget {
         children: [
           SectionTitle(title: 'Past Orders'),
           SizedBox(height: 20),
-          OrdersListView(),
+          FutureBuilder<List<DocumentSnapshot>>(
+            future: FirebaseFirestore.instance
+                .collection('orders')
+                .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.email)
+                .get()
+                .then((snapshot) => snapshot.docs),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return CircularProgressIndicator();
+              }
+
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  final order = snapshot.data![index].data() as Map<String, dynamic>;
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            order['itemName'] ?? 'Unknown Item',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text('Amount: ₹${order['itemPrice']?.toString() ?? '0.0'}'),
+                          Text('Status: ${order['status'] ?? 'Unknown'}'),
+                          SizedBox(height: 8),
+                          ElevatedButton.icon(
+                            onPressed: () => _launchMaps(snapshot.data![index].id),
+                            icon: Icon(Icons.location_on),
+                            label: Text('Track Order'),
+                            style: ElevatedButton.styleFrom(
+                               backgroundColor: Theme.of(context).primaryColor,
+                             ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ],
       ),
     );
@@ -270,8 +347,7 @@ class SectionTitle extends StatelessWidget {
 }
 
 class OrdersListView extends StatelessWidget {
-  Future<List<DocumentSnapshot<Map<String, dynamic>>>>
-  _getCheckoutHistory() async {
+  Future<List<DocumentSnapshot<Map<String, dynamic>>>> _getCheckoutHistory() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       final querySnapshot = await FirebaseFirestore.instance
@@ -297,32 +373,79 @@ class OrdersListView extends StatelessWidget {
           return Center(child: Text('No past orders found'));
         } else {
           final orders = snapshot.data!;
+
+          // Parse the timestamp string and sort the orders by date (descending)
+          orders.sort((a, b) {
+            final aData = a.data() as Map<String, dynamic>;
+            final bData = b.data() as Map<String, dynamic>;
+
+            final dateA = DateTime.parse(aData['timestamp']);
+            final dateB = DateTime.parse(bData['timestamp']);
+            return dateB.compareTo(dateA); // Sorting in descending order (latest first)
+          });
+
+          // Group orders by date
+          Map<String, List<DocumentSnapshot<Map<String, dynamic>>>> groupedOrders = {};
+          for (var order in orders) {
+            final orderData = order.data() as Map<String, dynamic>;
+            String orderDate = DateFormat('yyyy-MM-dd').format(DateTime.parse(orderData['timestamp']));
+
+            if (groupedOrders.containsKey(orderDate)) {
+              groupedOrders[orderDate]!.add(order);
+            } else {
+              groupedOrders[orderDate] = [order];
+            }
+          }
+
           return ListView.builder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
-            itemCount: orders.length,
+            itemCount: groupedOrders.keys.length,
             itemBuilder: (context, index) {
-              final order = orders[index].data()!;
-              final status = order['status'] ?? 'pending';
-              final deliveryTime = order['etd'] ?? 'Loading...';
+              String date = groupedOrders.keys.toList()[index];
+              List<DocumentSnapshot<Map<String, dynamic>>> ordersForDate = groupedOrders[date]!;
 
-              return OrderHistoryItem(
-                orderId: orders[index].id,
-                foodname: order['itemName'] ?? 'Unknown Food',
-                restaurant: order['vendor'] ?? 'Unknown Restaurant',
-                amount: order['itemPrice']?.toDouble() ?? 0,
-                status: status,
-                deliveryTime: deliveryTime,
-                foodId: order['itemId'] ?? '1',
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      date,
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ListView.builder(
+                    physics: NeverScrollableScrollPhysics(), // Prevent inner list from scrolling
+                    shrinkWrap: true, // Take up only as much space as needed
+                    itemCount: ordersForDate.length,
+                    itemBuilder: (context, index) {
+                      final orderData = ordersForDate[index].data() as Map<String, dynamic>;
+                      final status = orderData['status'] ?? 'pending';
+                      final deliveryTime = orderData['etd'] ?? 'Loading...';
+
+                      return OrderHistoryItem(
+                        orderId: ordersForDate[index].id,
+                        foodname: orderData['itemName'] ?? 'Unknown Food',
+                        restaurant: orderData['vendor'] ?? 'Unknown Restaurant',
+                        amount: orderData['itemPrice']?.toDouble() ?? 0,
+                        status: status,
+                        deliveryTime: deliveryTime,
+                        foodId: orderData['itemId'] ?? '1',
+                      );
+                    },
+                  ),
+                ],
               );
             },
           );
         }
       },
     );
-
   }
 }
+
+
 
 class OrderHistoryItem extends StatelessWidget {
   final String orderId;
@@ -331,7 +454,7 @@ class OrderHistoryItem extends StatelessWidget {
   final String status;
   final String deliveryTime;
   final String foodname;
-  final String foodId; // Add foodId to the item
+  final String foodId;
 
   const OrderHistoryItem({
     required this.orderId,
@@ -340,163 +463,98 @@ class OrderHistoryItem extends StatelessWidget {
     required this.status,
     required this.deliveryTime,
     required this.foodname,
-    required this.foodId, // Add foodId to the constructor
+    required this.foodId,
   });
+
+Future<void> _launchMaps(BuildContext context) async {
+  try {
+    final orderDoc = await FirebaseFirestore.instance
+        .collection('orders')
+        .doc(orderId)
+        .get();
+
+    if (orderDoc.exists) {
+      // Starting coordinates (9.5121° N, 77.6340° E)
+      final startLat = 9.5121;
+      final startLng = 77.6340;
+      
+      // Destination coordinates (9.5636° N, 77.6822° E)
+      final destLat = 9.5636;
+      final destLng = 77.6822;
+
+      final intent = 'google.navigation:q=$destLat,$destLng&origin=$startLat,$startLng';
+      if (await canLaunch(intent)) {
+        await launch(intent);
+      }
+    }
+  } catch (e) {
+    print('Error launching maps: $e');
+  }
+}
 
   @override
   Widget build(BuildContext context) {
     String statusMessage;
-    Widget actionWidget;
-
     switch (status) {
       case 'pending':
         statusMessage = 'Food is being cooked';
-        actionWidget = SizedBox.shrink();
         break;
-
       case 'in_transit':
         statusMessage = 'Food is on the way';
-        actionWidget = Text('Estimated delivery time: $deliveryTime');
         break;
-
       case 'completed':
         statusMessage = 'Food is waiting to deliver';
-        actionWidget = TextButton(
-          onPressed: () {
-            Navigator.pushNamed(context, '/fs_delivery', arguments: {
-              "Orderid":orderId
-            });
-            // Handle reorder
-            _addToCart(context, foodId);
-          },
-          child: Text('Reorder'),
-        );
         break;
-
       case 'delivered':
         statusMessage = 'Order delivered';
-        actionWidget = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildReviewSection(context),
-            TextButton(
-              onPressed: () {
-                // Handle reorder
-                _addToCart(context, foodId);
-              },
-              child: Text('Reorder'),
-            ),
-          ],
-        );
         break;
-
       default:
         statusMessage = 'Unknown status';
-        actionWidget = SizedBox.shrink();
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              foodname,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: () => _launchMaps(context),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                foodname,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Amount: ₹${amount.toStringAsFixed(2)}',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
+              SizedBox(height: 4),
+              Text(
+                'Amount: ₹${amount.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
               ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Status: $statusMessage',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
+              SizedBox(height: 4),
+              Text(
+                'Status: $statusMessage',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
               ),
-            ),
-            SizedBox(height: 4),
-            actionWidget,
-          ],
+              SizedBox(height: 4),
+              if (status == 'delivered')
+                Text('Delivered on: $deliveryTime',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500])),
+            ],
+          ),
         ),
       ),
     );
   }
-
-  Widget _buildReviewSection(BuildContext context) {
-    return FutureBuilder<DocumentSnapshot>(
-      future: _getExistingReview(), // Check for an existing review
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
-        } else if (snapshot.hasData && snapshot.data!.exists) {
-          // Review exists, display it
-          var reviewData = snapshot.data!.data() as Map<String, dynamic>;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Your Review:'),
-              Text('Rating: ${reviewData['rating']}'),
-              Text('Comments: ${reviewData['comments']}'),
-              TextButton(
-                onPressed: () {
-                  _showReviewDialog(context, reviewData); // Allow edit
-                },
-                child: Text('Edit Review'),
-              ),
-            ],
-          );
-        } else {
-          // No review, show "Add a Review" button
-          return TextButton(
-            onPressed: () {
-              _showReviewDialog(context, null); // Add new review
-            },
-            child: Text('Add a Review'),
-          );
-        }
-      },
-    );
-  }
-
-  Future<DocumentSnapshot> _getExistingReview() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      print(orderId);
-      return FirebaseFirestore.instance
-          .collection('fs_comments')
-          .doc(orderId)
-          .get();
-    } else {
-      throw Exception('User not logged in');
-    }
-  }
-
-  void _showReviewDialog(BuildContext context, Map<String, dynamic>? reviewData) {
-    showDialog(
-      context: context,
-      builder: (context) => ReviewDialog(
-        orderId: orderId,
-        restaurant: restaurant,
-        foodId: foodId,
-        existingReview: reviewData, // Pass existing review data if available
-      ),
-    );
-  }
-
-  void _addToCart(BuildContext context, String foodId) {
-    // Implement the logic to add the food to the cart
-  }
 }
+
 
 class ReviewDialog extends StatefulWidget {
   final String orderId;
