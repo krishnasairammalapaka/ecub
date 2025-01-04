@@ -19,7 +19,7 @@ class Category {
 }
 
 class MeHomePage extends StatefulWidget {
-  const MeHomePage({super.key});
+  MeHomePage({super.key});
 
   @override
   State<MeHomePage> createState() => _MeHomePageState();
@@ -502,7 +502,7 @@ class _MeHomePageState extends State<MeHomePage> {
   }
 
   grid_lay(List<Category> categories) {
-    return SizedBox(
+    return Container(
       height: 150,
       // Wrap GridView with Expanded
       child: Padding(

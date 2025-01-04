@@ -12,7 +12,7 @@ import 'package:badges/badges.dart' as badges;
 class MeItems2 extends StatefulWidget {
   final String categoryName;
 
-  const MeItems2({super.key, required this.categoryName});
+  MeItems2({super.key, required this.categoryName});
 
   @override
   State<MeItems2> createState() => _MeItems2State();
@@ -83,16 +83,16 @@ class _MeItems2State extends State<MeItems2> {
     "Transit Wheelchair": "Wheel Chair"
   };
 
-  void registerClick(String itemName) async {
+  void registerClick(String item_name) async {
     var box = await Hive.openBox('clickData');
     // if box is empty set values
 
     if (box.length < 3) {
-      int index = products.indexOf(itemName);
+      int index = products.indexOf(item_name);
       box.add(index + 1);
     } else {
       box.deleteAt(0);
-      int index = products.indexOf(itemName);
+      int index = products.indexOf(item_name);
       box.add(index + 1);
     }
     // print the box values enclosed in []

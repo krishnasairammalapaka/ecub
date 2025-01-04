@@ -174,7 +174,9 @@ void main() async {
   var user = FirebaseAuth.instance.currentUser;
 
   String? email = user?.email;
-  FirestoreNotificationService.initializeFirestoreListener(email!);
+  if (email != null) {
+    FirestoreNotificationService.initializeFirestoreListener(email);
+  }
   final mapsImplementation = GoogleMapsFlutterAndroid();
   GoogleMapsFlutterPlatform.instance = mapsImplementation;
 

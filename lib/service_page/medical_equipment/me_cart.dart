@@ -18,7 +18,7 @@ final User? user = FirebaseAuth.instance.currentUser;
 
 class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  double totalPrice = 0.0;
+  double totalPrice = 125.0;
   @override
   void initState() {
     super.initState();
@@ -33,7 +33,7 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
   }
 
   void calculateTotalPrice() async {
-    double total = 0.0;
+    double total = 125.0;
     QuerySnapshot cartItems = await FirebaseFirestore.instance
         .collection('me_cart')
         .doc(user?.email)
@@ -41,10 +41,10 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
         .get();
 
     print(total);
-    cartItems.docs.forEach((doc) {
+    for (var doc in cartItems.docs) {
       total += double.parse(doc.get('price')) * doc['quantity'];
       // total += doc['price'] * doc['quantity'];
-    });
+    }
 
     setState(() {
       totalPrice = total;
@@ -546,17 +546,18 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                         String currentTime = DateTime.now().toIso8601String();
                         // Create a new document in the me_store_orders collection
                         FirebaseFirestore.instance
-                          .collection('me_store_orders')
-                          .doc(snapshot.data?.docs[0]['storeName'])
-                          .collection('orders')
-                          .doc(currentTime)
-                          .set({
-                            'order_summary': generateOrderSummary(snapshot.data?.docs ?? []),
-                            'totalPrice': totalPrice,
-                            'user': user?.email,
-                            'time': currentTime,
-                            'status':'ordered',
-                          });
+                            .collection('me_store_orders')
+                            .doc(snapshot.data?.docs[0]['storeName'])
+                            .collection('orders')
+                            .doc(currentTime)
+                            .set({
+                          'order_summary':
+                              generateOrderSummary(snapshot.data?.docs ?? []),
+                          'totalPrice': totalPrice,
+                          'user': user?.email,
+                          'time': currentTime,
+                          'status': 'ordered',
+                        });
                       }).then((_) {
                         FirebaseFirestore.instance
                             .collection('me_cart')
@@ -654,25 +655,7 @@ class _MecartState extends State<Mecart> with SingleTickerProviderStateMixin {
                                   price: totalPrice,
                                 )),
                       );
-                      // FirebaseFirestore.instance
-                      //     .collection('me_orders')
-                      //     .doc(user?.email)
-                      //     .collection('orders')
-                      //     .add({
-                      //   'order_summary':
-                      //       generateOrderSummary(snapshot.data?.docs ?? []),
-                      // });
-                      // //clear the cart
-                      // FirebaseFirestore.instance
-                      //     .collection('me_cart')
-                      //     .doc(user?.email)
-                      //     .collection('items')
-                      //     .get()
-                      //     .then((snapshot) {
-                      //   for (DocumentSnapshot ds in snapshot.docs) {
-                      //     ds.reference.delete();
-                      //   }
-                      // });
+
                       Navigator.pop(context);
                     },
                     child: FutureBuilder<String>(
@@ -718,6 +701,36 @@ class RentPage extends StatefulWidget {
 }
 
 class _RentPageState extends State<RentPage> {
+  String searchQuery = '';
+  double totalPrice = 0.0; // Variable to store total price
+
+  // Function to calculate total price
+  void calculateTotalPrice() {
+    FirebaseFirestore.instance
+        .collection('me_cart_rent')
+        .doc(user?.email)
+        .collection('items')
+        .get()
+        .then((snapshot) {
+      double tempTotal = 0.0;
+      for (var doc in snapshot.docs) {
+        tempTotal += doc['quantity'] * doc['price']; // Assuming 'price' field
+      }
+      setState(() {
+        totalPrice = tempTotal;
+      });
+    });
+  }
+
+  // Function to generate order summary from cart items
+  String generateOrderSummary(List<DocumentSnapshot> cartItems) {
+    String summary = "";
+    for (var item in cartItems) {
+      summary += "${item['name']} x ${item['quantity']}\n";
+    }
+    return summary;
+  }
+
   @override
   Widget build(BuildContext context) {
     return user == null
@@ -751,6 +764,7 @@ class _RentPageState extends State<RentPage> {
               if (snapshot.data?.docs.isEmpty ?? true) {
                 return const Center(child: Text("Your cart is empty"));
               }
+
               return Column(
                 children: [
                   Padding(
@@ -771,155 +785,226 @@ class _RentPageState extends State<RentPage> {
                     ),
                   ),
                   Expanded(
-                    child: user == null
-                        ? const Center(
-                            child: Text("Please login to view your cart"))
-                        : StreamBuilder<QuerySnapshot>(
-                            stream: FirebaseFirestore.instance
-                                .collection('me_cart_rent')
-                                .doc(user?.email)
-                                .collection('items')
-                                .snapshots(),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
+                    child: ListView.builder(
+                      itemCount: snapshot.data?.docs.length ?? 0,
+                      itemBuilder: (context, index) {
+                        var item = snapshot.data!.docs[index];
+                        var filteredDocs = searchQuery.isEmpty
+                            ? snapshot.data?.docs ?? []
+                            : snapshot.data?.docs.where((doc) {
+                                  var itemName =
+                                      doc['name'].toString().toLowerCase();
+                                  return itemName.contains(searchQuery);
+                                }).toList() ??
+                                [];
 
-                              if (snapshot.hasError) {
-                                return const Center(
-                                    child: Text("Error fetching cart items."));
-                              }
-                              var filteredDocs = searchQuery.isEmpty
-                                  ? snapshot.data?.docs ?? []
-                                  : snapshot.data?.docs.where((doc) {
-                                        var itemName = doc['name']
-                                            .toString()
-                                            .toLowerCase();
-                                        return itemName.contains(searchQuery);
-                                      }).toList() ??
-                                      [];
+                        if (filteredDocs.isEmpty) {
+                          return const Center(
+                              child: Text("Your cart is empty"));
+                        }
 
-                              if (filteredDocs.isEmpty) {
-                                return const Center(
-                                    child: Text("Your cart is empty"));
-                              }
-
-                              return ListView.builder(
-                                itemCount: filteredDocs.length,
-                                itemBuilder: (context, index) {
-                                  var item = filteredDocs[index];
-                                  return Card(
-                                    elevation: 5,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding: EdgeInsets.all(10),
-                                      leading: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Image.network(item['imageUrl'],
-                                            width: 50,
-                                            height: 50,
-                                            fit: BoxFit.cover),
-                                      ),
-                                      title: Text(
-                                        item['name'],
-                                        style: TextStyle(
-                                          fontWeight: FontWeight
-                                              .bold, // Makes text bold
-                                        ),
-                                      ),
-                                      subtitle: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Padding(
-                                            padding:
-                                                const EdgeInsets.only(top: 8.0),
-                                            child: Text(
-                                                'Store: ${item['storeName']}',
-                                                style: TextStyle(fontSize: 14)),
-                                          ),
-                                          Row(
-                                            children: [
-                                              IconButton(
-                                                icon: Icon(Icons.remove_circle,
-                                                    color: Colors
-                                                        .red), // Custom icon color
-                                                onPressed: () {
-                                                  int currentQuantity =
-                                                      item['quantity'];
-                                                  if (currentQuantity > 1) {
-                                                    FirebaseFirestore.instance
-                                                        .collection(
-                                                            'me_cart_rent')
-                                                        .doc(user?.email)
-                                                        .collection('items')
-                                                        .doc(item.id)
-                                                        .update({
-                                                      'quantity':
-                                                          FieldValue.increment(
-                                                              -1)
-                                                    });
-                                                  } else {
-                                                    FirebaseFirestore.instance
-                                                        .collection(
-                                                            'me_cart_rent')
-                                                        .doc(user?.email)
-                                                        .collection('items')
-                                                        .doc(item.id)
-                                                        .delete();
-                                                  }
-                                                },
-                                              ),
-                                              Text(
-                                                  'Quantity: ${item['quantity']}'),
-                                              IconButton(
-                                                icon: Icon(Icons.add_circle,
-                                                    color: Colors
-                                                        .green), // Custom icon color
-                                                onPressed: () {
-                                                  FirebaseFirestore.instance
-                                                      .collection(
-                                                          'me_cart_rent')
-                                                      .doc(user?.email)
-                                                      .collection('items')
-                                                      .doc(item.id)
-                                                      .update({
-                                                    'quantity':
-                                                        FieldValue.increment(1)
-                                                  });
-                                                },
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                      trailing: IconButton(
-                                        icon: Icon(Icons.delete_outline,
-                                            color: Colors.grey[
-                                                600]), // Custom icon color
-                                        onPressed: () {
+                        return Card(
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: ListTile(
+                            contentPadding: EdgeInsets.all(10),
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(item['imageUrl'],
+                                  width: 50, height: 50, fit: BoxFit.cover),
+                            ),
+                            title: Text(
+                              item['name'],
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold, // Makes text bold
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text('Store: ${item['storeName']}',
+                                      style: TextStyle(fontSize: 14)),
+                                ),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.remove_circle,
+                                          color: Colors.red),
+                                      onPressed: () {
+                                        int currentQuantity = item['quantity'];
+                                        if (currentQuantity > 1) {
+                                          FirebaseFirestore.instance
+                                              .collection('me_cart_rent')
+                                              .doc(user?.email)
+                                              .collection('items')
+                                              .doc(item.id)
+                                              .update({
+                                            'quantity': FieldValue.increment(-1)
+                                          });
+                                        } else {
                                           FirebaseFirestore.instance
                                               .collection('me_cart_rent')
                                               .doc(user?.email)
                                               .collection('items')
                                               .doc(item.id)
                                               .delete();
-                                        },
-                                      ),
+                                        }
+                                      },
                                     ),
-                                  );
-                                },
-                              );
-                            },
+                                    Text('Quantity: ${item['quantity']}'),
+                                    IconButton(
+                                      icon: Icon(Icons.add_circle,
+                                          color: Colors.green),
+                                      onPressed: () {
+                                        FirebaseFirestore.instance
+                                            .collection('me_cart_rent')
+                                            .doc(user?.email)
+                                            .collection('items')
+                                            .doc(item.id)
+                                            .update({
+                                          'quantity': FieldValue.increment(1)
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete_outline,
+                                  color: Colors.grey[600]),
+                              onPressed: () {
+                                FirebaseFirestore.instance
+                                    .collection('me_cart_rent')
+                                    .doc(user?.email)
+                                    .collection('items')
+                                    .doc(item.id)
+                                    .delete();
+                              },
+                            ),
                           ),
+                        );
+                      },
+                    ),
+                  ),
+                  placeOrderButtonRent(context, snapshot),
+                ],
+              );
+            },
+          );
+  }
+
+  // Place Order button for Rent
+  Padding placeOrderButtonRent(
+      BuildContext context, AsyncSnapshot<QuerySnapshot<Object?>> snapshot) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20),
+      child: SlideAction(
+        text: 'Slide to Place Rent Order',
+        onSubmit: () {
+          showDialog(
+            context: context,
+            builder: (BuildContext dialogContext) {
+              return AlertDialog(
+                title: FutureBuilder<String>(
+                  future: Translate.translateText("Confirm Rent Order"),
+                  builder: (context, snapshot) {
+                    return snapshot.hasData
+                        ? Text(snapshot.data!)
+                        : Text("Confirm Rent Order");
+                  },
+                ),
+                content: FutureBuilder<String>(
+                  future: Translate.translateText(
+                      "Are you sure you want to place this rent order?"),
+                  builder: (context, snapshot) {
+                    return snapshot.hasData
+                        ? Text(snapshot.data!)
+                        : Text(
+                            "Are you sure you want to place this rent order?");
+                  },
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    child: FutureBuilder<String>(
+                      future: Translate.translateText("Cancel"),
+                      builder: (context, snapshot) {
+                        return snapshot.hasData
+                            ? Text(snapshot.data!)
+                            : Text('Cancel');
+                      },
+                    ),
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop(); // Close the dialog
+                    },
+                  ),
+                  TextButton(
+                    child: FutureBuilder<String>(
+                      future: Translate.translateText("Confirm"),
+                      builder: (context, snapshot) {
+                        return snapshot.hasData
+                            ? Text(snapshot.data!)
+                            : Text('Confirm');
+                      },
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      FirebaseFirestore.instance
+                          .collection('me_orders_rent')
+                          .doc(user?.email)
+                          .collection('orders')
+                          .add({
+                        'order_summary':
+                            generateOrderSummary(snapshot.data?.docs ?? []),
+                        'totalPrice': totalPrice,
+                      }).then((_) {
+                        String currentTime = DateTime.now().toIso8601String();
+                        FirebaseFirestore.instance
+                            .collection('me_store_orders_rent')
+                            .doc(snapshot.data?.docs[0]['storeName'])
+                            .collection('orders')
+                            .doc(currentTime)
+                            .set({
+                          'order_summary':
+                              generateOrderSummary(snapshot.data?.docs ?? []),
+                          'totalPrice': totalPrice,
+                          'user': user?.email,
+                          'time': currentTime,
+                          'status': 'ordered',
+                        });
+                      }).then((_) {
+                        FirebaseFirestore.instance
+                            .collection('me_cart_rent')
+                            .doc(user?.email)
+                            .collection('items')
+                            .get()
+                            .then((snapshot) {
+                          for (DocumentSnapshot ds in snapshot.docs) {
+                            ds.reference.delete();
+                          }
+                        });
+                      });
+                      calculateTotalPrice();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => PayHomeMed(
+                                  price: totalPrice,
+                                )),
+                      );
+                    },
                   ),
                 ],
               );
             },
           );
+        },
+        sliderButtonIcon: Icon(Icons.arrow_circle_right_outlined),
+      ),
+    );
   }
 }
