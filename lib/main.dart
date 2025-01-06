@@ -46,7 +46,7 @@ import 'package:ecub_s1_v2/models/Food_db.dart';
 import 'package:ecub_s1_v2/models/Cart_Db.dart';
 import 'package:ecub_s1_v2/models/Favourites_DB.dart';
 import 'package:ecub_s1_v2/models/CheckoutHistory_DB.dart';
-
+import 'package:ecub_s1_v2/pages/chat_support_page.dart';
 
 FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -256,6 +256,11 @@ class MyApp extends StatelessWidget {
         '/fs_s_checkout': (context) => FS_S_Checkout(),
         '/fs_s_packcheck': (context) => FS_S_PackCheck(),
         '/fs_s_packchange': (context) => FS_S_PackChange(),
+        '/chat_support': (context) => ChatSupportPage(), // Add this route
+        '/chat_category': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          return ChatSupportPage(category: args?['category'] ?? 'general');
+        },
       },
     );
   }

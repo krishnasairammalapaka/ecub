@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecub_s1_v2/translation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:maps_launcher/maps_launcher.dart';
 
 class MeOrders extends StatefulWidget {
-  MeOrders({super.key});
+  const MeOrders({super.key});
 
   @override
   State<MeOrders> createState() => _MeOrdersState();
@@ -25,122 +27,89 @@ class _MeOrdersState extends State<MeOrders> {
     }
   }
 
+  // Add map launcher function
+  Future<void> _launchMaps() async {
+    try {
+      // Static coordinates
+      final startLat = 9.5121;  // Current location
+      final startLng = 77.6340;
+      final destLat = 9.5636;   // Store location
+      final destLng = 77.6822;
+
+      final url = 'google.navigation:q=$destLat,$destLng&origin=$startLat,$startLng';
+      final uri = Uri.parse(url);
+      
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        // Fallback to maps launcher
+        MapsLauncher.launchCoordinates(destLat, destLng);
+      }
+    } catch (e) {
+      print('Error launching maps: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Orders'),
+        title: Text('Medical Equipment Orders'),
       ),
-      body: FutureBuilder<QuerySnapshot>(
-          future: FirebaseFirestore.instance
-              .collection('me_orders')
-              .doc(user?.email)
-              .collection('orders')
-              .get(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done &&
-                snapshot.hasData) {
-              final items = snapshot.data!.docs.map((doc) {
-                Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-                //get keys to list
-                List<String> keys = data['order_summary'].keys.toList();
-                //create a list of items
-                data = data['order_summary'];
-                List<Item> items = [];
-                for (int i = 0; i < keys.length; i++) {
-                  print(data[keys[i]]['name']);
-                  items.add(Item(
-                      name: data[keys[i]]['name'],
-                      quantity: data[keys[i]]['quantity'],
-                      store: data[keys[i]]['storeName'],
-                      price: data[keys[i]]['price']));
-                }
-                return items;
-              }).toList();
-              return ListView.builder(
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    child: Column(
-                      children: [
-                        ListTile(
-                          title: Text('Order ${index + 1}'),
-                        ),
-                        Column(
-                          children: items[index].map((item) {
-                            return ListTile(
-                              title: FutureBuilder<String>(
-                                future: Translate.translateText(item.name),
-                                builder: (context, snapshot) {
-                                  return snapshot.hasData
-                                      ? Text(
-                                          snapshot.data!,
-                                        )
-                                      : Text(
-                                          item.name,
-                                        );
-                                },
-                              ),
-                              subtitle: FutureBuilder<String>(
-                                future: Translate.translateText(
-                                    'Store: ${item.store}'),
-                                builder: (context, snapshot) {
-                                  return snapshot.hasData
-                                      ? Text(
-                                          snapshot.data!,
-                                          overflow: TextOverflow.ellipsis,
-                                        )
-                                      : Text(
-                                          item.store,
-                                        );
-                                },
-                              ),
-                              trailing: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  FutureBuilder<String>(
-                                    future: Translate.translateText(
-                                        'Quantity: ${item.quantity}'),
-                                    builder: (context, snapshot) {
-                                      return snapshot.hasData
-                                          ? Text(
-                                              snapshot.data!,
-                                            )
-                                          : Text(
-                                              'Quantity: ${item.quantity}',
-                                            );
-                                    },
-                                  ),
-                                  FutureBuilder<String>(
-                                    future: Translate.translateText(
-                                        'Price: ₹${item.price}'),
-                                    builder: (context, snapshot) {
-                                      return snapshot.hasData
-                                          ? Text(
-                                              snapshot.data!,
-                                            )
-                                          : Text(
-                                              'Price: ₹${item.price}',
-                                            );
-                                    },
-                                  )
-                                ],
-                              ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: fetchOrders(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
 
-                              //add store name
-                            );
-                          }).toList(),
-                        ),
-                      ],
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          return ListView.builder(
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context, index) {
+              // Get document data with null safety
+              final data = snapshot.data!.docs[index].data() as Map<String, dynamic>? ?? {};
+              
+              return Card(
+                margin: EdgeInsets.all(8),
+                child: Column(
+                  children: [
+                    ListTile(
+                      title: Text(
+                        data['name'] ?? 'Unknown Item', // Changed from itemName to name
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Price: ₹${data['price']?.toString() ?? '0'}'),
+                          Text('Quantity: ${data['quantity']?.toString() ?? '1'}'),
+                          Text('Status: ${data['status'] ?? 'Processing'}'),
+                        ],
+                      ),
                     ),
-                  );
-                },
+                    Padding(
+                      padding: EdgeInsets.all(8),
+                      child: ElevatedButton.icon(
+                        onPressed: _launchMaps,  // Connect to map launcher
+                        icon: Icon(Icons.location_on),
+                        label: Text('Track Order'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: Colors.white,
+                          minimumSize: Size(double.infinity, 45),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               );
-            }
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }),
+            },
+          );
+        },
+      ),
     );
   }
 }

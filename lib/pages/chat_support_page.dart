@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'chat_bot_webview.dart';  // Add this import
+import 'package:cloud_firestore/cloud_firestore.dart'; // Add this import
 
 class ChatSupportPage extends StatelessWidget {
-  const ChatSupportPage({Key? key}) : super(key: key);
+  final String category;
+  
+  const ChatSupportPage({
+    Key? key, 
+    this.category = 'general'
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +50,12 @@ class ChatSupportPage extends StatelessWidget {
                   builder: (context) => ChatBotWebView(),
                 ),
               ),
+            ),
+            _buildSupportButton(
+              context,
+              'Category Support: $category',
+              Icons.category,
+              () => _handleCategorySupport(context),
             ),
           ],
         ),
@@ -102,9 +114,38 @@ class ChatSupportPage extends StatelessWidget {
       ),
     );
   }
+
+  void _handleCategorySupport(BuildContext context) {
+    FirebaseFirestore.instance
+        .collection('chat_categories')
+        .doc(category)
+        .get()
+        .then((doc) {
+      if (doc.exists) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatBotWebView(
+              category: category,
+              url: doc.data()?['chatbotUrl'] ?? 'https://ecub-bot2.vercel.app',
+            ),
+          ),
+        );
+      }
+    });
+  }
 }
 
 class ChatBotWebView extends StatefulWidget {
+  final String category;
+  final String url;
+
+  const ChatBotWebView({
+    Key? key,
+    this.category = 'general',
+    this.url = 'https://ecub-bot2.vercel.app',
+  }) : super(key: key);
+
   @override
   _ChatBotWebViewState createState() => _ChatBotWebViewState();
 }
@@ -124,7 +165,7 @@ class _ChatBotWebViewState extends State<ChatBotWebView> {
           onPageFinished: (url) => setState(() => isLoading = false),
         ),
       )
-      ..loadRequest(Uri.parse('https://ecub-bot2.vercel.app'));
+      ..loadRequest(Uri.parse(widget.url));
   }
 
   @override
